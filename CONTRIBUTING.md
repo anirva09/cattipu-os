@@ -10,7 +10,7 @@ Thanks for considering a contribution. A few things to know before opening a pul
 
 
 
-\- Read `docs/FOUNDER\_VISION.md` first — it's the permanent constitution for this project. A
+\- Read `docs/FOUNDER\\\_VISION.md` first — it's the permanent constitution for this project. A
 
 &#x20; change that turns CATTIPU into a generic dashboard, a Windows clone, or that imitates the
 
