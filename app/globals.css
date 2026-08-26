@@ -1,0 +1,330 @@
+@import "tailwindcss";
+
+@theme {
+  /* ---- Brand palette (exact values from the CATTIPU design sheet) ---- */
+  --color-navy: #0b3d91;
+  --color-cream: #ede4c7;
+  --color-red: #d6403a;
+  --color-green: #2ba24c;
+  --color-blue: #3c6ad8;
+  --color-gold: #f0c419;
+  --color-purple: #6e3ba8;
+  --color-black: #111111;
+
+  /* ---- Semantic surfaces (one light, warm system — boot and desktop share it) ---- */
+  --color-bg: var(--color-cream);
+  --color-bg-dim: #e3d9b9;
+  --color-surface: #faf5e6;
+  --color-surface-solid: #fffdf7;
+  --color-ink: #17161a;
+  --color-ink-dim: #7a7566;
+  --color-ink-faint: #a39d8c;
+  --color-border: rgba(11, 61, 145, 0.16);
+  --color-border-strong: rgba(11, 61, 145, 0.3);
+
+  /* ---- Fonts (self-hosted via @fontsource — no external network calls) ----
+     Two personalities per the CATTIPU identity system, plus code:
+       --font-pixel-ui  chrome, titles, buttons, tabs, labels — the "molded plastic" voice
+       --font-body      paragraphs, descriptions, prompts — stays highly readable
+       --font-code      SQL / mono readouts — a pixel monospace, not a generic one
+     Never hardcode a font-family inside a component — reference these tokens
+     (via the font-pixel-ui / font-body / font-mono utility classes) instead. */
+  --font-pixel-ui: "Press Start 2P", ui-monospace, monospace;
+  --font-body: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    ui-sans-serif, system-ui, sans-serif;
+  --font-code: "VT323", ui-monospace, "SFMono-Regular", monospace;
+  /* Override Tailwind's built-in mono token too, so every existing `font-mono`
+     utility (DatabasePanel, NodeInspector, …) picks up the pixel monospace
+     automatically — no per-component edits needed. */
+  --font-mono: var(--font-code);
+
+  /* ---- Motion ---- */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: var(--color-navy);
+  color: var(--color-cream);
+}
+
+/* crisp pixel rendering for the boot logo / bitmap accents */
+.pixelated {
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
+}
+
+/* subtle scrollbar for the whole OS, in case any surface scrolls */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(11, 61, 145, 0.18);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- Pixel cursor system (Settings > Cursor) ---- */
+/* Crisp, no-anti-aliasing pixel cursors replacing the browser defaults.
+   Toggled by the .cattipu-cursors class on <body> (see CursorProvider). */
+body.cattipu-cursors,
+body.cattipu-cursors * {
+  cursor: url("/cursors/arrow.png") 8 8, auto;
+}
+body.cattipu-cursors button,
+body.cattipu-cursors a,
+body.cattipu-cursors [role="button"],
+body.cattipu-cursors .cattipu-cursor-hand {
+  cursor: url("/cursors/hand.png") 24 4, pointer;
+}
+body.cattipu-cursors input,
+body.cattipu-cursors textarea,
+body.cattipu-cursors [contenteditable="true"] {
+  cursor: url("/cursors/text.png") 28 32, text;
+}
+body.cattipu-cursors .cattipu-resize-handle {
+  cursor: url("/cursors/resize.png") 28 28, nwse-resize !important;
+}
+
+/* ---- React Flow: strip the default modern/glass look, go pixel ---- */
+.cattipu-flow .react-flow__renderer {
+  cursor: inherit;
+}
+.cattipu-flow .react-flow__controls {
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(11, 20, 40, 0.15);
+}
+.cattipu-flow .react-flow__controls-button {
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-solid);
+  color: var(--color-navy);
+}
+.cattipu-flow .react-flow__controls-button:hover {
+  background: var(--color-bg-dim);
+}
+.cattipu-flow .react-flow__attribution {
+  display: none;
+}
+.cattipu-flow .react-flow__edge-path {
+  stroke: var(--color-navy);
+  stroke-width: 1.5px;
+}
+.cattipu-flow .react-flow__edge.selected .react-flow__edge-path,
+.cattipu-flow .react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--color-blue);
+}
+.cattipu-flow .react-flow__edge-text {
+  font-family: var(--font-body);
+}
+.cattipu-flow .react-flow__handle {
+  background: var(--color-navy);
+  border: 1px solid var(--color-surface-solid);
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+}
+
+/* fade-in used for the graph's edges once nodes have finished appearing */
+@keyframes cattipu-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.cattipu-edge-animated {
+  opacity: 0;
+  animation: cattipu-fade-in 0.5s ease forwards;
+}
+
+/* one-shot "Events appear" pulse — Build Playback 2.0's events beat.
+   Mechanical, not glowy: a quick double-thickness flash, no blur. */
+@keyframes cattipu-edge-pulse {
+  0%,
+  100% {
+    stroke-width: 1.5px;
+  }
+  30%,
+  70% {
+    stroke-width: 3.5px;
+    stroke: var(--color-gold);
+  }
+}
+.cattipu-edge-pulse .react-flow__edge-path {
+  animation: cattipu-edge-pulse 1.4s ease-in-out 1;
+}
+
+/* SQL type-in caret */
+@keyframes cattipu-caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.cattipu-caret {
+  animation: cattipu-caret-blink 0.9s step-end infinite;
+}
+
+/* ============================================================
+   Surface depth system — Identity Refactor (v0.2.5)
+   A small, reusable set of "molded plastic" primitives. Every
+   window, dock, top bar, and tab should build on these instead of
+   inventing its own bevel, so the whole shell reads as one
+   physical object rather than a pile of separately styled cards.
+   ============================================================ */
+
+/* Raised: convex, pressable-looking plastic.
+   Window frames, dock rail, inactive folder tabs, top bar. */
+.cattipu-raised {
+  border: 2px solid var(--color-border-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -2px 0 rgba(11, 20, 40, 0.14),
+    0 2px 0 rgba(11, 20, 40, 0.16);
+}
+
+/* Recessed: concave, inset well.
+   Content areas, dock icon wells, active/pressed tab, SQL viewer. */
+.cattipu-recessed {
+  border: 2px solid var(--color-border-strong);
+  box-shadow:
+    inset 0 2px 3px rgba(11, 20, 40, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Carved / engraved label text, for light (cream/surface) backgrounds. */
+.cattipu-emboss-text {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5),
+    0 -1px 0 rgba(11, 20, 40, 0.35);
+}
+/* Same, inverted for dark (navy chrome) backgrounds. */
+.cattipu-emboss-text-inverted {
+  text-shadow:
+    0 -1px 0 rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Tiny embossed screw — decorative only, used sparingly on "special"
+   panels (About, Architect Control Room corners). Position it explicitly:
+   <span className="cattipu-screw" style={{ top: 6, left: 6 }} /> */
+.cattipu-screw {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(11, 20, 40, 0.35));
+  box-shadow: inset 0 0 0 1px rgba(11, 20, 40, 0.28);
+  pointer-events: none;
+}
+
+/* Blue LED — active-state indicator dot (dock, active window). */
+.cattipu-led {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-blue);
+  box-shadow:
+    0 0 0 1px rgba(11, 20, 40, 0.25),
+    0 0 4px 1px rgba(60, 106, 216, 0.85);
+}
+
+/* Mechanical press: quick, small, no bounce or blob easing. */
+.cattipu-press {
+  transition:
+    transform 140ms var(--ease-spring),
+    box-shadow 140ms var(--ease-spring);
+}
+.cattipu-press:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+/* Raised, but tuned for dark navy chrome instead of the light cream surfaces
+   above (top bar, title bars) — beveled top edge, darker lower edge, a
+   thin pixel highlight instead of a full inner glow. */
+.cattipu-raised-navy {
+  border-bottom: 2px solid rgba(0, 0, 0, 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.16);
+}
+
+/* Small embossed badge — a housing for the logo mark or a status glyph
+   sitting on navy chrome. */
+.cattipu-badge {
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.14));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -2px 2px rgba(0, 0, 0, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* A recessed pill for grouping small status glyphs on navy chrome. */
+.cattipu-recessed-navy {
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Focused-window glow — restrained, 1px, per the pixel-details pass.
+   Layers on top of .cattipu-raised's own box-shadow via an extra ring. */
+.cattipu-window-glow {
+  box-shadow:
+    0 0 0 1px var(--color-blue),
+    0 16px 40px rgba(11, 20, 40, 0.22);
+}
+
+/* Folder tabs — physical file-folder tabs (Architect's Planner / Architecture
+   / Database / Roadmap switcher). Inactive tabs sit raised, above the rack;
+   the active tab is pressed down flush with the panel it opens onto. */
+.cattipu-folder-tab {
+  position: relative;
+  top: 2px;
+  border: 2px solid var(--color-border-strong);
+  border-bottom: none;
+  border-radius: 5px 9px 0 0;
+  background: var(--color-bg-dim);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 0 rgba(11, 20, 40, 0.08),
+    0 1px 0 rgba(11, 20, 40, 0.1);
+}
+.cattipu-folder-tab-active {
+  top: 0;
+  background: var(--color-surface-solid);
+  box-shadow:
+    inset 0 2px 3px rgba(11, 20, 40, 0.14),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.5);
+}
