@@ -400,3 +400,11 @@ section icons, breadcrumb chevrons) — never for OS navigation glyphs.
   composes from that set rather than each getting its own bespoke
   bevel. That's what keeps the whole shell reading as one physical
   object instead of a pile of separately restyled components.
+
+## License
+
+The CATTIPU OS source code is licensed under the [MIT License](./LICENSE).
+
+The CATTIPU name, wordmark, and thumb logo are **not** covered by that license — they're
+proprietary brand assets, all rights reserved. See `assets/brand/README.md` before using,
+referencing, or modifying anything under `assets/brand/`.
