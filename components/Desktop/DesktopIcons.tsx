@@ -1,35 +1,39 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PixelLogo } from "../Boot/PixelLogo";
-import { AppIcon } from "../Dock/AppIcon";
 import { useWindowStore } from "@/store/useWindowStore";
+import { DesktopShortcutCard } from "./DesktopShortcutCard";
 
-interface IconDef {
+// Milestone 1 (Home Screen Refinement) — "Default shortcuts: My Projects,
+// Archive, Templates." This replaces the previous 3-item list (CATTIPU,
+// My Projects, Archive): the CATTIPU/About shortcut is dropped per this
+// explicit list — the logo stays reachable via the top bar badge instead.
+// Flagged in MILESTONE1_REPORT.md.
+interface ShortcutDef {
   id: string;
   label: string;
+  icon: string;
   onOpen: (openApp: ReturnType<typeof useWindowStore.getState>["openApp"]) => void;
-  render: () => React.ReactNode;
 }
 
-const ICONS: IconDef[] = [
-  {
-    id: "cattipu",
-    label: "CATTIPU",
-    onOpen: (openApp) => openApp("about", "About CATTIPU OS"),
-    render: () => <PixelLogo mode="retro" variant="mark" className="h-9 w-auto" />,
-  },
+const SHORTCUTS: ShortcutDef[] = [
   {
     id: "my-projects",
     label: "My Projects",
+    icon: "projects",
     onOpen: (openApp) => openApp("projects", "Projects"),
-    render: () => <AppIcon icon="projects" className="h-9 w-auto" />,
   },
   {
     id: "archive",
     label: "Archive",
+    icon: "archive",
     onOpen: (openApp) => openApp("explorer", "Explorer"),
-    render: () => <AppIcon icon="archive" className="h-9 w-auto" />,
+  },
+  {
+    id: "templates",
+    label: "Templates",
+    icon: "templates",
+    onOpen: (openApp) => openApp("templates", "Templates"),
   },
 ];
 
@@ -51,38 +55,18 @@ export function DesktopIcons() {
   return (
     <div
       ref={containerRef}
-      className="pointer-events-auto absolute left-5 top-6 flex flex-col gap-1"
+      className="pointer-events-auto absolute left-5 top-6 flex flex-col gap-2"
     >
-      {ICONS.map((icon) => {
-        const active = selected === icon.id;
-        return (
-          <button
-            key={icon.id}
-            aria-label={`Desktop icon: ${icon.label}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelected(icon.id);
-            }}
-            onDoubleClick={() => icon.onOpen(openApp)}
-            className={[
-              "cattipu-cursor-hand flex w-20 flex-col items-center gap-1.5 rounded-md border px-2 py-2.5 text-center transition-colors",
-              active
-                ? "border-dashed border-navy bg-navy/10"
-                : "border-transparent hover:bg-white/30",
-            ].join(" ")}
-          >
-            {icon.render()}
-            <span
-              className={[
-                "line-clamp-2 text-[11px] font-medium leading-tight",
-                active ? "bg-navy text-white px-1 rounded-[2px]" : "text-ink",
-              ].join(" ")}
-            >
-              {icon.label}
-            </span>
-          </button>
-        );
-      })}
+      {SHORTCUTS.map((s) => (
+        <DesktopShortcutCard
+          key={s.id}
+          label={s.label}
+          icon={s.icon}
+          selected={selected === s.id}
+          onSelect={() => setSelected(s.id)}
+          onOpen={() => s.onOpen(openApp)}
+        />
+      ))}
     </div>
   );
 }

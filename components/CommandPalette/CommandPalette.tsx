@@ -215,7 +215,18 @@ export function CommandPalette() {
             exit={{ opacity: 0, scale: 0.97, y: -4 }}
             transition={{ type: "spring", stiffness: 380, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
-            className="flex w-[min(92vw,32rem)] flex-col overflow-hidden rounded-xl border border-border-strong bg-surface shadow-[0_24px_60px_rgba(11,20,40,0.35)]"
+            // Milestone 6 (Mechanical Surface Consistency) — this was the
+            // one surface in the whole shell built entirely outside the
+            // molded-plastic system: a plain Tailwind rounded-xl card with
+            // a 1px ad hoc border, the lighter --color-surface background
+            // instead of the --color-surface-solid every other raised
+            // panel uses, and a 60px-blur floating drop shadow — precisely
+            // the "modern card shadow... glass effect" this pass removes
+            // everywhere else. Swapped for the same cattipu-raised bevel
+            // and hard 4px chamfer every window/panel already uses, and
+            // the shared molded-panel background. Size, position, motion,
+            // and every child element are unchanged.
+            className="cattipu-raised cattipu-chamfer flex w-[min(92vw,32rem)] flex-col overflow-hidden bg-surface-solid"
           >
             <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
               <Search className="h-4 w-4 shrink-0 text-ink-dim" strokeWidth={2} />
@@ -293,7 +304,11 @@ function CommandGroup({
 }) {
   return (
     <div className="px-2 py-1.5">
-      <p className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-ink-faint">
+      {/* Milestone 12 (Constitutional Foundation Retrofit) — group headers
+          are literally command-menu chrome, so this now names the `font-menu`
+          role explicitly rather than relying on the ambient body-font
+          default to happen to look right. */}
+      <p className="font-menu px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-ink-faint">
         {title}
       </p>
       {items.map((cmd) => {

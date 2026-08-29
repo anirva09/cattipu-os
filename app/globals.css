@@ -1,9 +1,40 @@
 @import "tailwindcss";
 
 @theme {
-  /* ---- Brand palette (exact values from the CATTIPU design sheet) ---- */
-  --color-navy: #0b3d91;
-  --color-cream: #ede4c7;
+  /* ---- Brand palette — Phase 2 Sub-sprint 1: superseded by
+     CATTIPU_FOUNDATION_TOKENS.json v1.0.0 (frozen-candidate), which is
+     newer and more rigorously validated than the v1.0 Refinement Sprint's
+     locked hex values it replaces. See PHASE2_SUBSPRINT_01_REPORT.md for
+     the conflict and why the JSON file won. Two distinct navies now
+     exist — do not conflate them. ---- */
+  --color-navy: #031f56; /* chrome_navy — was #0b3d91. Primary chrome: top
+    bar, dock, hardware faces, window frames. */
+  --color-navy-identity: #0c3c86; /* identity_navy — NEW. Logo mark + hero
+    identity text ONLY. Never substitute for chrome_navy. */
+  --color-electric: #10227e; /* selection_blue — was #1f5bff. Same role
+    (active indicators, selected nav/text, dock LED, Build Playback) but a
+    darker, less saturated value. This is the single most visible change
+    in this pass — everything that glowed bright blue now reads as a
+    deeper ink-blue. */
+  --color-cream: #e7d7c3; /* cream_background — was #efe7d2 */
+  --color-outline: #141110; /* NEW — spec's "outline": primary hard
+    border/keyline color, close to but distinct from --color-ink below */
+  --color-success: #196236; /* NEW — success_green, for positive system
+    state only (System Status "operational" text, etc.) */
+  --color-warning: #fac437; /* NEW — warning_yellow, for attention/warning
+    roles only — not a general heading or accent color */
+  --color-ai: #7856ab; /* NEW — ai_purple, for AI-semantic content only */
+  /* The four below are NOT in the foundation token file (open item U-03 in
+     PHASE1_QA_FREEZE.md: "later app sheets contain support colors not
+     present in the foundation token file... no new visual palette should
+     be invented during handoff"). They're pre-existing accent colors used
+     across Architect/Explorer/Boot for things the foundation spec doesn't
+     name (node-type colors, project-icon colors). Left untouched rather
+     than guessing a mapping — see PHASE2_SUBSPRINT_01_REPORT.md. Note
+     these now sit close to, but distinct from, the new semantic tokens
+     above (--color-green vs --color-success, --color-gold vs
+     --color-warning, --color-purple vs --color-ai) — that overlap is a
+     future cleanup candidate once U-03 is resolved, not a bug today. */
   --color-red: #d6403a;
   --color-green: #2ba24c;
   --color-blue: #3c6ad8;
@@ -11,32 +42,124 @@
   --color-purple: #6e3ba8;
   --color-black: #111111;
 
+  /* Milestone 11 (Architect Retro Workstation Identity) — NEW. A deep
+     oxblood/burgundy, originally Architect's own chrome hue. Milestone 12
+     (Constitutional Foundation Retrofit) promotes it to the frozen
+     application-window chrome color — see --color-app-titlebar below and
+     the "Frozen chrome hierarchy" section further down. An original
+     CATTIPU read on "premium planning workstation, 1993-1998" — not a
+     historical platform color lifted wholesale. */
+  --color-oxblood: #5c1524;
+  /* Milestone 12 (Constitutional Foundation Retrofit) — NEW. The frozen
+     chrome-hierarchy rule: OS-level chrome (top bar, dock, boot, Command
+     Palette — none of which are `.cattipu-window-frame`) stays
+     chrome_navy; every application WINDOW's title bar reads this token
+     instead, which defaults to oxblood. A separate token from
+     --color-navy (not a redeclaration of it) so an app window's title
+     bar goes oxblood without silently recoloring that same app's own
+     internal content accents (Settings' active tab, Explorer's active
+     breadcrumb, etc. all still intentionally use --color-navy). Consumed
+     by Window.tsx and components/UI/Panel.tsx's title-bar background —
+     see the "Frozen chrome hierarchy" section below for the one
+     documented exception (Architect, which additionally retints its own
+     content). */
+  --color-app-titlebar: var(--color-oxblood);
+
+  /* ---- Pixel construction rules ----
+     Every shell component should inherit these instead of picking its own
+     numbers. Referenced in code as plain px values (Tailwind arbitrary
+     values) since the token itself can't be interpolated into shadow/border
+     shorthand — this block is the single source of truth for what those
+     numbers mean. */
+  --grid-unit: 8px; /* base spacing grid — matches spacing.base_unit_px */
+  --icon-grid: 24px; /* icon artboard size — matches icons.grid_px */
+  --line-border: 2px; /* standard controls/icons — matches borders["2px"] */
+  --line-border-outer: 3px; /* NEW — major window/hardware frame outer
+    keyline, matches borders["3px"]. Window System sub-sprint wires this
+    into the actual window-chrome component; only defined here for now. */
+  --line-hairline: 1px; /* NEW — internal separators/fine rules, matches
+    borders["1px"]. Distinct from --line-highlight/--line-shadow below,
+    which are bevel-edge weights, not border weights. */
+  --line-highlight: 1px; /* embossed top highlight */
+  --line-shadow: 1px; /* cast-shadow weight */
+  --window-title-bar: 40px; /* NEW — WINDOW_ANATOMY_SPEC. Not yet consumed
+    by the window-chrome component (Window System sub-sprint). */
+  --window-control: 24px; /* NEW — square title-bar control size */
+  --window-chamfer: 4px; /* NEW — hard mechanical corner; never a smooth
+    CSS border-radius beyond this, per spec's "stepped, not rounded" rule */
+  --window-content-inset: 16px; /* NEW — standard content padding */
+  --dock-width-collapsed: 72px; /* Sprint 3 — Dock System. Mirrors
+    DOCK_RAIL_WIDTH_PX.collapsed in store/useSettingsStore.ts, which is the
+    value actually driving the Framer Motion width animation (a CSS custom
+    property can't be read as a plain number there). Keep both in sync. */
+  --dock-width-expanded: 184px; /* Milestone 2 — was 196px through
+    Milestone 1. Mirrors DOCK_RAIL_WIDTH_PX.expanded. */
+
   /* ---- Semantic surfaces (one light, warm system — boot and desktop share it) ---- */
   --color-bg: var(--color-cream);
   --color-bg-dim: #e3d9b9;
   --color-surface: #faf5e6;
-  --color-surface-solid: #fffdf7;
-  --color-ink: #17161a;
+  --color-surface-solid: #e8d8c5; /* molded_panel — was #fffdf7. Was
+    near-white; the foundation spec's "primary molded-plastic panel and
+    window face" is a deeper tan. Every window/panel face darkens with
+    this change — the second headline visual shift in this pass. */
+  --color-ink: #141110; /* outline — was #17161a, effectively imperceptible */
   --color-ink-dim: #7a7566;
   --color-ink-faint: #a39d8c;
-  --color-border: rgba(11, 61, 145, 0.16);
-  --color-border-strong: rgba(11, 61, 145, 0.3);
+  --color-border: rgba(3, 31, 86, 0.16); /* re-based on new chrome_navy rgb */
+  --color-border-strong: rgba(3, 31, 86, 0.3);
 
   /* ---- Fonts (self-hosted via @fontsource — no external network calls) ----
-     Two personalities per the CATTIPU identity system, plus code:
-       --font-pixel-ui  chrome, titles, buttons, tabs, labels — the "molded plastic" voice
-       --font-body      paragraphs, descriptions, prompts — stays highly readable
-       --font-code      SQL / mono readouts — a pixel monospace, not a generic one
-     Never hardcode a font-family inside a component — reference these tokens
-     (via the font-pixel-ui / font-body / font-mono utility classes) instead. */
+     Two period font FAMILIES back the whole system, plus code:
+       --font-pixel-ui  "Press Start 2P" — the true bitmap face. Chunky,
+                        unreadable past a short label; short chrome text only.
+       --font-code      "VT323" — a pixel-style monospace terminal face.
+                        Reads fine at paragraph length, unlike Press Start 2P.
+     Never hardcode a font-family inside a component — reference the frozen
+     ROLE tokens below (via their matching font-* utility classes) instead
+     of --font-pixel-ui / --font-code / --font-body directly, so a future
+     change to what a role means doesn't require hunting down call sites. */
   --font-pixel-ui: "Press Start 2P", ui-monospace, monospace;
-  --font-body: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    ui-sans-serif, system-ui, sans-serif;
   --font-code: "VT323", ui-monospace, "SFMono-Regular", monospace;
   /* Override Tailwind's built-in mono token too, so every existing `font-mono`
      utility (DatabasePanel, NodeInspector, …) picks up the pixel monospace
      automatically — no per-component edits needed. */
   --font-mono: var(--font-code);
+
+  /* ---- Frozen font roles — Milestone 12 (Constitutional Foundation
+     Retrofit): "CATTIPU must not visibly mix modern UI typography with
+     bitmap typography." Six named roles, each mapped onto one of the two
+     period families above — a component should reach for the role
+     (font-menu / font-window-title / font-label / font-code / font-status
+     / font-hero utility classes, auto-generated by Tailwind v4 from these
+     --font-* tokens) rather than inventing a font-family or picking
+     --font-pixel-ui/--font-code directly, so retuning a role later is a
+     one-line token edit, not a repo-wide find-and-replace.
+       Menu          compact bitmap UI      -> Press Start 2P
+       Window Title  bold bitmap UI         -> Press Start 2P
+       Labels        compact bitmap UI      -> Press Start 2P
+       Code          pixel-compatible mono  -> VT323 (also the --font-mono override above)
+       Status Bar    smallest readable      -> VT323 — Press Start 2P's blocky
+                     bitmap/mono role          glyphs stop reading below ~0.4rem;
+                                                VT323 stays legible smaller.
+       Hero          large bitmap display,  -> Press Start 2P, used sparingly
+                     used sparingly            (boot lockup caption, not body text)
+     --font-body is the ambient default (set on <body> below, and the base
+     for the pre-existing `font-body` utility several components already
+     use) — "Inter Variable must no longer be the visible default UI/body
+     voice." Re-pointed from Inter Variable to the VT323 stack: the same
+     var()-cascade technique Milestone 11 used for chrome color (Tailwind
+     utilities compile to var(), confirmed against build output), so every
+     paragraph/description/prompt across the whole shell picks up the
+     period terminal voice automatically, with zero per-component edits.
+     Inter Variable is no longer referenced anywhere in the stylesheet or
+     layout — see app/layout.tsx. */
+  --font-menu: var(--font-pixel-ui);
+  --font-window-title: var(--font-pixel-ui);
+  --font-label: var(--font-pixel-ui);
+  --font-status: var(--font-code);
+  --font-hero: var(--font-pixel-ui);
+  --font-body: var(--font-code);
 
   /* ---- Motion ---- */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
@@ -70,17 +193,25 @@ body {
   shape-rendering: crispEdges;
 }
 
-/* subtle scrollbar for the whole OS, in case any surface scrolls */
+/* Scrollbar for the whole OS, in case any surface scrolls. Milestone 3
+   (Window Chrome Retrofit) — "Scrollbar" in the shared-components list:
+   rebased the thumb color from the old pre-token-integration navy
+   rgb(11,61,145) to the current chrome_navy rgb(3,31,86), reduced the
+   999px full-pill radius to a small hard 2px radius (mechanical, not a
+   soft modern pill), and gave the track a visible recessed groove instead
+   of transparent — reads as a routed channel the thumb rides in, matching
+   .cattipu-vgroove's construction language elsewhere in the shell. */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(11, 61, 145, 0.18);
-  border-radius: 999px;
+  background: rgba(3, 31, 86, 0.28);
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-bg-dim);
+  box-shadow: inset 0 0 0 1px rgba(3, 31, 86, 0.1);
 }
 
 /* ---- Pixel cursor system (Settings > Cursor) ---- */
@@ -104,6 +235,35 @@ body.cattipu-cursors [contenteditable="true"] {
 body.cattipu-cursors .cattipu-resize-handle {
   cursor: url("/cursors/resize.png") 28 28, nwse-resize !important;
 }
+/* Milestone 4 (Window Interaction Polish) — the blanket
+   `body.cattipu-cursors *` rule above (default arrow for everything)
+   otherwise wins over a plain `.cattipu-window-titlebar { cursor: grab }`
+   rule, the same way it would for any other cursor exception — hence the
+   same scoped-selector + !important pattern already used for the resize
+   handles just above.
+   Milestone 12 (Constitutional Foundation Retrofit) — "freeze cursor
+   language: Arrow, I-Beam, Move, Resize, Hourglass, Pointing Hand." This
+   was disclosed as a placeholder ("no dedicated grab pixel art exists, so
+   this reuses the hand cursor") until now: scripts/gen_cursors.py gained
+   a real Move glyph (public/cursors/move.png), so dragging a window uses
+   its own dedicated asset instead of borrowing Pointing Hand's — the two
+   read as distinct affordances (draggable surface vs. clickable control)
+   and now look it. */
+body.cattipu-cursors .cattipu-window-titlebar {
+  cursor: url("/cursors/move.png") 32 32, grab !important;
+}
+body.cattipu-cursors .cattipu-window-titlebar:active {
+  cursor: url("/cursors/move.png") 32 32, grabbing !important;
+}
+/* Hourglass — the one existing real "busy" state in the shell today is
+   the Architect Generate switch, which already carries `data-busy` (see
+   .cattipu-switch:disabled[data-busy] further down, from Milestone 9).
+   This adds only the cursor for that existing selector — no Architect
+   file is touched, and no new busy state is invented; per the Milestone
+   12 brief, Architect's own content is out of this milestone's scope. */
+body.cattipu-cursors .cattipu-switch:disabled[data-busy] {
+  cursor: url("/cursors/hourglass.png") 32 32, wait !important;
+}
 
 /* ---- React Flow: strip the default modern/glass look, go pixel ---- */
 .cattipu-flow .react-flow__renderer {
@@ -112,7 +272,11 @@ body.cattipu-cursors .cattipu-resize-handle {
 .cattipu-flow .react-flow__controls {
   border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(11, 20, 40, 0.15);
+  /* Milestone 6 ("Toolbar controls") — was a soft 8px-blur floating drop
+     shadow, the modern-card look this pass removes elsewhere; replaced
+     with the same hard, zero-blur pixel-offset shadow .cattipu-tooltip
+     already uses for a small chrome element sitting on top of content. */
+  box-shadow: 2px 2px 0 rgba(11, 20, 40, 0.3);
 }
 .cattipu-flow .react-flow__controls-button {
   border: none;
@@ -165,11 +329,13 @@ body.cattipu-cursors .cattipu-resize-handle {
   0%,
   100% {
     stroke-width: 1.5px;
+    filter: none;
   }
   30%,
   70% {
     stroke-width: 3.5px;
-    stroke: var(--color-gold);
+    stroke: var(--color-electric);
+    filter: drop-shadow(0 0 3px rgba(16, 34, 126, 0.75));
   }
 }
 .cattipu-edge-pulse .react-flow__edge-path {
@@ -200,22 +366,29 @@ body.cattipu-cursors .cattipu-resize-handle {
    ============================================================ */
 
 /* Raised: convex, pressable-looking plastic.
-   Window frames, dock rail, inactive folder tabs, top bar. */
+   Window frames, dock rail, inactive folder tabs, top bar.
+   v1.0: thicker bevel, deeper cast shadow — reads as manufactured, not flat. */
 .cattipu-raised {
   border: 2px solid var(--color-border-strong);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    inset 0 -2px 0 rgba(11, 20, 40, 0.14),
-    0 2px 0 rgba(11, 20, 40, 0.16);
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -3px 0 rgba(11, 20, 40, 0.18),
+    0 3px 0 rgba(11, 20, 40, 0.2);
 }
 
 /* Recessed: concave, inset well.
-   Content areas, dock icon wells, active/pressed tab, SQL viewer. */
+   Content areas, dock icon wells, active/pressed tab, SQL viewer.
+   v1.0: deeper inset so "sunk in" reads clearly at a glance. */
 .cattipu-recessed {
   border: 2px solid var(--color-border-strong);
+  /* Milestone 6 (Mechanical Surface Consistency) — was a 4px-blur inset
+     shadow, the softest "modern" edge in the whole recessed/raised
+     family; every sibling primitive (.cattipu-raised, .cattipu-btn,
+     .cattipu-field, …) already used a hard, zero-blur offset. Flattened
+     to match — same depth (offset unchanged), no blur radius. */
   box-shadow:
-    inset 0 2px 3px rgba(11, 20, 40, 0.22),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.35);
+    inset 0 3px 0 rgba(11, 20, 40, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.4);
 }
 
 /* Carved / engraved label text, for light (cream/surface) backgrounds. */
@@ -244,16 +417,18 @@ body.cattipu-cursors .cattipu-resize-handle {
   pointer-events: none;
 }
 
-/* Blue LED — active-state indicator dot (dock, active window). */
+/* Electric LED — active-state indicator dot (dock, active window).
+   v1.0: brighter Electric Blue token, the one place on the shell chrome
+   that color is allowed to glow. */
 .cattipu-led {
   display: inline-block;
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--color-blue);
+  background: var(--color-electric);
   box-shadow:
     0 0 0 1px rgba(11, 20, 40, 0.25),
-    0 0 4px 1px rgba(60, 106, 216, 0.85);
+    0 0 5px 1.5px rgba(16, 34, 126, 0.9);
 }
 
 /* Mechanical press: quick, small, no bounce or blob easing. */
@@ -271,39 +446,72 @@ body.cattipu-cursors .cattipu-resize-handle {
    above (top bar, title bars) — beveled top edge, darker lower edge, a
    thin pixel highlight instead of a full inner glow. */
 .cattipu-raised-navy {
-  border-bottom: 2px solid rgba(0, 0, 0, 0.32);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.38);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -3px 0 rgba(0, 0, 0, 0.16);
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.2);
 }
 
 /* Small embossed badge — a housing for the logo mark or a status glyph
    sitting on navy chrome. */
+/* Milestone 6 (Mechanical Surface Consistency) — this and the two navy
+   wells below are "the same physical material" (a small recessed/raised
+   glyph housing on navy chrome) and previously disagreed on all three
+   normalized properties: border-radius (6px / 5px / 4px, three different
+   values for one role), border thickness (this had a 2px keyline, the
+   other two had none at all), and box-shadow blur (2px / 2px / 2px, all
+   soft). Unified to one 4px radius, one 2px border, zero blur — same
+   family as every other bevel primitive in the file. */
 .cattipu-badge {
   border: 2px solid rgba(0, 0, 0, 0.3);
-  border-radius: 6px;
+  border-radius: 4px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.14));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.32),
-    inset 0 -2px 2px rgba(0, 0, 0, 0.28),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.28),
     0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* A recessed pill for grouping small status glyphs on navy chrome. */
 .cattipu-recessed-navy {
-  border-radius: 5px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
   background: rgba(0, 0, 0, 0.16);
   box-shadow:
-    inset 0 1px 2px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(0, 0, 0, 0.35),
     inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Focused-window glow — restrained, 1px, per the pixel-details pass.
-   Layers on top of .cattipu-raised's own box-shadow via an extra ring. */
-.cattipu-window-glow {
+/* Recessed icon well on navy chrome — top bar status glyphs (sun, volume)
+   sit inside one of these instead of floating loose. */
+.cattipu-well-navy {
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.14);
   box-shadow:
-    0 0 0 1px var(--color-blue),
-    0 16px 40px rgba(11, 20, 40, 0.22);
+    inset 0 1px 0 rgba(0, 0, 0, 0.3),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Vertical separator groove — a carved seam between top-bar groups
+   (never a flat 1px line: highlight + shadow read as a routed channel). */
+.cattipu-vgroove {
+  display: inline-block;
+  width: 2px;
+  align-self: stretch;
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Focused-window glow — restrained, 1px, per the pixel-details pass.
+   Layers on top of .cattipu-raised's own box-shadow via an extra ring.
+   Milestone 6 — dropped the accompanying `0 16px 40px` cast shadow: a
+   40px-blur "floating" drop shadow is exactly the modern-card effect
+   this pass is removing everywhere else, and it's not something a
+   physical molded panel would cast. The hard 1px ring (a real "focused"
+   cue) stays. */
+.cattipu-window-glow {
+  box-shadow: 0 0 0 1px var(--color-blue);
 }
 
 /* Folder tabs — physical file-folder tabs (Architect's Planner / Architecture
@@ -324,7 +532,611 @@ body.cattipu-cursors .cattipu-resize-handle {
 .cattipu-folder-tab-active {
   top: 0;
   background: var(--color-surface-solid);
+  /* Milestone 6 — zero-blur, matching .cattipu-recessed's fix above. */
   box-shadow:
-    inset 0 2px 3px rgba(11, 20, 40, 0.14),
+    inset 0 2px 0 rgba(11, 20, 40, 0.14),
     inset 0 -1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================================
+   v1.0 Desktop Refinement — tactile buttons + Architect signature
+   ============================================================ */
+
+/* Tactile primary button: thicker bevel, deeper pressed state,
+   embossed top highlight, recessed edge. Layer over an existing
+   bg-navy / bg-surface-solid button instead of replacing it. */
+.cattipu-btn {
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.22),
+    0 3px 0 rgba(11, 20, 40, 0.22);
+  transition: transform 140ms var(--ease-spring), box-shadow 140ms var(--ease-spring);
+}
+.cattipu-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  /* Milestone 6 — zero-blur pressed state, matching every idle/disabled
+     state in this file (which were already hard-edged; only the
+     pressed states across several primitives still had soft blur). */
+  box-shadow:
+    inset 0 2px 0 rgba(0, 0, 0, 0.3),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.15);
+}
+.cattipu-btn:disabled {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* Construction circle — a single ring that expands and fades around a node
+   the instant Build Playback reveals it. One-shot, mechanical, no bounce. */
+@keyframes cattipu-construction-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(31, 91, 255, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(31, 91, 255, 0);
+  }
+}
+.cattipu-construction-ring {
+  animation: cattipu-construction-ring 0.6s ease-out 1;
+}
+
+/* Segmented loading blocks — Build Playback's own progress readout.
+   8 fixed cells, filled left to right as Generate runs; never a smooth
+   gradient bar, always discrete steps. */
+.cattipu-segments {
+  display: flex;
+  gap: 3px;
+}
+.cattipu-segments > span {
+  height: 4px;
+  width: 12px;
+  border-radius: 1px;
+  background: var(--color-border-strong);
+  /* Milestone 6 — zero-blur (was 1px). */
+  box-shadow: inset 0 1px 0 rgba(11, 20, 40, 0.2);
+}
+.cattipu-segments > span[data-filled="true"] {
+  background: var(--color-electric);
+  box-shadow: 0 0 3px rgba(31, 91, 255, 0.7);
+}
+@keyframes cattipu-seg-fill {
+  0%,
+  100% {
+    background: var(--color-border-strong);
+    box-shadow: none;
+  }
+  40% {
+    background: var(--color-electric);
+    box-shadow: 0 0 3px rgba(31, 91, 255, 0.7);
+  }
+}
+.cattipu-segments > span[data-sweep="true"] {
+  animation: cattipu-seg-fill 1.2s ease-in-out infinite;
+}
+
+/* ============================================================
+   Sprint 3 — Dock System
+   ============================================================ */
+
+/* Dock tooltip bubble — small "molded" label, on-brand instead of the
+   browser's native title tooltip. Positioned by its consumer. */
+.cattipu-tooltip {
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  background: var(--color-navy);
+  color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.18),
+    2px 2px 0 rgba(11, 20, 40, 0.35); /* Milestone 2 QA pass — was a
+    blurred `0 3px 8px` drop shadow; flattened to a hard, zero-blur
+    pixel-offset shadow, same construction as the rest of the shell. */
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Visible keyboard-focus ring for dock items — Electric Blue, since this
+   is exactly the "active/selected control" case that token is reserved
+   for. Apply via :focus-visible so mouse clicks don't show a ring. */
+.cattipu-dock-item:focus-visible {
+  outline: 2px solid var(--color-electric);
+  outline-offset: 1px;
+  border-radius: 0; /* Milestone 6 — matches the now-square dock well it rings. */
+}
+
+/* ============================================================
+   Milestone 1 — Home Screen Refinement
+   ============================================================ */
+
+/* Drafting-paper background for the Architect Preview card — a CSS
+   lookalike of the real Architect canvas's faint blueprint grid (see
+   components/Architect/ArchitectureCanvas.tsx), NOT a shared component,
+   so the real Architect canvas/functionality stays untouched. Flat lines,
+   no blur, per the "remove glow" instruction. */
+.cattipu-drafting-paper {
+  background-color: var(--color-surface-solid);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(3, 31, 86, 0.07) 0,
+      rgba(3, 31, 86, 0.07) 1px,
+      transparent 1px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(3, 31, 86, 0.07) 0,
+      rgba(3, 31, 86, 0.07) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+}
+
+/* Chunky pixel-style bar track for status/progress rows — discrete cells,
+   same "never a smooth gradient" rule as .cattipu-segments, but a single
+   continuous fill rather than 8 fixed blocks (used where the fraction
+   isn't naturally an 8-step value). */
+.cattipu-pixel-bar {
+  height: 8px;
+  background: var(--color-border-strong);
+  /* Milestone 6 — zero-blur (was 2px), matching every other recessed
+     track/well in the file. */
+  box-shadow: inset 0 1px 0 rgba(11, 20, 40, 0.25);
+  overflow: hidden;
+}
+.cattipu-pixel-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--color-electric);
+  image-rendering: pixelated;
+}
+
+/* ============================================================
+   Milestone 2 — Dock: 1998 workstation control
+   ============================================================ */
+
+/* Individual icon well. Idle = molded recessed inset (same depth as
+   .cattipu-recessed elsewhere, kept separate so dock hover/press states
+   can be tuned without touching every other recessed surface in the
+   app). Hover = "mechanical" anticipation: a visibly stronger bevel,
+   zero blur, zero glow — just a deeper hard-edged inset. Active/pressed
+   = deepest inset of the three, plus the navy tint applied inline. */
+/* Milestone 6 (Mechanical Surface Consistency) — "the dock is frozen"
+   still holds for geometry, spacing, and mechanics. This milestone is
+   the first to explicitly name "Dock buttons" as an inspect target and
+   "Chamfer size" as a normalized property, so — same disclosed-exception
+   pattern as Milestone 5's dock font fix — two purely cosmetic surface
+   properties are brought in line with the rest of the shell: box-shadow
+   blur (all three states below were the softest inset shadows in the
+   file, 3-5px blur vs. zero everywhere else) and corner-radius (the
+   well's own rounded-[5px] in Dock.tsx, squared to match every other
+   control-tier element this pass — see Dock.tsx and the
+   :focus-visible rule below). Well size, spacing, hover/press
+   Y-translation, and rail width/animation are untouched. */
+.cattipu-dock-well {
+  box-shadow:
+    inset 0 2px 0 rgba(11, 20, 40, 0.24),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.35);
+}
+.cattipu-dock-well:hover {
+  box-shadow:
+    inset 0 3px 0 rgba(11, 20, 40, 0.34),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.45);
+}
+.cattipu-dock-well[data-active="true"] {
+  box-shadow:
+    inset 0 4px 0 rgba(11, 20, 40, 0.42),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* ============================================================
+   Milestone 3 — Window Chrome Retrofit
+   "The dock is frozen." Nothing in this section touches
+   .cattipu-dock-well or anything else in the Milestone 2 block above —
+   every class here is new and window/field/button specific.
+   ============================================================ */
+
+/* Title bar chrome. Distinct from the general-purpose .cattipu-raised-navy
+   (top bar, still used there unchanged) because the spec calls out exact
+   literal edge weights — 1px highlight top edge, 2px dark lower edge —
+   rather than .cattipu-raised-navy's thicker 1.5px/4px bevel. Applied to
+   the window title bar only. */
+.cattipu-titlebar {
+  border-bottom: 2px solid rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+/* Hard mechanical chamfer for window frames — a true flat-cut corner,
+   which border-radius cannot produce ("remove inconsistent rounded
+   corners... hard 4px chamfer, never a smooth curve"). Consumes
+   --window-chamfer, defined since the Phase 2 token pass but unused until
+   now. clip-path clips the element's own painted box (children included),
+   the same role `overflow-hidden` + `rounded-*` played before — swapping
+   one for the other here, not stacking both. */
+/* Milestone 6 — .cattipu-chamfer is this exact rule under a
+   component-agnostic name, so window-scale surfaces that aren't
+   Window.tsx/Panel.tsx (currently just the Command Palette shell) can
+   reuse the same hard 4px chamfer without duplicating the polygon
+   formula or renaming .cattipu-window-frame's existing call sites. */
+.cattipu-chamfer,
+.cattipu-window-frame {
+  clip-path: polygon(
+    var(--window-chamfer) 0,
+    calc(100% - var(--window-chamfer)) 0,
+    100% var(--window-chamfer),
+    100% calc(100% - var(--window-chamfer)),
+    calc(100% - var(--window-chamfer)) 100%,
+    var(--window-chamfer) 100%,
+    0 calc(100% - var(--window-chamfer)),
+    0 var(--window-chamfer)
+  );
+}
+
+/* Window title-bar controls (Minimize / Stack / Close). Deliberately
+   colorless — "no colored filled buttons" — a molded cream-plastic key
+   against the navy title bar, differentiated only by icon glyph, not
+   fill color. Idle / hover / pressed all read as physical key states, not
+   a flat modern icon-button. Exactly --window-control (24px) square. */
+.cattipu-window-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--window-control);
+  height: var(--window-control);
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  background: var(--color-bg-dim);
+  color: var(--color-ink);
+  cursor: pointer; /* Milestone 4 — buttons don't get a pointer cursor by
+    default in most browsers' UA stylesheets; previously this only
+    happened when the opt-in pixel-cursor system (Settings > Cursor) was
+    on, so with it off there was no click affordance at all. */
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2),
+    0 1px 0 rgba(0, 0, 0, 0.25);
+  /* Milestone 4 — "no easing-heavy transitions": was a 120ms
+    var(--ease-spring) tween (a snappy ease-out curve) on both hover and
+    press. State changes now snap instantly, matching a physical toggle
+    switch rather than a softened modern micro-interaction. */
+  transition: none;
+}
+.cattipu-window-control:hover:not(:disabled) {
+  background: var(--color-bg);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.24),
+    0 1px 0 rgba(0, 0, 0, 0.25);
+}
+.cattipu-window-control:active:not(:disabled) {
+  transform: translateY(1.5px);
+  /* Milestone 6 — zero-blur pressed state ("Small title-strip buttons"). */
+  box-shadow:
+    inset 0 2px 0 rgba(0, 0, 0, 0.32),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* Shared "workstation field" primitive — components/UI/Input.tsx and
+   Textarea.tsx, and the Architect prompt field. Square corners (no
+   border-radius, unlike the pre-Milestone-3 .cattipu-recessed usages that
+   layered `rounded-[5px]` on top of it), the same inset bevel depth as
+   .cattipu-recessed, plus one extra outer highlight line beneath the
+   border so the border itself reads as embossed/routed rather than a
+   flat CSS border. Kept as its own class (not an edit to
+   .cattipu-recessed) since .cattipu-recessed is used by many non-field
+   surfaces (window content areas, tab panels) that don't want the extra
+   outer highlight line. */
+.cattipu-field {
+  border: 2px solid var(--color-border-strong);
+  border-radius: 0;
+  /* Milestone 6 ("Inputs, Textareas") — zero-blur (was 3px). */
+  box-shadow:
+    inset 0 2px 0 rgba(11, 20, 40, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.cattipu-field:focus {
+  outline: 2px solid var(--color-electric);
+  outline-offset: 1px;
+}
+
+/* Physical workstation switch — the Architect Generate button ("Most
+   Important" item this milestone: "convert into a physical workstation
+   switch... pressed state inverts the bevel... currently resembles a
+   modern CTA"). Square corners, same construction family as .cattipu-btn
+   (kept separate rather than edited, since .cattipu-btn already ships on
+   Milestone 1's approved Toolbox/Welcome-card buttons and this milestone
+   doesn't touch Home Screen) but with a deeper, more deliberate press
+   travel so the bevel inversion reads unmistakably as a switch throw. */
+.cattipu-switch {
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-radius: 0;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.22),
+    0 3px 0 rgba(11, 20, 40, 0.22);
+  transition: transform 140ms var(--ease-spring), box-shadow 140ms var(--ease-spring);
+}
+/* Milestone 9 — was a CSS `brightness()` filter, a soft uniform
+   lightening more at home on a modern button than a physical switch.
+   Replaced with the same "stronger top highlight, deeper lower edge"
+   language .cattipu-window-control:hover already uses elsewhere. */
+.cattipu-switch:hover:not(:disabled) {
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.48),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.26),
+    0 3px 0 rgba(11, 20, 40, 0.22);
+}
+.cattipu-switch:active:not(:disabled) {
+  transform: translateY(3px);
+  /* Milestone 6 — zero-blur pressed state (was 5px). */
+  box-shadow:
+    inset 0 3px 0 rgba(0, 0, 0, 0.4),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+}
+/* Milestone 9 — hard, zero-blur keyboard-focus ring. Same construction
+   as the dock's existing :focus-visible rule, reused rather than
+   reinvented; :focus-visible means an ordinary mouse click doesn't
+   show it. */
+.cattipu-switch:focus-visible {
+  outline: 2px solid var(--color-electric);
+  outline-offset: 1px;
+}
+/* Milestone 9 — Generate is disabled for two different reasons: busy
+   (actively generating/playing — still doing something, should read as
+   "on") and an empty prompt (nothing to submit — should read as
+   genuinely inert). The native `disabled` attribute has to cover both
+   for click-blocking, so `data-busy` (set alongside it in
+   PromptBar.tsx) carries the visual split. Previously both cases
+   looked identical: a spinner and "Thinking…" label sitting on a
+   dimmed, flattened button that looked switched off mid-work. */
+.cattipu-switch:disabled:not([data-busy]) {
+  opacity: 0.5;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+.cattipu-switch:disabled[data-busy] {
+  opacity: 1;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.22),
+    0 3px 0 rgba(11, 20, 40, 0.22);
+}
+
+/* ============================================================
+   Milestone 4 — Window Interaction Polish
+   "No spring motion, glow, blur, transparency, floating shadows, or
+   easing-heavy transitions." Preserves every construction rule from
+   Milestone 3 (title bar height, control size, chamfer) — this section
+   only adds cursor affordances and the title-bar focus/unfocus contrast.
+   ============================================================ */
+
+/* Draggable title bar: an idle "grab" cursor (there was previously no
+   idle cursor hint at all outside the opt-in pixel-cursor system — only
+   an :active grabbing cursor), "grabbing" while a drag is in progress.
+   The opt-in pixel-cursor system (body.cattipu-cursors .cattipu-cursor-
+   hand, still applied to ordinary clickable surfaces elsewhere) is a
+   higher-specificity, deliberately-scoped rule and still wins over this
+   when that setting is on — this just fills the gap when it's off. */
+.cattipu-window-titlebar {
+  cursor: grab;
+}
+.cattipu-window-titlebar:active {
+  cursor: grabbing;
+}
+
+/* Title-bar active/inactive contrast — "subtle workstation-era contrast
+   only," standing in for the glow ring this milestone removes. The
+   frame, bevel, and content area are unchanged between the two states;
+   only the title bar dims, the same way a classic Mac OS or BeOS title
+   bar goes flat/gray for every window except the one in front. Applied
+   via `data-focused` (set from the same z-index comparison that already
+   determined the removed glow ring) rather than a color swap that would
+   read as a redesign — background shifts from chrome_navy to a
+   desaturated slate-navy, no transparency or filter involved. */
+.cattipu-titlebar[data-focused="false"] {
+  background: #454c60;
+}
+.cattipu-titlebar[data-focused="false"] .cattipu-titlebar-label {
+  color: rgba(255, 255, 255, 0.62);
+}
+.cattipu-titlebar[data-focused="false"] .pixelated {
+  opacity: 0.62;
+}
+
+/* ============================================================
+   Milestone 10 — Architect Generated-State Prototype
+   ============================================================ */
+
+/* Horizontal analog of .cattipu-vgroove — a carved seam between dense
+   sections of a generated-result pane (Planner's status strip / features
+   / suggested-stack groups), never a flat 1px rule. */
+.cattipu-hgroove {
+  height: 2px;
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Small hard-edged status pill — "GENERATED", stack tier tags, and
+   similar short readouts. Square corners, zero blur, same construction
+   family as .cattipu-badge but with no fixed fill: like .cattipu-btn
+   and .cattipu-dock-well, callers supply their own background utility
+   (bg-navy for a filled/active reading, none for a neutral one) rather
+   than this primitive hardcoding a color. */
+.cattipu-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(11, 20, 40, 0.12);
+}
+
+/* ============================================================
+   Milestone 9 — Architect Input State Polish
+   Scope: the Architect app's initial prompt state only
+   (PromptBar.tsx, and ArchitectApp.tsx's idle empty-state block).
+   .cattipu-switch itself was edited directly above (Generate is its
+   only consumer, per Milestone 3's header comment). .cattipu-field is
+   NOT edited here — it's shared with ProjectsApp.tsx's Input.tsx —
+   the new .cattipu-architect-field modifier below carries this
+   milestone's focus treatment, applied only to the Architect prompt
+   textarea, so the Projects "New Project" field is untouched.
+   ============================================================ */
+
+/* Prompt field focus — was the shared .cattipu-field:focus rule: a 2px
+   outline floating 1px outside the field's own border, the same
+   treatment used for keyboard-focus rings elsewhere. On a large
+   multi-line field that reads as a modern web focus ring rather than a
+   physical control lighting up under the cursor. Replaced with a hard
+   color change on the field's own embossed border (no floating outline
+   at all) plus a deeper inset bevel, so the well itself looks
+   "engaged" rather than gaining a ring around its outside edge. */
+.cattipu-architect-field:focus {
+  outline: none;
+  border-color: var(--color-electric);
+  box-shadow:
+    inset 0 3px 0 rgba(11, 20, 40, 0.34),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Hard, non-blurred keyboard-focus ring for the "Try: <example>" link,
+   which had no custom focus treatment at all before this pass — only
+   the browser's inconsistent default. Same construction as
+   .cattipu-switch:focus-visible above, reused rather than invented
+   fresh for a second element. */
+.cattipu-focus-ring:focus-visible {
+  outline: 2px solid var(--color-electric);
+  outline-offset: 1px;
+}
+
+/* ============================================================
+   Milestone 11 — Architect Retro Workstation Identity
+   Scope: the Architect app only — its empty/input state (further
+   polish on top of Milestone 9) and the entire generated-result
+   workspace (replacing Milestone 10's top-folder-tab layout with a
+   left-outline / center-workspace / right-inspector / bottom-status
+   shell). Nothing here touches Home Screen, dock, top bar, or any
+   other app's chrome — see the scoped selector below.
+
+   Chrome-color strategy, REVISED by Milestone 12 (Constitutional
+   Foundation Retrofit): originally this one rule re-pointed
+   --color-navy/--color-border-strong/--color-border for the whole
+   Architect window subtree — title bar included. Milestone 12 made
+   an oxblood title bar the shared rule for every application window
+   (see --color-app-titlebar in the @theme block and .cattipu-titlebar
+   below), so the title-bar portion of this override is now redundant
+   and has been removed — Architect's title bar renders identically,
+   just sourced from the shared token instead of this scoped one.
+   What's left below is Architect's own content-level identity: the
+   outline rail, status strip, ArchitectureCanvas's ReactFlow chrome
+   (edges/handles/gateway-node accent), DatabasePanel, ApiCatalogPanel,
+   RecommendationsPanel, RoadmapPanel, ExportCenter, and NodeInspector
+   all already reference var(--color-navy) (Tailwind utilities compile
+   to var(), confirmed against build output in M11) — redeclaring it
+   here keeps Architect's whole workspace oxblood-tinted, which is
+   Architect's own accepted identity, not something every app inherits
+   (see docs/DESIGN_CONSTITUTION.md's chrome-hierarchy section for why
+   this is a documented one-app exception, not the general rule).
+   --color-electric (the blue selection/focus accent used for LEDs and
+   keyboard-focus rings) is deliberately NOT overridden here: one
+   accent hue stays the universal "interactive/selected" signal across
+   every app, while navy vs. oxblood is purely each app's own chrome
+   material — the same reasoning Milestone 3 used to keep window
+   controls colorless and tell states apart by icon, not fill. */
+.cattipu-window-frame[data-accent="oxblood"] {
+  --color-navy: var(--color-oxblood);
+  --color-border-strong: rgba(92, 21, 36, 0.32);
+  --color-border: rgba(92, 21, 36, 0.16);
+}
+
+/* Small hard-edged icon tile — a tight square well around an existing
+   Lucide glyph. This milestone's "small pixel-style icons" is met by
+   boxing existing glyphs into a compact, hard-edged toolbar tile
+   (same family as .cattipu-badge's icon housing) rather than
+   generating new bitmap art this pass — disclosed in
+   MILESTONE11_REPORT.md, not a silent scope cut. */
+.cattipu-icon-tile {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-strong);
+  background: rgba(0, 0, 0, 0.05);
+}
+.cattipu-outline-item[data-active="true"] .cattipu-icon-tile {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+/* Left outline/nav rail — the generated workspace's section list
+   (Summary / Features / Architecture / Data Model / Stack / APIs /
+   Ideas / Roadmap), replacing Milestone 10's folder-tab row. A
+   vertical list of flush boxed rows reads as a CASE tool's project
+   outline; the active row is filled and pressed in — the same
+   "selected = inverted/filled block, not an underline" language the
+   existing Application/Infrastructure segmented toggle already uses
+   in ArchitectureCanvas.tsx — rather than a fourth different
+   "selected" convention. */
+.cattipu-outline-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  padding: 7px 10px;
+  text-align: left;
+}
+.cattipu-outline-item[data-active="true"] {
+  background: var(--color-navy);
+  color: #ffffff;
+  box-shadow:
+    inset 0 2px 0 rgba(0, 0, 0, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.14);
+}
+.cattipu-outline-item:hover:not([data-active="true"]):not(:disabled) {
+  background: var(--color-bg);
+}
+.cattipu-outline-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.cattipu-outline-item:focus-visible {
+  outline: 2px solid var(--color-electric);
+  outline-offset: -2px;
+}
+
+/* ============================================================
+   Milestone 12 — Constitutional Foundation Retrofit
+   Shared OS/application foundation only — see the chrome-hierarchy
+   tokens/comments earlier in this file (--color-app-titlebar, the
+   revised Milestone 11 override) and the font-role tokens in @theme
+   for the other half of this milestone's CSS changes.
+   ============================================================ */
+
+/* Native notification body — components/System/NotificationCenter.tsx.
+   Reuses .cattipu-raised (hard bevel) + .cattipu-chamfer (hard 4px
+   corner-cut, the same one every window/dialog uses) rather than
+   inventing new depth language; this rule only adds the width cap and
+   layout a toast-style stack needs. Deliberately no blur, no
+   translucency, no soft floating shadow — none of those constructs
+   exist anywhere in this stylesheet and this milestone doesn't start. */
+.cattipu-notification {
+  width: 100%;
+}
+
+/* Small bordered icon well, tinted per notification type via an inline
+   custom color (info/success/warning/error) rather than four near-
+   duplicate CSS rules — same "callers supply their own color, this
+   primitive supplies the construction" pattern as .cattipu-status-pill. */
+.cattipu-notification-icon {
+  border: 1.5px solid currentColor;
+  background: color-mix(in srgb, currentColor 12%, transparent);
 }

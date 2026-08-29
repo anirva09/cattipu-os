@@ -7,10 +7,27 @@ import type {
 } from "@/lib/ai/types";
 import { generateArchitecture } from "@/lib/ai/generateArchitecture";
 import { layoutAppNodes, layoutInfraNodes, nextAppNodePosition } from "@/lib/ai/layout";
-import { useProjectStore, type Project } from "@/store/useProjectStore";
+import { useProjectStore } from "@/store/useProjectStore";
+import type { CattipuProject } from "@/lib/project/types";
 
 export type ArchitectStatus = "idle" | "generating" | "playing" | "ready" | "error";
-export type ArchitectTab = "planner" | "architecture" | "database" | "apis" | "recommendations" | "roadmap";
+// Milestone 11 (Architect Retro Workstation Identity) — "planner" (which
+// combined summary + features + stack in one panel) is split into three
+// outline sections below: "summary", "features", "stack". "database" and
+// "recommendations" keep their existing ids (only their outline labels
+// change, to "Data Model" and "Ideas") so Command Palette's
+// setArchitectTab("apis"/"roadmap") calls and BuildPlayback's own
+// setActiveTab("architecture"/"database"/"roadmap") staging calls both
+// stay valid untouched.
+export type ArchitectTab =
+  | "summary"
+  | "features"
+  | "architecture"
+  | "database"
+  | "stack"
+  | "apis"
+  | "recommendations"
+  | "roadmap";
 export type GraphView = "application" | "infrastructure";
 export type PlaybackStage =
   | "planner"
@@ -79,13 +96,16 @@ interface ArchitectState {
   viewRecommendation: (nodeId: string) => void;
 
   // Feature 10 — project memory
-  loadFromProject: (project: Project) => void;
+  loadFromProject: (project: CattipuProject) => void;
 }
 
 const initialFields = {
   prompt: "",
   status: "idle" as ArchitectStatus,
-  activeTab: "planner" as ArchitectTab,
+  // Milestone 11 — default outline section is now Architecture (was
+  // "planner"), per the brief: "Default generated view should be
+  // Architecture." Matches what loadFromProject() below already set.
+  activeTab: "architecture" as ArchitectTab,
   graphView: "application" as GraphView,
   data: null,
   selectedNodeId: null,
@@ -127,7 +147,7 @@ export const useArchitectStore = create<ArchitectState>((set, get) => {
         data: null,
         selectedNodeId: null,
         error: null,
-        activeTab: "planner",
+        activeTab: "architecture",
         graphView: "application",
         playbackStage: "planner",
         roadmapCollapsed: {},
@@ -331,10 +351,10 @@ export const useArchitectStore = create<ArchitectState>((set, get) => {
 
     // ── Feature 10 — project memory ─────────────────────────────────────
     loadFromProject: (project) => {
-      if (!project.architecture) return;
+      if (!project.architect.data) return;
       set({
-        data: project.architecture,
-        prompt: project.architecture.prompt,
+        data: project.architect.data,
+        prompt: project.architect.data.prompt,
         linkedProjectId: project.id,
         status: "ready",
         activeTab: "architecture",

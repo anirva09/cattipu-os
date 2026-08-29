@@ -7,6 +7,8 @@ import { useProjectStore, type ProjectIcon } from "@/store/useProjectStore";
 import { useArchitectStore } from "@/store/useArchitectStore";
 import { useWindowStore } from "@/store/useWindowStore";
 import { useUiSound } from "@/lib/useUiSound";
+import { Input } from "@/components/UI/Input";
+import { CattipuButton } from "@/components/UI/Button";
 
 const ICONS: Record<ProjectIcon, React.ComponentType<{ className?: string }>> = {
   banking: Building2,
@@ -42,13 +44,21 @@ export function ProjectsApp() {
           <h2 className="text-base font-semibold text-ink">Your projects</h2>
           <p className="text-sm text-ink-dim">Where ideas become software.</p>
         </div>
-        <button
+        {/* Typography pass — this button and "Create" below used to render
+            in the modern body font (text-[13px] font-medium) while the
+            identical "New Project" action elsewhere (the Home Screen
+            Toolbox) already used the shared pixel-ui CattipuButton — an
+            accidental modern-font leak on one of two renderings of the
+            same action. Migrated onto CattipuButton so both read in one
+            voice; icon shrunk from h-3.5 to h-3 to match Toolbox's own
+            icon size. */}
+        <CattipuButton
+          variant="primary"
+          icon={<Plus className="h-3 w-3" strokeWidth={2.5} />}
           onClick={() => setCreating((c) => !c)}
-          className="flex items-center gap-1.5 rounded-md bg-navy px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-navy/90"
         >
-          <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
           New Project
-        </button>
+        </CattipuButton>
       </div>
 
       <AnimatePresence initial={false}>
@@ -67,19 +77,20 @@ export function ProjectsApp() {
               }}
               className="flex items-center gap-2 px-5 py-3"
             >
-              <input
+              {/* Milestone 3 (Window Chrome Retrofit) — a real in-window
+                  text field, migrated onto the shared workstation Input
+                  primitive (square corners, embossed border) in place of
+                  the previous ad hoc rounded-md input. */}
+              <Input
                 autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Name your project…"
-                className="flex-1 rounded-md border border-border-strong bg-surface-solid px-3 py-1.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-navy"
+                className="flex-1 bg-surface-solid"
               />
-              <button
-                type="submit"
-                className="rounded-md bg-navy px-3 py-1.5 text-[13px] font-medium text-white hover:bg-navy/90"
-              >
+              <CattipuButton type="submit" variant="primary">
                 Create
-              </button>
+              </CattipuButton>
             </form>
           </motion.div>
         )}
@@ -88,23 +99,29 @@ export function ProjectsApp() {
       <div className="flex-1 overflow-auto px-2 py-2">
         {projects.map((p) => {
           const Icon = ICONS[p.icon];
-          const openable = !!p.architecture;
+          const openable = !!p.architect.data;
           return (
             <button
               key={p.id}
               disabled={!openable}
               onClick={() => {
-                if (!p.architecture) return;
+                if (!p.architect.data) return;
                 loadFromProject(p);
                 openApp("architect", "Architect");
               }}
               className={[
-                "cattipu-cursor-hand group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                // Milestone 6 (Mechanical Surface Consistency) — square
+                // corners (was rounded-lg/8px). Desktop.tsx's Recent
+                // Projects renders this same "project row" role at
+                // rounded-[5px] — two different radii for one role;
+                // unified both to hard 0, matching every other
+                // control-tier element this pass.
+                "cattipu-cursor-hand group flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors",
                 openable ? "hover:bg-bg" : "cursor-default",
               ].join(" ")}
             >
               <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-2"
+                className="flex h-9 w-9 shrink-0 items-center justify-center border-2"
                 style={{ borderColor: p.color, color: p.color }}
               >
                 <Icon className="h-4 w-4" />

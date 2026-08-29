@@ -17,7 +17,8 @@ export type AppId =
   | "memory"
   | "settings"
   | "explorer"
-  | "about";
+  | "about"
+  | "templates";
 
 export interface Rect {
   x: number;
@@ -41,6 +42,13 @@ interface WindowState {
   windows: WindowInstance[];
   nextZ: number;
   lastRects: Partial<Record<AppId, Rect>>;
+  // Milestone 4 (Window Interaction Polish) — "newly opened windows do not
+  // perfectly overlap." A monotonically increasing counter, separate from
+  // `windows.length`: the old cascade keyed off the *currently open*
+  // count, which resets to 0 whenever windows are closed — so opening
+  // App A, closing it, then opening App B landed App B in exactly the
+  // same spot A started in. This counter only ever goes up.
+  spawnCount: number;
   openApp: (appId: AppId, title: string, initialRect?: Partial<Rect>) => void;
   closeWindow: (id: string) => void;
   focusWindow: (id: string) => void;
@@ -74,9 +82,10 @@ export const useWindowStore = create<WindowState>((set, get) => ({
   windows: [],
   nextZ: 1,
   lastRects: {},
+  spawnCount: 0,
 
   openApp: (appId, title, initialRect) => {
-    const { windows, nextZ, lastRects } = get();
+    const { windows, nextZ, lastRects, spawnCount } = get();
 
     // if this app is already open, just focus (and un-minimize) it
     const existing = windows.find((w) => w.appId === appId);
@@ -90,9 +99,12 @@ export const useWindowStore = create<WindowState>((set, get) => ({
       return;
     }
 
-    // reopen where this app was left, otherwise cascade a fresh spot
+    // reopen where this app was left, otherwise cascade a fresh spot —
+    // keyed off spawnCount (ever-increasing), not the current open count,
+    // so repeated open/close cycles keep advancing the stagger instead of
+    // resetting to the same spot every time.
     const remembered = lastRects[appId];
-    const pos = remembered ?? cascadePosition(windows.length);
+    const pos = remembered ?? cascadePosition(spawnCount);
     const defaults = DEFAULT_SIZES[appId];
     const win: WindowInstance = {
       id: nextId(),
@@ -109,7 +121,7 @@ export const useWindowStore = create<WindowState>((set, get) => ({
       minimized: false,
       maximized: false,
     };
-    set({ windows: [...windows, win], nextZ: nextZ + 1 });
+    set({ windows: [...windows, win], nextZ: nextZ + 1, spawnCount: spawnCount + 1 });
     chime("window-open");
   },
 

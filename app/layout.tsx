@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import "@fontsource-variable/inter";
+// Milestone 12 (Constitutional Foundation Retrofit) — the
+// @fontsource-variable/inter import that used to live here is gone:
+// Inter Variable is no longer the default UI/body voice (see --font-body
+// in app/globals.css, now VT323), and nothing else in the app references
+// it, so it's dead weight rather than an unused fallback worth keeping.
 import "@fontsource/press-start-2p";
 import "@fontsource/vt323";
 import "reactflow/dist/style.css";

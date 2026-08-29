@@ -18,6 +18,18 @@ export function toMarkdown(data: GeneratedArchitecture): string {
   lines.push(`# ${data.projectName}`, "", data.summary, "");
   lines.push("## Features", "");
   data.features.forEach((f) => lines.push(`- **${f.label}** — ${f.description}`));
+  if (data.stack.length > 0) {
+    lines.push(
+      "",
+      "## Suggested Stack",
+      "",
+      "| Layer | Technology | Why | Tier |",
+      "|---|---|---|---|"
+    );
+    data.stack.forEach((s) =>
+      lines.push(`| ${s.category} | ${s.name} | ${s.reason} | ${s.tier === "core" ? "Core" : "Supporting"} |`)
+    );
+  }
   lines.push("", "## Architecture", "");
   data.nodes.forEach((n) =>
     lines.push(`- **${n.label}** (${n.kind}) — ${n.responsibilities.join("; ") || "—"}`)

@@ -25,7 +25,7 @@ function ErTableNode({ data }: { data: { table: SqlTable } }) {
   };
 
   return (
-    <div className="cattipu-raised w-[210px] overflow-hidden rounded-md bg-surface-solid">
+    <div className="cattipu-raised w-[210px] overflow-hidden bg-surface-solid">
       <Handle type="target" position={Position.Left} />
       <Handle type="source" position={Position.Right} />
       <div className="flex items-center gap-1.5 border-b-2 border-border-strong bg-bg-dim px-2.5 py-1.5">

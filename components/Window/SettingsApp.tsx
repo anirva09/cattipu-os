@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Palette, LayoutGrid, MousePointer2, Volume2, Info, Check } from "lucide-react";
+import { Palette, LayoutGrid, MousePointer2, Volume2, Info, Check, Bell } from "lucide-react";
+import { UtilityIcon, type UtilityIconId } from "@/components/Icons";
 import {
   useSettingsStore,
   DOCK_ICON_SIZE_PX,
@@ -10,10 +11,11 @@ import {
   type DockMode,
   type DockIconSize,
 } from "@/store/useSettingsStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
 import { PixelLogo } from "../Boot/PixelLogo";
 import { CATTIPU_VERSION, CATTIPU_BUILD, CATTIPU_TAGLINE } from "@/lib/version";
 
-type Section = "appearance" | "dock" | "cursor" | "sound" | "about";
+type Section = "appearance" | "dock" | "cursor" | "sound" | "notifications" | "about";
 
 const SECTIONS: {
   id: Section;
@@ -24,6 +26,12 @@ const SECTIONS: {
   { id: "dock", label: "Dock", icon: LayoutGrid },
   { id: "cursor", label: "Cursor", icon: MousePointer2 },
   { id: "sound", label: "Sound", icon: Volume2 },
+  // Milestone 12 (Constitutional Foundation Retrofit) — "provide one safe
+  // verification path so the [notification] primitive can be tested."
+  // Settings is the natural, low-risk home for a test surface: it's
+  // already a grid of self-contained preference sections, so a fifth one
+  // doesn't touch any other app's layout.
+  { id: "notifications", label: "Notifications", icon: Bell },
   { id: "about", label: "About", icon: Info },
 ];
 
@@ -77,6 +85,7 @@ export function SettingsApp() {
         {section === "dock" && <DockSection />}
         {section === "cursor" && <CursorSection />}
         {section === "sound" && <SoundSection />}
+        {section === "notifications" && <NotificationsSection />}
         {section === "about" && <AboutSection />}
       </div>
     </div>
@@ -252,6 +261,70 @@ function SoundSection() {
   );
 }
 
+// Milestone 12 (Constitutional Foundation Retrofit) — the notification
+// primitive's one safe, discoverable verification path: four buttons,
+// one per frozen type, each firing a real sample notification through
+// the real store (not a mock) so the actual queue/stack-cap/auto-dismiss/
+// sound behavior can be exercised by hand or by Playwright.
+const SAMPLE_NOTIFICATIONS: {
+  type: "info" | "success" | "warning" | "error";
+  label: string;
+  iconId: UtilityIconId;
+  title: string;
+  message: string;
+}[] = [
+  { type: "info", label: "Info", iconId: "info", title: "Project synced", message: "Everything is up to date." },
+  {
+    type: "success",
+    label: "Success",
+    iconId: "ready",
+    title: "Export complete",
+    message: "Your architecture was exported.",
+  },
+  {
+    type: "warning",
+    label: "Warning",
+    iconId: "warning",
+    title: "Unsaved changes",
+    message: "Close without saving?",
+  },
+  {
+    type: "error",
+    label: "Error",
+    iconId: "error",
+    title: "Connection lost",
+    message: "Could not reach the workspace.",
+  },
+];
+
+function NotificationsSection() {
+  const push = useNotificationStore((s) => s.push);
+
+  return (
+    <div>
+      <SectionTitle
+        title="Notifications"
+        sub="Native CATTIPU system notifications — hard-bordered, no modern toast styling."
+      />
+      <div className="grid grid-cols-2 gap-2">
+        {SAMPLE_NOTIFICATIONS.map((n) => (
+          <button
+            key={n.type}
+            onClick={() => push(n.type, n.title, { message: n.message })}
+            className="cattipu-cursor-hand flex items-center gap-2.5 rounded-lg border border-border bg-surface px-3 py-2.5 text-left transition-colors hover:bg-navy/[0.05]"
+          >
+            <UtilityIcon id={n.iconId} size={16} className="shrink-0" />
+            <span className="text-[13px] font-medium text-ink">Send {n.label}</span>
+          </button>
+        ))}
+      </div>
+      <p className="mt-4 text-xs text-ink-dim">
+        Ordinary notifications clear themselves in a few seconds. Errors stay until dismissed.
+      </p>
+    </div>
+  );
+}
+
 function AboutSection() {
   return (
     <div>
@@ -292,13 +365,13 @@ function ToggleRow({
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={[
-          "relative h-6 w-11 shrink-0 rounded-full border transition-colors",
-          checked ? "border-navy bg-navy" : "border-border-strong bg-bg-dim",
+          "cattipu-cursor-hand cattipu-recessed relative h-6 w-11 shrink-0 rounded-[4px] transition-colors",
+          checked ? "bg-navy" : "bg-bg-dim",
         ].join(" ")}
       >
         <span
           className={[
-            "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform",
+            "cattipu-raised absolute top-0.5 h-4 w-4 rounded-[3px] bg-surface-solid transition-transform",
             checked ? "translate-x-[22px]" : "translate-x-0.5",
           ].join(" ")}
         />
