@@ -56,6 +56,13 @@ export function BootScreen() {
   }, []);
 
   const done = filled >= TOTAL_SEGMENTS;
+  // Milestone 12 (Constitutional Foundation Retrofit) — "normalize
+  // machine/system language... INITIALIZING..., LOADING MODULES...,
+  // READY." Copy/system-language alignment only: the segmented bar,
+  // timing, and every other beat of this screen are untouched — only the
+  // single pre-READY label now stages through the two frozen boot phrases
+  // instead of a single static "BOOTING CATTIPU OS" the whole time.
+  const stage = done ? "READY" : filled / TOTAL_SEGMENTS < 0.5 ? "INITIALIZING" : "LOADING MODULES";
 
   return (
     <AnimatePresence>
@@ -96,9 +103,9 @@ export function BootScreen() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.4 }}
-              className="font-pixel-ui text-[0.6rem] tracking-[0.15em] text-navy"
+              className="font-hero text-[0.6rem] tracking-[0.15em] text-navy"
             >
-              {done ? ". . . READY . . ." : ". . . BOOTING CATTIPU OS . . ."}
+              . . . {stage} . . .
             </motion.p>
 
             <div className="flex w-full gap-[3px] rounded-sm border-2 border-black bg-surface p-[3px]">

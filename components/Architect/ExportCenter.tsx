@@ -76,7 +76,7 @@ export function ExportCenter() {
             exit={{ opacity: 0, scale: 0.97, y: 6 }}
             transition={{ type: "spring", stiffness: 380, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
-            className="cattipu-raised w-[min(90vw,30rem)] overflow-hidden rounded-md bg-bg-dim"
+            className="cattipu-raised w-[min(90vw,30rem)] overflow-hidden bg-bg-dim"
           >
             <div className="flex items-center justify-between border-b-2 border-border-strong bg-surface px-4 py-3">
               <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export function ExportCenter() {
                   <button
                     key={f.id}
                     onClick={() => run(f.id)}
-                    className="cattipu-cursor-hand cattipu-raised cattipu-press flex items-start gap-2.5 rounded-md bg-surface-solid px-3 py-2.5 text-left"
+                    className="cattipu-cursor-hand cattipu-raised cattipu-press flex items-start gap-2.5 bg-surface-solid px-3 py-2.5 text-left"
                   >
                     <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[3px] border border-black/10 bg-navy/10 text-navy">
                       <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />

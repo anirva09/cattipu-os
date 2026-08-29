@@ -24,6 +24,16 @@ Always:
 * Explain every changed file.
 * Stop after the requested sprint.
 
+## Tooling
+
+Dependencies are installed with `npm install` — `package-lock.json` (npm-format) is the
+tracked, authoritative lockfile. Scripts (`lint`, `build`, `dev`) are invoked with `pnpm run
+<script>`; pnpm is fine for running scripts once `node_modules` exists, but do not run `pnpm
+install` on a fresh clone — it generates a mismatched `pnpm-lock.yaml` and an incomplete
+`node_modules` (missing `@eslint/eslintrc`), which breaks `pnpm lint`. Do not regenerate or
+swap lockfiles casually; if `pnpm-lock.yaml` ever appears, delete it and reinstall with `npm
+install`.
+
 ## Commit Style
 
 Use Conventional Commits.

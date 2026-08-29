@@ -41,7 +41,7 @@ export function RecommendationsPanel() {
               key={rec.id}
               variants={item}
               onClick={() => viewRecommendation(rec.targetNodeId)}
-              className="cattipu-cursor-hand cattipu-raised group flex items-start gap-3 rounded-md bg-surface-solid px-3.5 py-3 text-left"
+              className="cattipu-cursor-hand cattipu-raised group flex items-start gap-3 bg-surface-solid px-3.5 py-3 text-left"
             >
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[3px] border border-black/10 bg-gold/25 text-gold">
                 <Lightbulb className="h-3.5 w-3.5" strokeWidth={2.5} />

@@ -104,12 +104,28 @@ export interface Recommendation {
   targetNodeId: string; // ArchitectNode this recommendation is about
 }
 
+// Milestone 10 (Architect Generated-State Prototype) — "Suggested
+// stack" was a named required output with no field anywhere in the
+// data model before this. `tier` is an authored editorial category
+// (which layer of the stack this is), same status as `Recommendation`
+// above — not a fabricated health/confidence metric.
+export type StackTier = "core" | "supporting";
+
+export interface StackItem {
+  id: string;
+  category: string; // "Frontend" | "Backend" | "Database" | ...
+  name: string;
+  reason: string;
+  tier: StackTier;
+}
+
 export interface GeneratedArchitecture {
   prompt: string;
   projectName: string;
   projectIcon: ProjectIcon;
   summary: string;
   features: ArchitectFeature[];
+  stack: StackItem[];
   nodes: ArchitectNode[];
   edges: ArchitectEdge[];
   tables: SqlTable[];

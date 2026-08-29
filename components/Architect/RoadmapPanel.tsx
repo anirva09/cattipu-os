@@ -38,7 +38,7 @@ export function RoadmapPanel() {
                 <span className="cattipu-badge absolute -left-[21px] top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full">
                   <Circle className="h-1.5 w-1.5 fill-navy text-navy" />
                 </span>
-                <div className="cattipu-raised overflow-hidden rounded-md bg-surface-solid">
+                <div className="cattipu-raised overflow-hidden bg-surface-solid">
                   <button
                     onClick={() => togglePhase(p.id)}
                     className="cattipu-cursor-hand flex w-full items-center gap-2 px-3.5 py-2.5 text-left"

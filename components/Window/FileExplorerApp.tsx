@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ChevronRight, FileText, FileArchive, FileImage, FileCode } from "lucide-react";
-import { AppIcon } from "../Dock/AppIcon";
+import { UtilityIcon } from "@/components/Icons";
 import { useProjectStore, type ProjectIcon } from "@/store/useProjectStore";
 import { useWindowStore } from "@/store/useWindowStore";
 import { useArchitectStore } from "@/store/useArchitectStore";
@@ -147,7 +147,7 @@ export function FileExplorerApp() {
                     active ? "bg-navy/10 font-medium text-navy" : "text-ink hover:bg-navy/[0.06]",
                   ].join(" ")}
                 >
-                  <AppIcon icon="projects" className="h-4 w-auto shrink-0" />
+                  <UtilityIcon id="folder-closed" size={16} className="shrink-0" />
                   <span className="truncate">{f.name}</span>
                 </button>
               );
@@ -176,7 +176,7 @@ export function FileExplorerApp() {
                       // created project (no architecture yet) falls back
                       // to the Projects app.
                       const project = projects.find((p) => p.id === entry.id);
-                      if (project?.architecture) {
+                      if (project?.architect.data) {
                         loadFromProject(project);
                         openApp("architect", "Architect");
                       } else {
@@ -207,7 +207,7 @@ function EntryIcon({
   entry: Entry | { id: string; name: string; kind: "project"; color: string };
 }) {
   if (entry.kind === "folder") {
-    return <AppIcon icon="projects" className="h-10 w-auto" />;
+    return <UtilityIcon id="folder-closed" size={40} />;
   }
   if (entry.kind === "project") {
     return (

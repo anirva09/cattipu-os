@@ -47,7 +47,7 @@ export function ApiCatalogPanel() {
               key={api.id}
               variants={item}
               onClick={() => viewApi(api.nodeId)}
-              className="cattipu-cursor-hand cattipu-raised group flex flex-col gap-1.5 rounded-md bg-surface-solid px-3.5 py-2.5 text-left"
+              className="cattipu-cursor-hand cattipu-raised group flex flex-col gap-1.5 bg-surface-solid px-3.5 py-2.5 text-left"
             >
               <div className="flex items-center gap-2">
                 <span

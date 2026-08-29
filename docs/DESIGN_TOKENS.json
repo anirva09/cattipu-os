@@ -1,0 +1,91 @@
+{
+  "$comment": "Reverse-engineered from app/globals.css's @theme block, the single source of truth in the codebase for these values (see docs/DESIGN_CONSTITUTION.md). Every value below is copied verbatim from committed CSS, not invented. 'status: defined_not_consumed' marks a token that exists in globals.css but isn't yet read by the component it names — that gap is real and part of the current implementation, not an omission in this file.",
+  "source_file": "app/globals.css",
+  "extracted_at_commit": "e5335c5",
+
+  "color": {
+    "chrome_navy": { "css_var": "--color-navy", "value": "#031f56", "usage": "top bar, dock, window frames, hardware chrome faces" },
+    "identity_navy": { "css_var": "--color-navy-identity", "value": "#0c3c86", "usage": "logo mark / hero identity text only", "status": "defined_not_consumed", "note": "declared but no component reads it yet" },
+    "selection_blue": { "css_var": "--color-electric", "value": "#10227e", "usage": "active indicators, dock LED, keyboard focus ring, Build Playback pulse/glow" },
+    "cream_background": { "css_var": "--color-cream", "value": "#e7d7c3", "usage": "desktop field background (feeds --color-bg)" },
+    "outline": { "css_var": "--color-outline", "value": "#141110", "usage": "declared alias for the primary dark ink color", "status": "defined_not_consumed", "note": "components still reference --color-ink directly, which now resolves to the same hex" },
+    "success": { "css_var": "--color-success", "value": "#196236", "status": "defined_not_consumed", "note": "no component references --color-success yet" },
+    "warning": { "css_var": "--color-warning", "value": "#fac437", "status": "defined_not_consumed" },
+    "ai": { "css_var": "--color-ai", "value": "#7856ab", "status": "defined_not_consumed" },
+    "legacy_accent_red": { "css_var": "--color-red", "value": "#d6403a", "usage": "Architect node-type color, Boot/System accents, window close button fill" },
+    "legacy_accent_green": { "css_var": "--color-green", "value": "#2ba24c", "usage": "Architect node-type color, Boot/System accents" },
+    "legacy_accent_blue": { "css_var": "--color-blue", "value": "#3c6ad8", "usage": "Architect node-type color, window 'stack' button fill, focused-window glow ring, react-flow selected edge" },
+    "legacy_accent_gold": { "css_var": "--color-gold", "value": "#f0c419", "usage": "Architect node-type color, window minimize button fill" },
+    "legacy_accent_purple": { "css_var": "--color-purple", "value": "#6e3ba8", "usage": "Architect node-type color, 'Welcome back, Creator.' name highlight" },
+    "black": { "css_var": "--color-black", "value": "#111111" },
+
+    "surface_bg": { "css_var": "--color-bg", "value": "var(--color-cream)", "usage": "page/desktop background" },
+    "surface_bg_dim": { "css_var": "--color-bg-dim", "value": "#e3d9b9", "usage": "window frame fill, inactive folder-tab fill, dock rail background" },
+    "surface": { "css_var": "--color-surface", "value": "#faf5e6", "usage": "card/panel backgrounds (Welcome card, settings rows)" },
+    "surface_solid": { "css_var": "--color-surface-solid", "value": "#e8d8c5", "usage": "window content area / molded panel face" },
+    "ink": { "css_var": "--color-ink", "value": "#141110", "usage": "primary text color" },
+    "ink_dim": { "css_var": "--color-ink-dim", "value": "#7a7566", "usage": "secondary text (descriptions, timestamps)" },
+    "ink_faint": { "css_var": "--color-ink-faint", "value": "#a39d8c", "usage": "tertiary/disabled text, chevrons" },
+    "border": { "css_var": "--color-border", "value": "rgba(3, 31, 86, 0.16)", "usage": "hairline dividers" },
+    "border_strong": { "css_var": "--color-border-strong", "value": "rgba(3, 31, 86, 0.3)", "usage": ".cattipu-raised / .cattipu-recessed outline" }
+  },
+
+  "spacing": {
+    "grid_unit": { "css_var": "--grid-unit", "value": "8px", "note": "documented base unit; components mostly use Tailwind's own spacing scale (which is also 4px/8px-based) rather than this var directly" }
+  },
+
+  "icon": {
+    "grid": { "css_var": "--icon-grid", "value": "24px" },
+    "asset_note": "actual PNG assets in public/icons/*.png are NOT uniformly 24x24 — intrinsic sizes range ~48-66px per components/Dock/AppIcon.tsx's DIMS table (e.g. explorer 66x57, home 54x54, forge 64x48); the 24px grid token governs rendered/display size via className, not source asset dimensions"
+  },
+
+  "border_weight": {
+    "standard": { "css_var": "--line-border", "value": "2px", "usage": ".cattipu-raised / .cattipu-recessed / .cattipu-btn / .cattipu-tooltip borders" },
+    "outer_frame": { "css_var": "--line-border-outer", "value": "3px", "status": "defined_not_consumed" },
+    "hairline": { "css_var": "--line-hairline", "value": "1px", "status": "defined_not_consumed", "note": "components use --color-border / --color-border-strong 1px borders directly (e.g. Tailwind border-border) rather than this var" },
+    "bevel_highlight": { "css_var": "--line-highlight", "value": "1px" },
+    "bevel_shadow": { "css_var": "--line-shadow", "value": "1px" }
+  },
+
+  "window": {
+    "title_bar_height": { "css_var": "--window-title-bar", "value": "40px", "status": "defined_not_consumed", "actual_implementation": "44px (h-11, components/Window/Window.tsx line 79; also TopBar.tsx uses h-11)" },
+    "control_size": { "css_var": "--window-control", "value": "24px", "status": "defined_not_consumed", "actual_implementation": "28x24px (h-6 w-7, components/Window/Window.tsx minimize/stack/close buttons)" },
+    "chamfer": { "css_var": "--window-chamfer", "value": "4px", "status": "defined_not_consumed", "actual_implementation": "rounded-md / rounded-t-[3px] (soft border-radius, not a hard chamfer)" },
+    "content_inset": { "css_var": "--window-content-inset", "value": "16px", "status": "defined_not_consumed" },
+    "min_size": { "value": "360x260px", "source": "components/Window/Window.tsx Rnd minWidth/minHeight props" }
+  },
+
+  "dock": {
+    "width_collapsed": { "css_var": "--dock-width-collapsed", "value": "72px", "js_source": "store/useSettingsStore.ts DOCK_RAIL_WIDTH_PX.collapsed" },
+    "width_expanded": { "css_var": "--dock-width-expanded", "value": "196px", "js_source": "store/useSettingsStore.ts DOCK_RAIL_WIDTH_PX.expanded" },
+    "icon_size_options_px": { "sm": 16, "md": 24, "lg": 32, "default": "md", "js_source": "store/useSettingsStore.ts DOCK_ICON_SIZE_PX" },
+    "icon_well_padding": "iconPx + 8px (components/Dock/Dock.tsx line ~139)",
+    "tooltip_delay_ms": 400,
+    "hover_lift_px": 1,
+    "gap": "8px (Tailwind gap-2)"
+  },
+
+  "typography": {
+    "note": "see docs/TYPOGRAPHY.md for full extracted usage; families only, here",
+    "font_pixel_ui": { "css_var": "--font-pixel-ui", "value": "\"Press Start 2P\", ui-monospace, monospace" },
+    "font_body": { "css_var": "--font-body", "value": "\"Inter Variable\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", ui-sans-serif, system-ui, sans-serif" },
+    "font_code": { "css_var": "--font-code", "value": "\"VT323\", ui-monospace, \"SFMono-Regular\", monospace", "also_aliased_as": "--font-mono" }
+  },
+
+  "motion": {
+    "ease_spring": { "css_var": "--ease-spring", "value": "cubic-bezier(0.16, 1, 0.3, 1)" },
+    "press_transition_ms": 140,
+    "dock_spring": { "stiffness": 340, "damping": 32, "source": "components/Dock/Dock.tsx rail width animation" },
+    "window_open_spring": { "stiffness": 360, "damping": 28, "source": "components/Window/Window.tsx" }
+  },
+
+  "corner_radius_survey": {
+    "note": "frequency count across all .tsx files (grep, not a token — the codebase has no single radius scale; this is what's actually there)",
+    "rounded_default_4px": 46,
+    "rounded_md_6px": 24,
+    "rounded_lg_8px": 8,
+    "rounded_full": 4,
+    "rounded_xl_12px": 3,
+    "rounded_sm_2px": 2
+  }
+}
