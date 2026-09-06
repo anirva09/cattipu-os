@@ -1,0 +1,82 @@
+.cattipu-sidebar-button,
+.cattipu-sidebar-button *,
+.cattipu-sidebar-button *::before,
+.cattipu-sidebar-button *::after {
+  box-sizing: border-box;
+}
+
+.cattipu-sidebar-button {
+  display: grid;
+  grid-template-rows:
+    var(--cattipu-sidebar-icon-size)
+    var(--cattipu-sidebar-label-line-height);
+  place-content: center;
+  justify-items: center;
+  row-gap: var(--cattipu-sidebar-label-gap);
+
+  width: var(--cattipu-sidebar-button-width);
+  height: var(--cattipu-sidebar-button-height);
+  margin: 0;
+  padding: 0;
+
+  appearance: none;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-family);
+  font-size: var(--cattipu-sidebar-label-size);
+  font-weight: 700;
+  line-height: var(--cattipu-sidebar-label-line-height);
+  text-align: center;
+  cursor: default;
+  overflow: hidden;
+
+  transition: none;
+}
+
+/* Hover stays physically raised. Only the molded surface catches more light. */
+.cattipu-sidebar-button[data-selected='false']:hover:not(:active),
+.cattipu-sidebar-button[data-selected='false']:focus-visible:not(:active) {
+  background: var(--cattipu-bevel-left);
+  outline: none;
+}
+
+/* Pressed state is supplied by cattipu-bevel--pressable; surface stays cream. */
+.cattipu-sidebar-button[data-selected='false']:active {
+  background: var(--cattipu-cream);
+}
+
+/* Selected is a latched mechanical state: darker molded cream + inset bevel. */
+.cattipu-sidebar-button[data-selected='true'] {
+  background: var(--cattipu-dark-cream);
+  outline: none;
+}
+
+.cattipu-sidebar-button__icon {
+  display: grid;
+  place-items: center;
+  width: var(--cattipu-sidebar-icon-size);
+  height: var(--cattipu-sidebar-icon-size);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cattipu-sidebar-button__icon > svg,
+.cattipu-sidebar-button__icon > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.cattipu-sidebar-button__label {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: var(--cattipu-sidebar-label-line-height);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: clip;
+  pointer-events: none;
+}

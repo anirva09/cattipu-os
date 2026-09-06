@@ -2,7 +2,7 @@
 
 import { useWindowStore } from "@/store/useWindowStore";
 import { APP_MAP } from "@/lib/apps";
-import { Window } from "./Window";
+import { Window } from "./LegacyWindow";
 import { ProjectsApp } from "./ProjectsApp";
 import { PlaceholderApp } from "./PlaceholderApp";
 import { FileExplorerApp } from "./FileExplorerApp";

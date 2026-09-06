@@ -1,0 +1,20 @@
+icon_count_120: PASS
+unique_ids: PASS
+all_required_fields: PASS
+six_volumes: PASS
+has_32_master: PASS
+has_16_handcrafted: PASS
+has_future_namespaces: PASS
+has_svg_grammar_sketches: PASS
+
+Department counts:
+- CAT-AI: 18
+- CAT-ARCH: 21
+- CAT-CANVAS: 16
+- CAT-EXP: 13
+- CAT-FORGE: 16
+- CAT-MEM: 1
+- CAT-PROJ: 1
+- CAT-SHELL: 5
+- CAT-UTIL: 21
+- CAT-WIN: 8

@@ -1,0 +1,17 @@
+.cattipu-folder-tree,
+.cattipu-folder-tree *,
+.cattipu-folder-tree *::before,
+.cattipu-folder-tree *::after {
+  box-sizing: border-box;
+}
+
+.cattipu-folder-tree {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: var(--cattipu-folder-tree-padding-top) 0 0;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-family);
+}

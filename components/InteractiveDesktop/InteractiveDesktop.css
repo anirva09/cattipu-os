@@ -1,0 +1,83 @@
+.cattipu-interactive-desktop,
+.cattipu-interactive-desktop *,
+.cattipu-interactive-desktop *::before,
+.cattipu-interactive-desktop *::after {
+  box-sizing: border-box;
+}
+
+.cattipu-interactive-desktop {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: var(--cattipu-desktop-reference-width);
+  min-height: var(--cattipu-desktop-reference-height);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-family);
+}
+
+.cattipu-interactive-desktop__sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 9000;
+}
+
+.cattipu-interactive-desktop__topbar {
+  position: absolute;
+  left: var(--cattipu-desktop-sidebar-width);
+  right: 0;
+  top: 0;
+  z-index: 8800;
+}
+
+.cattipu-interactive-desktop__window-layer {
+  position: absolute;
+  left: var(--cattipu-desktop-sidebar-width);
+  top: var(--cattipu-desktop-topbar-height);
+  right: var(--cattipu-desktop-window-layer-right);
+  bottom: var(--cattipu-desktop-bottom-height);
+  z-index: 100;
+  overflow: hidden;
+  background-color: var(--cattipu-cream);
+  background-image: url("/assets/cattipu/engineering-paper-8px.png");
+  background-repeat: repeat;
+  background-size: 8px 8px;
+}
+
+.cattipu-interactive-desktop__right-widgets {
+  position: absolute;
+  right: var(--cattipu-desktop-right-widget-gap);
+  top: var(--cattipu-desktop-right-widget-top);
+  z-index: 8600;
+}
+
+.cattipu-interactive-desktop__bottom-status {
+  position: absolute;
+  left: var(--cattipu-desktop-sidebar-width);
+  right: 0;
+  bottom: 0;
+  z-index: 8800;
+}
+
+.cattipu-interactive-desktop__shell-window-body {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-interactive-desktop__shell-window-status {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  color: var(--cattipu-outer-frame);
+  white-space: nowrap;
+}

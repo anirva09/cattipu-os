@@ -1,0 +1,57 @@
+.cattipu-divider-groove,
+.cattipu-divider-groove *,
+.cattipu-divider-groove *::before,
+.cattipu-divider-groove *::after {
+  box-sizing: border-box;
+}
+
+.cattipu-divider-groove {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--cattipu-dark-cream);
+  border-radius: 0;
+}
+
+.cattipu-divider-groove--vertical {
+  width: var(--cattipu-divider-thickness);
+  height: 100%;
+}
+
+.cattipu-divider-groove--horizontal {
+  width: 100%;
+  height: var(--cattipu-divider-thickness);
+}
+
+.cattipu-divider-groove__grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cattipu-divider-mark-gap);
+}
+
+.cattipu-divider-groove--vertical .cattipu-divider-groove__grip {
+  flex-direction: column;
+}
+
+.cattipu-divider-groove__mark {
+  display: block;
+  flex: 0 0 auto;
+  background: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-divider-groove--horizontal .cattipu-divider-groove__mark {
+  width: var(--cattipu-divider-mark);
+  height: calc(var(--cattipu-divider-mark) * 2);
+  border-right: var(--cattipu-divider-mark) solid var(--cattipu-bevel-top);
+}
+
+.cattipu-divider-groove--vertical .cattipu-divider-groove__mark {
+  width: calc(var(--cattipu-divider-mark) * 2);
+  height: var(--cattipu-divider-mark);
+  border-bottom: var(--cattipu-divider-mark) solid var(--cattipu-bevel-top);
+}
