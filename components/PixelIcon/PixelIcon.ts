@@ -15,8 +15,24 @@ import IconJob from '../../public/assets/pixelforge/toolbox/job-32.svg';
 import IconScript from '../../public/assets/pixelforge/toolbox/script-32.svg';
 import IconConfig from '../../public/assets/pixelforge/toolbox/config-32.svg';
 
+import { SHELL_ICONS_32 } from './shellIcons';
+
 export type PixelIconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
+/**
+ * Every PixelForge mark the shell can resolve, in one registry.
+ *
+ * The eight Toolbox marks are the package's own approved exports and are
+ * unchanged. The Shell marks come from Specimen Sheet 01 FINAL FROZEN v1.0
+ * (see ./shellIcons.ts) and were added when the icon authority migration
+ * replaced the temporary hand-drawn shell glyphs. There is no third source:
+ * a name that misses here has no frozen asset behind it, and the correct
+ * response is to manufacture one on the sheet, not to draw a substitute.
+ *
+ * These entries are the 32px masters. Surfaces smaller than 24px must go
+ * through getShellIcon(name, 16) for the separately handcrafted small
+ * drawing — the sheet forbids downscaling the 32.
+ */
 export const PIXEL_ICON_REGISTRY = {
   entity: IconEntity,
   service: IconService,
@@ -26,6 +42,7 @@ export const PIXEL_ICON_REGISTRY = {
   job: IconJob,
   script: IconScript,
   config: IconConfig,
+  ...SHELL_ICONS_32,
 } as const satisfies Readonly<Record<string, PixelIconComponent>>;
 
 export type PixelIconName = keyof typeof PIXEL_ICON_REGISTRY;
