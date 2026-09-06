@@ -9,8 +9,17 @@
   position: relative;
   width: 100%;
   height: 100%;
-  min-width: var(--cattipu-desktop-reference-width);
-  min-height: var(--cattipu-desktop-reference-height);
+  /* RC2 viewport fit. This carried
+   *   min-width:  var(--cattipu-desktop-reference-width);   1600px
+   *   min-height: var(--cattipu-desktop-reference-height);   900px
+   * which forced the document larger than any viewport below the 1600x900
+   * reference and produced both scrollbars at 1366x768 and a horizontal one
+   * at 1440x900. The reference numbers are still what the layout is composed
+   * against - every child is positioned from those variables - but they are
+   * a design reference, not a minimum the browser has to honour. The layout
+   * beneath is already fluid: sidebar, top bar, window layer and status bar
+   * are absolutely positioned from the edges, so removing the floor lets
+   * them meet the real viewport instead of overflowing it. */
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -27,12 +36,63 @@
   z-index: 9000;
 }
 
+/* RC2 viewport fit. The rail's nine buttons plus the brand plate and the
+ * node monitor come to 894px of content. That clears a 900px viewport with
+ * 6px to spare and does not fit a 768px one: at 1366x768 the last two items,
+ * Explorer and Settings, ran off the bottom. The rail sets `overflow:
+ * visible` and the desktop clips, so they were not below a fold - they were
+ * unreachable, with no scrollbar and nothing to suggest they existed.
+ *
+ * Scoped to short viewports on purpose. Every ancestor between the rail and
+ * the button list is content-sized with no height of its own, so making the
+ * list scroll means binding that whole chain to the rail's height - and at
+ * 900px that would stretch the chassis from its natural 894 to 900, moving
+ * the node monitor 6px. The Golden Master is 1600x900, so the media query
+ * keeps it byte-identical and only viewports that genuinely cannot fit the
+ * rail pay anything. `min-height: 0` is what lets a flex item shrink below
+ * its content; without it the overflow has nowhere to go and `overflow-y`
+ * does nothing at all. */
+@media (max-height: 899px) {
+  .cattipu-interactive-desktop__sidebar,
+  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__raised,
+  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__bevel-gap,
+  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__well,
+  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__chassis {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__navigation {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  /* The buttons must not pay for the shrink. Without this the column takes
+   * the height it is given and squeezes its children into it - nine rail
+   * keys went from 81px to 64px, which is resizing the design rather than
+   * fitting it. Pinned to their natural size, the shortfall becomes scroll
+   * instead of compression. */
+  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__navigation > * {
+    flex: 0 0 auto;
+  }
+}
+
 .cattipu-interactive-desktop__topbar {
   position: absolute;
   left: var(--cattipu-desktop-sidebar-width);
   right: 0;
   top: 0;
   z-index: 8800;
+  /* TopBar.css sets `width: 100%` on this same element. For an absolutely
+   * positioned box, a used width beats `right`, so the bar resolved to the
+   * full width of its containing block and started 98px in - overhanging the
+   * viewport by exactly the sidebar width at every size, which pushed the
+   * clock cluster off the right edge. `auto` hands the sizing back to the
+   * left/right pair above. */
+  width: auto;
 }
 
 .cattipu-interactive-desktop__window-layer {
@@ -54,6 +114,21 @@
   right: var(--cattipu-desktop-right-widget-gap);
   top: var(--cattipu-desktop-right-widget-top);
   z-index: 8600;
+  /* The stack is 760px of widgets at its natural height. Below a 900px
+   * viewport that runs past the status bar and off the bottom of the screen -
+   * at 768 it ended 74px out. The widgets themselves are frozen, so nothing
+   * here resizes them: the COLUMN is capped at the room actually available
+   * between its own top offset and the status bar, and scrolls inside that
+   * cap when there isn't enough. At 900 the sum is exactly 760, so the
+   * reference layout is untouched and no scrollbar appears; only smaller
+   * viewports ever scroll, and they scroll the column rather than clipping
+   * the last widget away. */
+  max-height: calc(
+    100% - var(--cattipu-desktop-right-widget-top) -
+      var(--cattipu-desktop-bottom-height) - 8px
+  );
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .cattipu-interactive-desktop__bottom-status {
@@ -62,6 +137,8 @@
   right: 0;
   bottom: 0;
   z-index: 8800;
+  /* Same overhang as the top bar, same cause, same fix. */
+  width: auto;
 }
 
 .cattipu-interactive-desktop__shell-window-body {
