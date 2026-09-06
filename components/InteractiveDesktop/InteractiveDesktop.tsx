@@ -99,6 +99,8 @@ const SHELL_WINDOWS: readonly ShellWindowDefinition[] = [
   },
 ] as const;
 
+export type CattipuShellWindowId = Exclude<CattipuWindowId, 'projects'>;
+
 export interface InteractiveDesktopProps {
   brandMark: ReactNode;
   sidebarIcons: CattipuSidebarIcons;
@@ -107,6 +109,17 @@ export interface InteractiveDesktopProps {
   creatorName?: string;
   className?: string;
   style?: CSSProperties;
+  /**
+   * Integration hook, added when the v0.9 package was merged into the
+   * CATTIPU OS repository. Supplies the body of a shell window; anything
+   * not provided keeps the package's original status-line placeholder, so
+   * omitting this prop reproduces the signed-off behaviour exactly.
+   *
+   * Window CHROME is unaffected — title, tone and the three controls are
+   * still owned by this component. Only what is drawn inside the frame
+   * comes from here.
+   */
+  windowContent?: Partial<Record<CattipuShellWindowId, ReactNode>>;
 }
 
 type InteractiveDesktopStyle = CSSProperties &
@@ -136,6 +149,7 @@ export function InteractiveDesktop({
   creatorName = 'Creator',
   className,
   style,
+  windowContent,
 }: InteractiveDesktopProps) {
   const {
     state,
@@ -265,7 +279,9 @@ export function InteractiveDesktop({
                 onMaximize={() => maximizeWindow(definition.id)}
                 onClose={() => closeWindow(definition.id)}
               >
+                {windowContent?.[definition.id] ?? (
                 <WorkspaceShellBody status={definition.status} />
+              )}
               </Window>
             </ManagedWindow>
           );
