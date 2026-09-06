@@ -11,7 +11,8 @@ import { PlaceholderApp } from "@/components/Window/PlaceholderApp";
 import { APP_MAP } from "@/lib/apps";
 import type { CattipuSidebarIcons } from "@/components/Sidebar/Sidebar";
 import { CATTIPU_SIDEBAR_ITEMS } from "@/components/Sidebar/Sidebar";
-import { AppIcon } from "@/components/Icons";
+import { ShellIcon } from "@/components/PixelIcon";
+import type { ShellIconName } from "@/components/PixelIcon";
 import { PixelLogo } from "@/components/Boot/PixelLogo";
 
 /**
@@ -25,10 +26,9 @@ import { PixelLogo } from "@/components/Boot/PixelLogo";
  * and this file is the only place integration decisions are recorded.
  */
 
-/** The nine rail items the package's Sidebar declares. Every one maps to an
- *  id the repo's own APP_ICONS set already draws, so the rail needs no new
- *  artwork — see components/Icons/appIcons.ts. */
-const SIDEBAR_ICON_SIZE = 32;
+/** The nine rail items the package's Sidebar declares. Every one resolves to
+ *  a frozen PixelForge mark — Sheet 01 covers eight of them and `launch`
+ *  comes from the same family. The rail draws nothing of its own. */
 
 function useDateTimeText(): string {
   // Rendered empty on the server and filled on the client. A date formatted
@@ -81,12 +81,7 @@ export function CattipuShell() {
   const sidebarIcons = useMemo<CattipuSidebarIcons>(() => {
     const entries = CATTIPU_SIDEBAR_ITEMS.map(({ id, label }) => [
       id,
-      <AppIcon
-        key={id}
-        icon={id}
-        alt={label}
-        style={{ width: SIDEBAR_ICON_SIZE, height: SIDEBAR_ICON_SIZE }}
-      />,
+      <ShellIcon key={id} name={id as ShellIconName} title={label} />,
     ]);
     return Object.fromEntries(entries) as CattipuSidebarIcons;
   }, []);

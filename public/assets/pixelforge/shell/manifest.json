@@ -1,0 +1,260 @@
+{
+  "family": "CATTIPU OS Pixel Icons",
+  "sizes": [
+    32,
+    16
+  ],
+  "departments": {
+    "SHELL": {
+      "title": "SHELL",
+      "chrome": "system",
+      "note": "The surfaces a person navigates between."
+    },
+    "SYS": {
+      "title": "SYSTEM",
+      "chrome": "runtime",
+      "note": "Live services the shell reports on."
+    },
+    "UTIL": {
+      "title": "WORKSPACE",
+      "chrome": "tooling",
+      "note": "Actions taken on the work itself."
+    }
+  },
+  "sheets": {
+    "01": {
+      "title": "Shell & Desktop",
+      "ids": [
+        "CAT-SHELL-001",
+        "CAT-SHELL-002",
+        "CAT-SHELL-003",
+        "CAT-SHELL-004",
+        "CAT-SHELL-005",
+        "CAT-SHELL-006",
+        "CAT-SHELL-007",
+        "CAT-SHELL-008",
+        "CAT-SHELL-009",
+        "CAT-SHELL-010",
+        "CAT-SYS-001",
+        "CAT-SYS-002",
+        "CAT-SYS-003",
+        "CAT-SYS-004",
+        "CAT-SYS-005",
+        "CAT-UTIL-001",
+        "CAT-UTIL-002",
+        "CAT-UTIL-003",
+        "CAT-UTIL-004",
+        "CAT-UTIL-005"
+      ]
+    }
+  },
+  "palette": {
+    "K": "#241f12",
+    "W": "#f2e3c4",
+    "S": "#cdb994",
+    "G": "#e0b34c",
+    "N": "#1d3d70",
+    "R": "#9d3b2c",
+    "T": "#2b6b56",
+    "P": "#5b3a63",
+    "D": "#77705f",
+    "L": "#a49b87",
+    "B": "#b9d0dd",
+    "E": "#6ca35c",
+    "X": "#12160f"
+  },
+  "icons": {
+    "home": {
+      "32": "icons/32/home.svg",
+      "16": "icons/16/home.svg",
+      "id": "CAT-SHELL-001",
+      "display": "Home",
+      "department": "SHELL"
+    },
+    "projects": {
+      "32": "icons/32/projects.svg",
+      "16": "icons/16/projects.svg",
+      "id": "CAT-SHELL-002",
+      "display": "Projects",
+      "department": "SHELL"
+    },
+    "architect": {
+      "32": "icons/32/architect.svg",
+      "16": "icons/16/architect.svg",
+      "id": "CAT-SHELL-003",
+      "display": "Architect",
+      "department": "SHELL"
+    },
+    "canvas": {
+      "32": "icons/32/canvas.svg",
+      "16": "icons/16/canvas.svg",
+      "id": "CAT-SHELL-004",
+      "display": "Canvas",
+      "department": "SHELL"
+    },
+    "forge": {
+      "32": "icons/32/forge.svg",
+      "16": "icons/16/forge.svg",
+      "id": "CAT-SHELL-005",
+      "display": "Forge",
+      "department": "SHELL"
+    },
+    "memory": {
+      "32": "icons/32/memory.svg",
+      "16": "icons/16/memory.svg",
+      "id": "CAT-SHELL-006",
+      "display": "Memory",
+      "department": "SHELL"
+    },
+    "launch": {
+      "32": "icons/32/launch.svg",
+      "16": "icons/16/launch.svg"
+    },
+    "explorer": {
+      "32": "icons/32/explorer.svg",
+      "16": "icons/16/explorer.svg",
+      "id": "CAT-SHELL-007",
+      "display": "Explorer",
+      "department": "SHELL"
+    },
+    "settings": {
+      "32": "icons/32/settings.svg",
+      "16": "icons/16/settings.svg",
+      "id": "CAT-SHELL-008",
+      "display": "Settings",
+      "department": "SHELL"
+    },
+    "search": {
+      "32": "icons/32/search.svg",
+      "16": "icons/16/search.svg",
+      "id": "CAT-SHELL-009",
+      "display": "Search",
+      "department": "SHELL"
+    },
+    "bell": {
+      "32": "icons/32/bell.svg",
+      "16": "icons/16/bell.svg",
+      "id": "CAT-SHELL-010",
+      "display": "Notifications",
+      "department": "SHELL"
+    },
+    "clock": {
+      "32": "icons/32/clock.svg",
+      "16": "icons/16/clock.svg",
+      "id": "CAT-SYS-002",
+      "display": "Clock",
+      "department": "SYS"
+    },
+    "folder": {
+      "32": "icons/32/folder.svg",
+      "16": "icons/16/folder.svg"
+    },
+    "archive": {
+      "32": "icons/32/archive.svg",
+      "16": "icons/16/archive.svg"
+    },
+    "template": {
+      "32": "icons/32/template.svg",
+      "16": "icons/16/template.svg"
+    },
+    "file": {
+      "32": "icons/32/file.svg",
+      "16": "icons/16/file.svg"
+    },
+    "api": {
+      "32": "icons/32/api.svg",
+      "16": "icons/16/api.svg"
+    },
+    "flow": {
+      "32": "icons/32/flow.svg",
+      "16": "icons/16/flow.svg"
+    },
+    "entity": {
+      "32": "icons/32/entity.svg",
+      "16": "icons/16/entity.svg"
+    },
+    "service": {
+      "32": "icons/32/service.svg",
+      "16": "icons/16/service.svg"
+    },
+    "screen": {
+      "32": "icons/32/screen.svg",
+      "16": "icons/16/screen.svg"
+    },
+    "job": {
+      "32": "icons/32/job.svg",
+      "16": "icons/16/job.svg"
+    },
+    "script": {
+      "32": "icons/32/script.svg",
+      "16": "icons/16/script.svg"
+    },
+    "config": {
+      "32": "icons/32/config.svg",
+      "16": "icons/16/config.svg"
+    },
+    "terminal": {
+      "32": "icons/32/terminal.svg",
+      "16": "icons/16/terminal.svg",
+      "id": "CAT-SYS-001",
+      "display": "Terminal",
+      "department": "SYS"
+    },
+    "calendar": {
+      "32": "icons/32/calendar.svg",
+      "16": "icons/16/calendar.svg",
+      "id": "CAT-SYS-003",
+      "display": "Calendar",
+      "department": "SYS"
+    },
+    "volume": {
+      "32": "icons/32/volume.svg",
+      "16": "icons/16/volume.svg",
+      "id": "CAT-SYS-004",
+      "display": "Volume",
+      "department": "SYS"
+    },
+    "network": {
+      "32": "icons/32/network.svg",
+      "16": "icons/16/network.svg",
+      "id": "CAT-SYS-005",
+      "display": "Network",
+      "department": "SYS"
+    },
+    "newproject": {
+      "32": "icons/32/newproject.svg",
+      "16": "icons/16/newproject.svg",
+      "id": "CAT-UTIL-001",
+      "display": "New Project",
+      "department": "UTIL"
+    },
+    "recent": {
+      "32": "icons/32/recent.svg",
+      "16": "icons/16/recent.svg",
+      "id": "CAT-UTIL-002",
+      "display": "Recent",
+      "department": "UTIL"
+    },
+    "save": {
+      "32": "icons/32/save.svg",
+      "16": "icons/16/save.svg",
+      "id": "CAT-UTIL-003",
+      "display": "Save",
+      "department": "UTIL"
+    },
+    "openfile": {
+      "32": "icons/32/openfile.svg",
+      "16": "icons/16/openfile.svg",
+      "id": "CAT-UTIL-004",
+      "display": "Open",
+      "department": "UTIL"
+    },
+    "favorite": {
+      "32": "icons/32/favorite.svg",
+      "16": "icons/16/favorite.svg",
+      "id": "CAT-UTIL-005",
+      "display": "Favorite",
+      "department": "UTIL"
+    }
+  }
+}

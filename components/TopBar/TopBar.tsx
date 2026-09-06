@@ -9,6 +9,8 @@ import {
   cattipuTokens,
 } from '../../design-system/tokens';
 
+import { ShellIcon } from '../PixelIcon/ShellIcon';
+
 import '../../design-system/bevel.css';
 import './TopBar.css';
 
@@ -38,46 +40,37 @@ export interface TopBarProps
   onNotifications?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
 }
 
+/**
+ * Icon authority migration — these three were hand-drawn stroke glyphs
+ * (a circle-and-stem magnifier, an outlined bell, a vector analogue clock)
+ * that never came from PixelForge. They now render the frozen Sheet 01
+ * marks CAT-SHELL-009 Search, CAT-SHELL-010 Notifications and CAT-SYS-002
+ * Clock.
+ *
+ * The 16px HANDCRAFTED master is used, not the 32 shrunk to fit: this slot
+ * is 24px, and 32 -> 24 is a 0.75x scale that drops the 1px highlight row
+ * and breaks the 2px outline. The mark keeps its own size and the slot
+ * centres it, so the top bar's spacing, height and separators are
+ * unchanged.
+ *
+ * The wrapper keeps each original class name, so the sizing, hover and
+ * disabled rules in TopBar.css still apply to the same element.
+ */
 function SearchIcon() {
   return (
-    <svg
-      className="cattipu-top-bar__search-glyph"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle cx="9" cy="9" r="6" />
-      <path d="M13.5 13.5 20 20" />
-      <path className="cattipu-top-bar__icon-highlight" d="M5.5 7.5A4 4 0 0 1 9 5.5" />
-    </svg>
+    <ShellIcon name="search" size={16} className="cattipu-top-bar__search-glyph" />
   );
 }
 
 function BellIcon() {
   return (
-    <svg
-      className="cattipu-top-bar__bell-glyph"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M6 16.5h12l-1.5-2.25V10a4.5 4.5 0 0 0-9 0v4.25L6 16.5Z" />
-      <path d="M10 18.5h4a2 2 0 0 1-4 0Z" />
-      <rect x="11" y="3" width="2" height="2" />
-    </svg>
+    <ShellIcon name="bell" size={16} className="cattipu-top-bar__bell-glyph" />
   );
 }
 
 function AnalogClockIcon() {
   return (
-    <svg
-      className="cattipu-top-bar__clock-glyph"
-      viewBox="0 0 28 28"
-      aria-hidden="true"
-    >
-      <circle className="cattipu-top-bar__clock-face" cx="14" cy="14" r="11" />
-      <path className="cattipu-top-bar__clock-ticks" d="M14 4v2M14 22v2M4 14h2M22 14h2" />
-      <path className="cattipu-top-bar__clock-hand" d="M14 8v6l4 3" />
-      <path className="cattipu-top-bar__clock-second" d="M14 14 10 18" />
-    </svg>
+    <ShellIcon name="clock" size={16} className="cattipu-top-bar__clock-glyph" />
   );
 }
 
