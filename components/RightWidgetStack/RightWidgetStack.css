@@ -258,8 +258,20 @@
 
 .cattipu-right-widget-stack__toolbox {
   display: grid;
-  grid-template-columns: repeat(4, var(--cattipu-toolbox-column-width));
-  justify-content: space-between;
+  /* RC2 pixel alignment. This was four fixed 47px columns distributed with
+   * `space-between`, which splits the 20px of slack in a 208px container
+   * three ways - 6.667px per gap. Every cell after the first therefore
+   * landed on a fraction, and the 38px icon plates, which carry a 2px
+   * border, inherited it as a half-pixel left edge: 1376.5, 1430.16,
+   * 1483.81, 1537.47. A 2px border straddling a pixel boundary is painted
+   * with antialiasing, which is the blurred bevel.
+   *
+   * Four equal tracks divide 208 exactly (52px), and a 38px plate centred
+   * in 52 sits at +7 - integer both times, at every viewport, with no
+   * fractional transform and nothing resized. The plates and labels keep
+   * their frozen dimensions; only the slack between them is distributed
+   * evenly instead of unevenly. */
+  grid-template-columns: repeat(4, 1fr);
   align-content: center;
   gap: 8px 0;
   width: 100%;
@@ -271,7 +283,10 @@
   grid-template-rows: var(--cattipu-toolbox-icon-size) 18px;
   justify-items: center;
   align-items: center;
-  width: var(--cattipu-toolbox-column-width);
+  /* Fills its track (see the grid note above) rather than sitting 47px wide
+   * inside a 52px one, which would have put the centring back on a half
+   * pixel. --cattipu-toolbox-column-width still drives nothing else. */
+  width: 100%;
   margin: 0;
   padding: 0;
   appearance: none;
