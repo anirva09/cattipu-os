@@ -15,13 +15,25 @@ import '../../design-system/bevel.css';
 import './TopBar.css';
 
 export const CATTIPU_TOP_BAR_REFERENCE = {
-  height: 48,
+  // Golden Master fidelity pass. Measured off
+  // preview/Desktop_1600x900_latest_full_render.png, the approved
+  // reference shipped inside the v0.9 package: its top bar is 74px tall
+  // and its three glyphs measure 33x33, 30x35 and 35x36. This file
+  // declared 48 and 24 - so the shipped component and the package's own
+  // signed-off render had never agreed with each other.
+  //
+  // Correcting the height also removes the reason the icons were small.
+  // A 24px slot could not hold a 32px PixelForge master, which forced the
+  // 16px drawing into it; a 32px slot takes the 32px master at native
+  // size, so the marks get crisper and closer to the reference from the
+  // same change.
+  height: 74,
   horizontalPadding: cattipuTokens.spacing[24],
   clusterGap: cattipuTokens.spacing[16],
   inlineGap: cattipuTokens.spacing[8],
   controlSize: 32,
-  iconSize: 24,
-  clockSize: 28,
+  iconSize: 32,
+  clockSize: 32,
   separatorHeight: 32,
   brandSize: cattipuTokens.type.desktopTitle,
   dateSize: cattipuTokens.type.widgetHeader,
@@ -58,19 +70,19 @@ export interface TopBarProps
  */
 function SearchIcon() {
   return (
-    <ShellIcon name="search" size={16} className="cattipu-top-bar__search-glyph" />
+    <ShellIcon name="search" size={32} className="cattipu-top-bar__search-glyph" />
   );
 }
 
 function BellIcon() {
   return (
-    <ShellIcon name="bell" size={16} className="cattipu-top-bar__bell-glyph" />
+    <ShellIcon name="bell" size={32} className="cattipu-top-bar__bell-glyph" />
   );
 }
 
 function AnalogClockIcon() {
   return (
-    <ShellIcon name="clock" size={16} className="cattipu-top-bar__clock-glyph" />
+    <ShellIcon name="clock" size={32} className="cattipu-top-bar__clock-glyph" />
   );
 }
 

@@ -44,7 +44,9 @@ export const CATTIPU_INTERACTIVE_DESKTOP_REFERENCE = {
   width: 1600,
   height: 900,
   sidebarWidth: 98,
-  topBarHeight: 48,
+  // Golden Master fidelity pass - matches CATTIPU_TOP_BAR_REFERENCE.height.
+  // The window layer starts below the bar, so this has to move with it.
+  topBarHeight: 74,
   bottomStatusHeight: 50,
   rightWidgetWidth: 232,
   rightWidgetGap: cattipuTokens.spacing[8],
