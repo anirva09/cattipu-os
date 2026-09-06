@@ -1,0 +1,24 @@
+.cattipu-progress,
+.cattipu-progress *,
+.cattipu-progress *::before,
+.cattipu-progress *::after {
+  box-sizing: border-box;
+}
+
+.cattipu-progress {
+  position: relative;
+  width: var(--cattipu-progress-width);
+  height: var(--cattipu-progress-height);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+  border-radius: 0;
+}
+
+.cattipu-progress__fill {
+  display: block;
+  width: var(--cattipu-progress-fill);
+  height: 100%;
+  background: var(--cattipu-progress-navy);
+}

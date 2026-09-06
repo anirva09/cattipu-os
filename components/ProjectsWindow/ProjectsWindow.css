@@ -1,0 +1,47 @@
+.cattipu-projects-window,
+.cattipu-projects-window *,
+.cattipu-projects-window *::before,
+.cattipu-projects-window *::after {
+  box-sizing: border-box;
+}
+
+.cattipu-projects-window {
+  display: grid;
+  grid-template-columns:
+    var(--cattipu-projects-tree-width)
+    var(--cattipu-projects-divider-size)
+    var(--cattipu-projects-right-width);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-projects-window__right {
+  display: grid;
+  grid-template-rows:
+    var(--cattipu-projects-list-height)
+    var(--cattipu-projects-divider-size)
+    var(--cattipu-projects-details-height);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cattipu-projects-window__project-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cattipu-projects-card-gap);
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: var(--cattipu-projects-list-padding);
+  overflow: hidden;
+  background: var(--cattipu-cream);
+}

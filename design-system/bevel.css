@@ -1,0 +1,41 @@
+.cattipu-edge--outer {
+  border: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  border-radius: var(--cattipu-radius);
+}
+
+.cattipu-bevel--raised {
+  border-style: solid;
+  border-width: var(--cattipu-border-size);
+  border-top-color: var(--cattipu-bevel-top);
+  border-left-color: var(--cattipu-bevel-left);
+  border-bottom-color: var(--cattipu-bevel-bottom);
+  border-right-color: var(--cattipu-bevel-right);
+  border-radius: var(--cattipu-radius);
+}
+
+.cattipu-bevel--inset {
+  border-style: solid;
+  border-width: var(--cattipu-border-size);
+  border-top-color: var(--cattipu-bevel-right);
+  border-left-color: var(--cattipu-bevel-bottom);
+  border-bottom-color: var(--cattipu-bevel-top);
+  border-right-color: var(--cattipu-bevel-left);
+  border-radius: var(--cattipu-radius);
+}
+
+.cattipu-edge--bottom {
+  border-bottom: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+}
+
+
+.cattipu-bevel--pressable:active {
+  border-top-color: var(--cattipu-bevel-right);
+  border-left-color: var(--cattipu-bevel-bottom);
+  border-bottom-color: var(--cattipu-bevel-top);
+  border-right-color: var(--cattipu-bevel-left);
+}
+
+.cattipu-focus--mechanical:focus-visible {
+  outline: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  outline-offset: calc(var(--cattipu-border-size) * -2);
+}

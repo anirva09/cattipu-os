@@ -1,0 +1,110 @@
+.cattipu-folder-tree-item,
+.cattipu-folder-tree-item *,
+.cattipu-folder-tree-item *::before,
+.cattipu-folder-tree-item *::after {
+  box-sizing: border-box;
+}
+
+.cattipu-folder-tree-item {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-family);
+}
+
+.cattipu-folder-tree-item[data-depth]:not([data-depth='0'])::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--cattipu-tree-indent) - 12px);
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--cattipu-bevel-bottom);
+}
+
+.cattipu-folder-tree-item[data-depth]:not([data-depth='0']) > .cattipu-folder-tree-item__row::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--cattipu-tree-indent) - 12px);
+  top: calc(var(--cattipu-tree-row-height) / 2);
+  width: 12px;
+  border-top: 1px solid var(--cattipu-bevel-bottom);
+}
+
+.cattipu-folder-tree-item__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: var(--cattipu-tree-row-height);
+  margin: 0;
+  padding: 0 4px 0 var(--cattipu-tree-indent);
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.cattipu-folder-tree-item__row[data-selected='true'] {
+  background: var(--cattipu-dark-cream);
+  outline: 1px solid var(--cattipu-bevel-bottom);
+  outline-offset: -1px;
+}
+
+.cattipu-folder-tree-item__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 var(--cattipu-tree-icon-size);
+  width: var(--cattipu-tree-icon-size);
+  height: var(--cattipu-tree-icon-size);
+  margin-right: var(--cattipu-tree-icon-gap);
+}
+
+.cattipu-folder-tree-item__folder-glyph,
+.cattipu-folder-tree-item__project-glyph {
+  display: block;
+  width: 24px;
+  height: 24px;
+  stroke: var(--cattipu-outer-frame);
+  stroke-width: 1.5px;
+  stroke-linejoin: miter;
+}
+
+.cattipu-folder-tree-item__folder-glyph {
+  fill: var(--cattipu-tree-folder);
+}
+
+.cattipu-folder-tree-item__glyph-highlight {
+  fill: none;
+  stroke: var(--cattipu-bevel-top);
+  stroke-width: 1px;
+}
+
+.cattipu-folder-tree-item__project-glyph {
+  fill: var(--cattipu-cream);
+}
+
+.cattipu-folder-tree-item__glyph-detail {
+  fill: none;
+  stroke-width: 1px;
+}
+
+.cattipu-folder-tree-item__label {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--cattipu-tree-label-size);
+  font-weight: 700;
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: clip;
+}
+
+.cattipu-folder-tree-item__children {
+  display: block;
+  width: 100%;
+}
