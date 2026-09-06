@@ -14,6 +14,14 @@ import { CATTIPU_SIDEBAR_ITEMS } from "@/components/Sidebar/Sidebar";
 import { ShellIcon } from "@/components/PixelIcon";
 import type { ShellIconName } from "@/components/PixelIcon";
 import { PixelLogo } from "@/components/Boot/PixelLogo";
+import { ProjectsWindow } from "@/components/ProjectsWindow/ProjectsWindow";
+import { useProjectStore } from "@/store/useProjectStore";
+import {
+  orderProjects,
+  toProjectDetails,
+  toProjectTree,
+  toWindowProject,
+} from "@/lib/os/projects";
 
 /**
  * The seam between this repository and the frozen v0.9 package.
@@ -75,6 +83,58 @@ const WINDOW_CONTENT: Partial<Record<CattipuShellWindowId, React.ReactNode>> = {
   memory: <PlaceholderApp app={APP_MAP.memory} />,
 };
 
+/**
+ * Milestone 15 — the Projects window, reading the OS state layer.
+ *
+ * The window itself is a frozen visual component and is not edited: it
+ * already accepts `treeNodes`, `projects`, `details` and a selection
+ * callback, with hardcoded constants as defaults. Passing real values is
+ * the whole integration. Nothing here formats or computes anything —
+ * every displayed value comes from lib/os/projects.ts, which is also what
+ * Explorer, Recent and the desktop will read, so one rename or one build
+ * moves all of them at once.
+ */
+function LiveProjectsWindow({ onMinimize, onMaximize, onClose }: {
+  onMinimize: () => void;
+  onMaximize: () => void;
+  onClose: () => void;
+}) {
+  const projects = useProjectStore((s) => s.projects);
+  const openProject = useProjectStore((s) => s.openProject);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const ordered = useMemo(() => orderProjects(projects), [projects]);
+  const selected =
+    ordered.find((p) => p.id === selectedId) ?? ordered[0] ?? null;
+
+  const treeNodes = useMemo(() => toProjectTree(projects), [projects]);
+  const cards = useMemo(() => ordered.map((p) => toWindowProject(p)), [ordered]);
+  const details = useMemo(
+    () => (selected ? toProjectDetails(selected) : undefined),
+    [selected],
+  );
+
+  const handleTreeSelect = (id: string) => {
+    setSelectedId(id);
+    // Selecting a project in the tree IS opening it, as far as "Last
+    // Opened" is concerned - that is the moment a person looked at it.
+    if (projects.some((p) => p.id === id)) openProject(id);
+  };
+
+  return (
+    <ProjectsWindow
+      treeNodes={treeNodes}
+      projects={cards}
+      details={details}
+      selectedTreeId={selected?.id}
+      onTreeSelect={handleTreeSelect}
+      onMinimize={onMinimize}
+      onMaximize={onMaximize}
+      onClose={onClose}
+    />
+  );
+}
+
 export function CattipuShell() {
   const dateTimeText = useDateTimeText();
 
@@ -92,6 +152,7 @@ export function CattipuShell() {
       sidebarIcons={sidebarIcons}
       dateTimeText={dateTimeText}
       windowContent={WINDOW_CONTENT}
+      renderProjectsWindow={(controls) => <LiveProjectsWindow {...controls} />}
     />
   );
 }

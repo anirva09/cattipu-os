@@ -21,7 +21,11 @@ import type { GeneratedArchitecture } from "@/lib/ai/types";
 
 /** Bump this — and add a branch in migrate.ts — whenever CattipuProject's
  * shape changes in a way old persisted projects can't just be read as. */
-export const PROJECT_SCHEMA_VERSION = 1;
+export const PROJECT_SCHEMA_VERSION = 2;
+
+/** Shown as the owner of anything created locally. A single constant so
+ *  the Projects list, the details panel and Explorer cannot disagree. */
+export const DEFAULT_PROJECT_OWNER = "node";
 
 // ---------------------------------------------------------------------
 // Shared artifact identity — "stable string IDs, not a graph database."
@@ -57,6 +61,35 @@ export interface ArtifactRef {
 // ---------------------------------------------------------------------
 
 export type ProjectIcon = "banking" | "saas" | "website" | "generic";
+
+/**
+ * Milestone 15 (Living Projects).
+ *
+ * Status is NOT stored. It is derived from what the project actually
+ * contains (see lib/os/projects.ts `projectStatus`), so it cannot drift
+ * from reality the way a hand-set field does: a project with an Architect
+ * graph and no builds IS "Designing", and there is no way to persist a
+ * claim otherwise. The single exception is `archived`, which is a real
+ * user decision no artifact can imply.
+ */
+export type ProjectStatus =
+  | "New"
+  | "Designing"
+  | "Building"
+  | "Shipped"
+  | "Archived";
+
+/** What kind of thing is being built. Unlike status this is a genuine
+ *  choice - nothing in the artifacts can tell an API from a library - so
+ *  it is stored, defaulted from the icon at creation and editable after. */
+export type ProjectType = "Web" | "API" | "AI" | "Platform" | "Library";
+
+export const PROJECT_TYPE_BY_ICON: Record<ProjectIcon, ProjectType> = {
+  banking: "Platform",
+  saas: "Web",
+  website: "Web",
+  generic: "AI",
+};
 
 /** The idea that started this project — deliberately just the raw
  * prompt. Architect's own `summary` (in ArchitectArtifacts below) is the
@@ -274,6 +307,22 @@ export interface CattipuProject {
   createdAt: string;
   updatedAt: string;
 
+  // ── Milestone 15 (Living Projects) ────────────────────────────────
+  /** Editable. Defaults from `icon` at creation. */
+  type: ProjectType;
+  /** Whose project this is. Shown in the Projects list and details panel. */
+  owner: string;
+  /** Set every time the project is opened. `null` until it first is -
+   *  which is meaningfully different from "opened at creation time", and
+   *  is why this is nullable rather than defaulting to createdAt. */
+  lastOpenedAt: string | null;
+  /** Kept at the top of the list. */
+  pinned: boolean;
+  /** Starred. Independent of `pinned` - a favourite need not be pinned. */
+  favorite: boolean;
+  /** The one piece of status a user sets rather than the artifacts imply. */
+  archived: boolean;
+
   idea: ProjectIdea;
   architect: ArchitectArtifacts;
   canvas: CanvasArtifacts;
@@ -320,6 +369,8 @@ export interface CreateProjectOptions {
   editedLabel?: string;
   idea?: ProjectIdea;
   architect?: ArchitectArtifacts;
+  type?: ProjectType;
+  owner?: string;
 }
 
 /** The one place a brand-new, schema-current CattipuProject gets built —
@@ -337,6 +388,12 @@ export function createProject(opts: CreateProjectOptions): CattipuProject {
     editedLabel: opts.editedLabel ?? "Edited just now",
     createdAt: now,
     updatedAt: now,
+    type: opts.type ?? PROJECT_TYPE_BY_ICON[opts.icon ?? "generic"],
+    owner: opts.owner ?? DEFAULT_PROJECT_OWNER,
+    lastOpenedAt: null,
+    pinned: false,
+    favorite: false,
+    archived: false,
     idea: opts.idea ?? { prompt: "" },
     architect: opts.architect ?? { data: null },
     canvas: createEmptyCanvasArtifacts(),

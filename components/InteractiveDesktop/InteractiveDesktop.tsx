@@ -120,6 +120,23 @@ export interface InteractiveDesktopProps {
    * comes from here.
    */
   windowContent?: Partial<Record<CattipuShellWindowId, ReactNode>>;
+  /**
+   * Integration hook, added in Milestone 15 (Living Projects). Replaces
+   * the Projects window body with one wired to real state, receiving the
+   * same three control callbacks this component would have passed to the
+   * built-in ProjectsWindow. Omitted, the built-in one renders exactly as
+   * signed off - the package's default behaviour is unchanged.
+   *
+   * Projects needs this rather than `windowContent` because it is the one
+   * window whose CHROME the package owns directly (ProjectsWindow is a
+   * Window, not a body inside one), so swapping its body means swapping
+   * the whole component.
+   */
+  renderProjectsWindow?: (controls: {
+    onMinimize: () => void;
+    onMaximize: () => void;
+    onClose: () => void;
+  }) => ReactNode;
 }
 
 type InteractiveDesktopStyle = CSSProperties &
@@ -150,6 +167,7 @@ export function InteractiveDesktop({
   className,
   style,
   windowContent,
+  renderProjectsWindow,
 }: InteractiveDesktopProps) {
   const {
     state,
@@ -252,11 +270,17 @@ export function InteractiveDesktop({
           onFocus={() => focusWindow('projects')}
           onMove={(position) => moveWindow('projects', position)}
         >
-          <ProjectsWindow
-            onMinimize={() => minimizeWindow('projects')}
-            onMaximize={() => maximizeWindow('projects')}
-            onClose={() => closeWindow('projects')}
-          />
+          {renderProjectsWindow?.({
+            onMinimize: () => minimizeWindow('projects'),
+            onMaximize: () => maximizeWindow('projects'),
+            onClose: () => closeWindow('projects'),
+          }) ?? (
+            <ProjectsWindow
+              onMinimize={() => minimizeWindow('projects')}
+              onMaximize={() => maximizeWindow('projects')}
+              onClose={() => closeWindow('projects')}
+            />
+          )}
         </ManagedWindow>
 
         {SHELL_WINDOWS.map((definition) => {
