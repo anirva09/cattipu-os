@@ -1,6 +1,8 @@
 import type { GeneratedArchitecture } from "@/lib/ai/types";
 import {
+  DEFAULT_PROJECT_OWNER,
   PROJECT_SCHEMA_VERSION,
+  PROJECT_TYPE_BY_ICON,
   createEmptyCanvasArtifacts,
   createEmptyForgeArtifacts,
   createEmptyLaunchArtifacts,
@@ -61,6 +63,18 @@ function backfillMissingArtifacts(project: CattipuProject): CattipuProject {
     forge: project.forge ?? createEmptyForgeArtifacts(),
     memory: project.memory ?? createEmptyMemoryArtifacts(),
     launch: project.launch ?? createEmptyLaunchArtifacts(),
+    // Milestone 15 fields. A v1 record predates all of them, so every one
+    // is filled from something the record already carries rather than
+    // invented: the type from the icon it was saved with, the owner from
+    // the same constant new projects use. `lastOpenedAt` stays null - the
+    // record genuinely does not know when it was last opened, and null
+    // says that honestly where a fabricated timestamp would not.
+    type: project.type ?? PROJECT_TYPE_BY_ICON[project.icon ?? "generic"],
+    owner: project.owner ?? DEFAULT_PROJECT_OWNER,
+    lastOpenedAt: project.lastOpenedAt ?? null,
+    pinned: project.pinned ?? false,
+    favorite: project.favorite ?? false,
+    archived: project.archived ?? false,
   };
 }
 
@@ -79,6 +93,12 @@ function migrateLegacy(legacy: LegacyProjectV0): CattipuProject {
     // used for both fields rather than fabricating a fake history.
     createdAt: now,
     updatedAt: now,
+    type: PROJECT_TYPE_BY_ICON[legacy.icon ?? "generic"],
+    owner: DEFAULT_PROJECT_OWNER,
+    lastOpenedAt: null,
+    pinned: false,
+    favorite: false,
+    archived: false,
     idea: { prompt: architecture?.prompt ?? "" },
     architect: { data: architecture },
     canvas: createEmptyCanvasArtifacts(),

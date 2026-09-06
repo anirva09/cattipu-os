@@ -4,6 +4,7 @@ import type { GeneratedArchitecture } from "@/lib/ai/types";
 import {
   PROJECT_SCHEMA_VERSION,
   createProject,
+  nextProjectId,
   type CanvasArtifacts,
   type CattipuProject,
   type ForgeBuild,
@@ -56,21 +57,65 @@ interface ProjectState {
   addForgeBuild: (id: string, build: ForgeBuild) => void;
   appendMemoryRecord: (id: string, record: MemoryRecord) => void;
   addLaunchRelease: (id: string, release: LaunchRelease) => void;
+
+  // ── Milestone 15 (Living Projects) ──────────────────────────────────
+  // The verbs the Projects window offers. Every one goes through this
+  // store, so a rename in Projects is a rename in Explorer, on the
+  // desktop and in Recent - not three copies kept in step by hand.
+  //
+  // There is deliberately no setProgress or setStatus. Both are derived
+  // from artifacts in lib/os/projects.ts, and adding a setter is exactly
+  // how a hardcoded percentage gets back in.
+  renameProject: (id: string, name: string) => void;
+  duplicateProject: (id: string) => CattipuProject | null;
+  removeProject: (id: string) => void;
+  /** Marks the project opened. This is what "Last Opened" and the
+   *  ordering of Recent are computed from, so it must be called by
+   *  whatever actually opens one. */
+  openProject: (id: string) => void;
+  togglePinned: (id: string) => void;
+  toggleFavorite: (id: string) => void;
+  setArchived: (id: string, archived: boolean) => void;
 }
 
 function touch(): Pick<CattipuProject, "updatedAt"> {
   return { updatedAt: new Date().toISOString() };
 }
 
+/**
+ * Fixed, not `new Date()`.
+ *
+ * `createProject` stamps createdAt/updatedAt from the clock, and this
+ * module is evaluated twice - once on the server rendering the page, once
+ * in the browser bundle. Two different clocks produced two different
+ * timestamps, so the server's "CREATED: 4:34 PM" and the client's
+ * disagreed and React threw #418 and discarded the server markup. Seed
+ * data is demo content; pinning its timestamps costs nothing and makes
+ * the two renders identical by construction.
+ */
+const SEED_STAMPS = [
+  "2026-08-29T12:36:00.000Z",
+  "2026-08-28T09:18:00.000Z",
+  "2026-08-27T04:52:00.000Z",
+] as const;
+
+function seed(
+  index: number,
+  opts: Parameters<typeof createProject>[0],
+): CattipuProject {
+  const at = SEED_STAMPS[index];
+  return { ...createProject(opts), createdAt: at, updatedAt: at };
+}
+
 const SEED_PROJECTS: CattipuProject[] = [
-  createProject({ name: "Banking Platform", icon: "banking", color: ICON_COLOR.banking, editedLabel: "Edited 5m ago" }),
-  createProject({ name: "AI SaaS Starter", icon: "saas", color: ICON_COLOR.saas, editedLabel: "Edited 1h ago" }),
-  createProject({ name: "CATTIPU Website", icon: "website", color: ICON_COLOR.website, editedLabel: "Edited 3h ago" }),
+  seed(0, { name: "Banking Platform", icon: "banking", color: ICON_COLOR.banking, editedLabel: "Edited 5m ago" }),
+  seed(1, { name: "AI SaaS Starter", icon: "saas", color: ICON_COLOR.saas, editedLabel: "Edited 1h ago" }),
+  seed(2, { name: "CATTIPU Website", icon: "website", color: ICON_COLOR.website, editedLabel: "Edited 3h ago" }),
 ];
 
 export const useProjectStore = create<ProjectState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       projects: SEED_PROJECTS,
 
       addProject: (name) => {
@@ -122,6 +167,75 @@ export const useProjectStore = create<ProjectState>()(
             p.id === id
               ? { ...p, memory: { ...p.memory, records: [...p.memory.records, record] }, ...touch() }
               : p
+          ),
+        }));
+      },
+
+      renameProject: (id, name) => {
+        const next = name.trim();
+        if (!next) return;              // a blank name is not a rename
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id === id ? { ...p, name: next, editedLabel: "Renamed just now", ...touch() } : p
+          ),
+        }));
+      },
+
+      duplicateProject: (id) => {
+        const source = get().projects.find((p) => p.id === id);
+        if (!source) return null;
+        // A copy of the WORK, not of the history: a fresh id and fresh
+        // timestamps, never opened. Cloning createdAt would make the
+        // duplicate claim an age it does not have, and cloning the id
+        // would make two projects the same project.
+        const copy: CattipuProject = {
+          ...structuredClone(source),
+          id: nextProjectId(),
+          name: `${source.name} copy`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastOpenedAt: null,
+          pinned: false,
+          favorite: false,
+          editedLabel: "Duplicated just now",
+        };
+        set((s) => ({ projects: [copy, ...s.projects] }));
+        return copy;
+      },
+
+      removeProject: (id) => {
+        set((s) => ({ projects: s.projects.filter((p) => p.id !== id) }));
+      },
+
+      openProject: (id) => {
+        const now = new Date().toISOString();
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id === id ? { ...p, lastOpenedAt: now } : p
+          ),
+        }));
+      },
+
+      togglePinned: (id) => {
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id === id ? { ...p, pinned: !p.pinned, ...touch() } : p
+          ),
+        }));
+      },
+
+      toggleFavorite: (id) => {
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id === id ? { ...p, favorite: !p.favorite, ...touch() } : p
+          ),
+        }));
+      },
+
+      setArchived: (id, archived) => {
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id === id ? { ...p, archived, ...touch() } : p
           ),
         }));
       },
