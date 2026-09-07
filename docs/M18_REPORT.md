@@ -2,8 +2,8 @@
 
 Windows now snap, cascade, tile and restore exactly, all through the
 existing window manager. 40/40 behavioural checks pass against the
-production build; the layout arithmetic and the restore contract carry 32
-unit tests, mutation-checked against twelve deliberate breakages.
+production build; the layout arithmetic and the restore contract carry 33
+unit tests, mutation-checked against thirteen deliberate breakages.
 
 ---
 
@@ -38,7 +38,7 @@ renders it as 3px of grey, which is why the RC2 fit audit exists.
 | `components/InteractiveDesktop/` | Renders the snap preview; keyboard route to the workspace commands. |
 | `components/DesktopObjects/` | `Window ▸ Cascade / Tile / Restore All` in the desktop menu. |
 | `components/ContextMenu/ContextMenu.tsx` | Portals to `<body>` — see the bugs below. |
-| `lib/os/__tests__/workspace.test.ts` | 32 tests, added to `npm test`. |
+| `lib/os/__tests__/workspace.test.ts` | 33 tests, added to `npm test`. |
 | `scripts/m18-verify.py` | Where every figure below comes from. |
 
 **No duplicate window state.** Snapping, tiling and restoring are actions
@@ -139,7 +139,7 @@ so typing in Explorer's search box is not interrupted by a re-render.
 
 ---
 
-## Three real bugs found
+## Four real bugs found
 
 **The context menu was trapped under windows.** `position: fixed` with
 `z-index: 12000` is not enough: a fixed element is still confined to the
@@ -156,6 +156,17 @@ kept one restore point, so maximizing a window snapped to the left half
 and un-maximizing dropped the snap entirely. Fixed by recording the snap
 region on the restore point and leaving a home point behind when
 restoring onto one.
+
+**Restore All did nothing after a Tile.** `arrange` cleared every
+window's restore point, on the reasoning that an arranged window has an
+explicit place. Each piece was internally consistent and the result was
+that `Restore All` silently did nothing at exactly the moment a person
+reaches for it — tile, dislike it, press restore, nothing happens. Found
+by recording the walkthrough rather than by a test, because every test
+asserted about restoring a *snap* or a *maximize*. Arranging now records
+a restore point; a window that was already snapped or maximized keeps the
+one it had, so restoring still goes home rather than back to the
+arrangement it was in a moment ago.
 
 **A tiled workspace hides its own escape hatch.** After Tile, only
 **1.5%** of the workspace is uncovered — the 8px seams between tiles.
@@ -220,6 +231,8 @@ verified and holds. Responsive window bodies are their own milestone.
 
 - **Snap Bottom is implemented**, since the four halves are one coherent
   set once the arithmetic exists.
+- **Restore All undoes a Cascade or a Tile**, as well as a snap or a
+  maximize. See the bug above.
 - **Arranging does not change z-order.** An arrangement decides where
   windows are, not which one you were working in. Asserted on the z
   *values* and the counter, not just on relative order — raising every
@@ -238,14 +251,14 @@ verified and holds. Responsive window bodies are their own milestone.
 ```
 npm run typecheck   0 errors
 npm run lint        0 errors, 1 pre-existing warning (ManagedWindow.tsx:329)
-npm test            9/9 + 18/18 + 16/16 + 24/24 + 32/32
+npm test            9/9 + 18/18 + 16/16 + 24/24 + 33/33
 npm run build       clean
 M18 harness         40/40
 M16 harness         27/27   (re-run)
 M17 harness         42/42   (re-run)
 ```
 
-The 32 unit tests were mutation-checked against twelve deliberate
+The 33 unit tests were mutation-checked against thirteen deliberate
 breakages: halves rounded twice, tile remainder dropped, short last row
 keeping the column width, cascade never wrapping, no boundary clamp,
 snap threshold ignored, restore keeping the raised z-index, snap

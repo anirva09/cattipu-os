@@ -480,6 +480,33 @@ test("un-maximizing a snapped window returns it to its half", () => {
   assert.deepEqual(state.windows.explorer.position, home);
 });
 
+test("Restore All undoes a Tile — the case that reaches for it most", () => {
+  // Arranging used to clear every restore point, so after a tile there
+  // was nothing to restore and the command silently did nothing.
+  let state = allOpen();
+  const before = Object.fromEntries(
+    (["projects", "architect", "memory", "explorer", "settings"] as const).map(
+      (id) => [id, { ...state.windows[id].position }],
+    ),
+  );
+
+  state = reduce(state, { type: "arrange", layout: "tile", bounds: BOX });
+  assert.notDeepEqual(state.windows.projects.position, before.projects,
+    "fixture: tiling actually moved things");
+
+  state = reduce(state, { type: "restoreAll" });
+  for (const id of ["projects", "architect", "memory", "explorer", "settings"] as const) {
+    assert.deepEqual(state.windows[id].position, before[id], id);
+    // The resolved rectangle, not the `size` field. Restore writes an
+    // explicit {920,612} where the window previously had `null`, and
+    // those two mean the same thing — asserting the field would be
+    // asserting a representation rather than a behaviour.
+    const rect = windowRect(state.windows[id], BOX);
+    assert.equal(rect.width, CATTIPU_DEFAULT_WINDOW_SIZE.width, `${id} width`);
+    assert.equal(rect.height, CATTIPU_DEFAULT_WINDOW_SIZE.height, `${id} height`);
+  }
+});
+
 test("Restore All puts every changed window back at once", () => {
   let state = allOpen();
   const before = {
