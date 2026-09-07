@@ -449,7 +449,14 @@ export function windowManagerReducer(
           snap: null,
           position: { x: rect.x, y: rect.y },
           size: { width: rect.width, height: rect.height },
-          restore: null,
+          // An arrangement is something to come back FROM. Clearing the
+          // restore point here was a real defect: after Tile, every
+          // window had nothing to restore, so "Restore All" silently did
+          // nothing at exactly the moment a person reaches for it. A
+          // window that was already snapped or maximized keeps the point
+          // it had, so restoring still goes home rather than to the
+          // arrangement it was in a moment ago.
+          restore: target.restore ?? restorePointFor(target, target.snap),
         };
       });
 
