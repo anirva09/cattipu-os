@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { InteractiveDesktop } from "@/components/InteractiveDesktop";
 import type { CattipuShellWindowId } from "@/components/InteractiveDesktop";
 import { ArchitectApp } from "@/components/Architect/ArchitectApp";
+import { DesktopObjectLayer } from "@/components/DesktopObjects";
 import { FileExplorerApp } from "@/components/Window/FileExplorerApp";
 import { SettingsApp } from "@/components/Window/SettingsApp";
 import { PlaceholderApp } from "@/components/Window/PlaceholderApp";
@@ -153,6 +154,12 @@ export function CattipuShell() {
       dateTimeText={dateTimeText}
       windowContent={WINDOW_CONTENT}
       renderProjectsWindow={(controls) => <LiveProjectsWindow {...controls} />}
+      // Milestone 16. The layer owns desktop objects; the desktop owns the
+      // window manager, so opening a shortcut's project comes back through
+      // this callback rather than through a second copy of window state.
+      desktopLayer={({ openWindow }) => (
+        <DesktopObjectLayer onOpenWindow={openWindow} />
+      )}
     />
   );
 }

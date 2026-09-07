@@ -45,6 +45,10 @@ import Recent32 from '../../public/assets/pixelforge/shell/32/recent.svg';
 import Save32 from '../../public/assets/pixelforge/shell/32/save.svg';
 import OpenFile32 from '../../public/assets/pixelforge/shell/32/openfile.svg';
 import Favorite32 from '../../public/assets/pixelforge/shell/32/favorite.svg';
+// Milestone 16 - the desktop needs a folder mark. Same frozen family,
+// same manufacturing passes; it is simply not one of Sheet 01's twenty,
+// like `launch`. Copied from the family, not drawn.
+import Folder32 from '../../public/assets/pixelforge/shell/32/folder.svg';
 
 import Home16 from '../../public/assets/pixelforge/shell/16/home.svg';
 import Projects16 from '../../public/assets/pixelforge/shell/16/projects.svg';
@@ -67,6 +71,7 @@ import Recent16 from '../../public/assets/pixelforge/shell/16/recent.svg';
 import Save16 from '../../public/assets/pixelforge/shell/16/save.svg';
 import OpenFile16 from '../../public/assets/pixelforge/shell/16/openfile.svg';
 import Favorite16 from '../../public/assets/pixelforge/shell/16/favorite.svg';
+import Folder16 from '../../public/assets/pixelforge/shell/16/folder.svg';
 
 export type ShellIconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -94,6 +99,7 @@ export const SHELL_ICON_IDS = {
   openfile: 'CAT-UTIL-004',
   favorite: 'CAT-UTIL-005',
   launch: 'CAT-FAMILY-launch',
+  folder: 'CAT-FAMILY-folder',
 } as const;
 
 export const SHELL_ICONS_32 = {
@@ -118,6 +124,7 @@ export const SHELL_ICONS_32 = {
   save: Save32,
   openfile: OpenFile32,
   favorite: Favorite32,
+  folder: Folder32,
 } as const satisfies Readonly<Record<string, ShellIconComponent>>;
 
 export const SHELL_ICONS_16 = {
@@ -142,6 +149,7 @@ export const SHELL_ICONS_16 = {
   save: Save16,
   openfile: OpenFile16,
   favorite: Favorite16,
+  folder: Folder16,
 } as const satisfies Readonly<Record<string, ShellIconComponent>>;
 
 export type ShellIconName = keyof typeof SHELL_ICONS_32;

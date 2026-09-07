@@ -1,0 +1,161 @@
+.cattipu-context-menu,
+.cattipu-context-menu *,
+.cattipu-context-menu *::before,
+.cattipu-context-menu *::after {
+  box-sizing: border-box;
+}
+
+/* Fixed, because the menu is anchored to the pointer and the pointer is a
+ * viewport coordinate. Positioning it inside the desktop would mean
+ * subtracting the sidebar and top bar by hand at every call site, and
+ * getting that wrong is invisible until the menu opens near an edge. */
+.cattipu-context-menu {
+  position: fixed;
+  z-index: 12000;
+  min-width: 196px;
+  max-width: 288px;
+  padding: 2px;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-family);
+  outline: none;
+}
+
+.cattipu-context-menu__heading,
+.cattipu-context-menu__back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 22px;
+  padding: 0 8px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: var(--cattipu-dark-cream);
+  border: 0;
+  border-bottom: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  color: var(--cattipu-outer-frame);
+  text-align: left;
+}
+
+.cattipu-context-menu__back {
+  cursor: pointer;
+}
+
+.cattipu-context-menu__back:hover {
+  background: var(--cattipu-menu-highlight);
+  color: var(--cattipu-cream);
+}
+
+/* Drawn, not typed. A "<" from the VGA face sits on a different baseline
+ * to the pixel marks beside it; a 2px triangle made of borders lands on
+ * whole pixels at every zoom the rest of the shell is drawn for. */
+.cattipu-context-menu__back-arrow {
+  flex: 0 0 auto;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-right: 5px solid currentColor;
+}
+
+.cattipu-context-menu__list {
+  display: block;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cattipu-context-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 26px;
+  padding: 0 8px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 26px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.cattipu-context-menu__item:hover,
+.cattipu-context-menu__item:focus-visible {
+  background: var(--cattipu-menu-highlight);
+  color: var(--cattipu-cream);
+  outline: none;
+}
+
+/* Disabled items stay in the list rather than disappearing. "Paste" that
+ * vanishes when the clipboard is empty teaches nothing; "Paste" that is
+ * visibly unavailable tells you the machine has the concept and you have
+ * not copied anything yet. */
+.cattipu-context-menu__item[data-disabled='true'] {
+  color: var(--cattipu-bevel-bottom);
+  cursor: default;
+}
+
+.cattipu-context-menu__item[data-disabled='true']:hover {
+  background: transparent;
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-context-menu__icon {
+  display: grid;
+  flex: 0 0 16px;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+}
+
+.cattipu-context-menu__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cattipu-context-menu__hint {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-context-menu__item:hover .cattipu-context-menu__hint {
+  color: var(--cattipu-dark-cream);
+}
+
+.cattipu-context-menu__more {
+  flex: 0 0 auto;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid currentColor;
+}
+
+/* The same two-line groove the dividers elsewhere in the shell use, so a
+ * menu separator and a panel separator are the same object. */
+.cattipu-context-menu__separator {
+  height: 4px;
+  margin: 2px 4px;
+  border-top: 1px solid var(--cattipu-bevel-right);
+  border-bottom: 1px solid var(--cattipu-bevel-top);
+}
+
+.cattipu-context-menu__empty {
+  padding: 0 8px;
+  font-size: 11px;
+  line-height: 26px;
+  letter-spacing: 0.06em;
+  color: var(--cattipu-bevel-bottom);
+}

@@ -1,0 +1,125 @@
+.cattipu-desktop-objects,
+.cattipu-desktop-objects *,
+.cattipu-desktop-objects *::before,
+.cattipu-desktop-objects *::after {
+  box-sizing: border-box;
+}
+
+/* The layer fills the window layer and sits UNDER every managed window.
+ * Managed windows carry z-index 1 upward from the window manager's own
+ * counter, so this has to be 0 — not 1, which would tie with the lowest
+ * window and let paint order decide, and paint order is source order,
+ * which would put the layer on top of it.
+ *
+ * It is the desktop surface, so it has to receive the right-click that
+ * opens the desktop menu, which means it cannot be pointer-events: none.
+ * Windows are siblings painted above it and still take their own clicks. */
+.cattipu-desktop-objects {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  padding: 0;
+  font-family: var(--cattipu-font-family);
+  color: var(--cattipu-outer-frame);
+}
+
+.cattipu-desktop-objects__object {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 2px;
+  background: transparent;
+  border: var(--cattipu-border-size) solid transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: center;
+  cursor: default;
+  /* The icon is dragged, not selected. Without this a drag paints a text
+   * selection across the label and the native drag image takes over. */
+  user-select: none;
+  -webkit-user-drag: none;
+  touch-action: none;
+}
+
+.cattipu-desktop-objects__object:focus-visible {
+  outline: none;
+}
+
+/* Selection is a dotted marquee on the label plus a raised plate behind
+ * the mark — the same two cues the rail uses for its active key, so a
+ * selected desktop icon and a selected rail item read as one idea. */
+.cattipu-desktop-objects__object[data-selected='true'] .cattipu-desktop-objects__plate {
+  background: var(--cattipu-dark-cream);
+  border-color: var(--cattipu-outer-frame);
+}
+
+.cattipu-desktop-objects__object[data-selected='true'] .cattipu-desktop-objects__label {
+  background: var(--cattipu-menu-highlight);
+  color: var(--cattipu-cream);
+}
+
+.cattipu-desktop-objects__object[data-dragging='true'] {
+  opacity: 0.7;
+  z-index: 40;
+}
+
+.cattipu-desktop-objects__plate {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: var(--cattipu-border-size) solid transparent;
+}
+
+/* Two lines, then ellipsis.
+ *
+ * One nowrap line inside an 84px cell truncates "Banking Platform" to
+ * "Banking Pla…" and "Untitled Folder" to "Untitled Fo…" — every icon on
+ * the desktop ends in the same three dots and none of them is
+ * identifiable, which is the entire job of a label. Two lines hold the
+ * project names this shell actually ships with, and the clamp keeps the
+ * icon's height fixed so a long name can never push into the row below. */
+.cattipu-desktop-objects__label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  max-width: 100%;
+  max-height: 32px;
+  padding: 1px 3px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 15px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.cattipu-desktop-objects__rename {
+  display: block;
+  width: 100%;
+  padding: 0 2px;
+  background: var(--cattipu-cream);
+  border: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  border-radius: 0;
+  color: var(--cattipu-outer-frame);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 15px;
+  text-align: center;
+  outline: none;
+}
+
+/* The cell a dragged icon will land in, drawn under it. Snapping that only
+ * happens on release is snapping you have to trust; showing the target
+ * cell makes it something you can see before you let go. */
+.cattipu-desktop-objects__drop-target {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  border: var(--cattipu-border-size) dashed var(--cattipu-bevel-bottom);
+  background: rgb(74 69 56 / 6%);
+}
