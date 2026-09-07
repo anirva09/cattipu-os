@@ -121,7 +121,17 @@ export interface InteractiveDesktopProps {
    * still owned by this component. Only what is drawn inside the frame
    * comes from here.
    */
-  windowContent?: Partial<Record<CattipuShellWindowId, ReactNode>>;
+  windowContent?: Partial<
+    Record<
+      CattipuShellWindowId,
+      | ReactNode
+      // Milestone 17: a window body may need the window manager - Explorer
+      // opens a project by raising Projects rather than rendering its own
+      // copy of one. Widened rather than replaced, so every existing
+      // ReactNode value still type-checks and behaves identically.
+      | ((controls: { openWindow: (id: CattipuWindowId) => void }) => ReactNode)
+    >
+  >;
   /**
    * Integration hook, added in Milestone 15 (Living Projects). Replaces
    * the Projects window body with one wired to real state, receiving the
@@ -167,6 +177,19 @@ function isLaunchableSidebarItem(
   item: CattipuSidebarItemId,
 ): item is CattipuWindowId {
   return (CATTIPU_WINDOW_IDS as readonly string[]).includes(item);
+}
+
+/** A window body is either a node or a function that wants the window
+ *  manager. Resolving it here keeps every call site unchanged. */
+function renderWindowContent(
+  content: InteractiveDesktopProps['windowContent'] extends
+    | Partial<Record<CattipuShellWindowId, infer V>>
+    | undefined
+    ? V
+    : never,
+  openWindow: (id: CattipuWindowId) => void,
+): ReactNode {
+  return typeof content === 'function' ? content({ openWindow }) : content;
 }
 
 function WorkspaceShellBody({ status }: { status: string }) {
@@ -327,9 +350,10 @@ export function InteractiveDesktop({
                 onMaximize={() => maximizeWindow(definition.id)}
                 onClose={() => closeWindow(definition.id)}
               >
-                {windowContent?.[definition.id] ?? (
-                <WorkspaceShellBody status={definition.status} />
-              )}
+                {renderWindowContent(
+                  windowContent?.[definition.id],
+                  launchWindow,
+                ) ?? <WorkspaceShellBody status={definition.status} />}
               </Window>
             </ManagedWindow>
           );

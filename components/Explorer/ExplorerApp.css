@@ -1,0 +1,291 @@
+.cattipu-explorer,
+.cattipu-explorer *,
+.cattipu-explorer *::before,
+.cattipu-explorer *::after {
+  box-sizing: border-box;
+}
+
+/* Two rows: a fixed toolbar and a body that takes what is left.
+ * `min-height: 0` on the grid AND on every pane below it is what lets the
+ * panes scroll instead of growing the window — a flex/grid child defaults
+ * to min-content, so without it `overflow-y: auto` has nothing to do and
+ * the content simply escapes the frame. */
+.cattipu-explorer {
+  display: grid;
+  grid-template-rows: var(--cattipu-explorer-toolbar-height) 1fr;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-family);
+}
+
+/* ── toolbar ──────────────────────────────────────────────────────────── */
+
+.cattipu-explorer__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--cattipu-explorer-gap);
+  min-width: 0;
+  padding: 0 var(--cattipu-explorer-pad);
+  background: var(--cattipu-cream);
+  border-bottom: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+}
+
+.cattipu-explorer__up {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font: inherit;
+  cursor: default;
+}
+
+.cattipu-explorer__up:disabled {
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-explorer__up-arrow {
+  width: 0;
+  height: 0;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid currentColor;
+  border-left: 5px solid transparent;
+}
+
+.cattipu-explorer__crumbs {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cattipu-explorer__crumb {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 180px;
+  padding: 2px 4px;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  color: var(--cattipu-outer-frame);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+.cattipu-explorer__crumb:hover {
+  background: var(--cattipu-dark-cream);
+}
+
+/* The Golden Master marks the thing you are looking at with weight and
+ * near-black ink rather than a colour. `--color-ink` is the app's existing
+ * ink token; nothing new is introduced here. */
+.cattipu-explorer__crumb[data-current='true'] {
+  color: var(--color-ink, #141110);
+  font-weight: 700;
+}
+
+.cattipu-explorer__crumb-sep {
+  flex: 0 0 auto;
+  padding: 0 2px;
+  color: var(--cattipu-bevel-bottom);
+  font-size: 13px;
+}
+
+.cattipu-explorer__search {
+  display: flex;
+  flex: 0 0 var(--cattipu-explorer-search-width);
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 6px;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-explorer__search-field {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--color-ink, #141110);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.cattipu-explorer__search-field::placeholder {
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-explorer__search-clear {
+  flex: 0 0 auto;
+  padding: 0 2px;
+  background: transparent;
+  border: 0;
+  color: var(--cattipu-outer-frame);
+  font: inherit;
+  font-size: 13px;
+  cursor: default;
+}
+
+/* ── body ─────────────────────────────────────────────────────────────── */
+
+.cattipu-explorer__body {
+  display: grid;
+  grid-template-columns:
+    var(--cattipu-explorer-tree-width)
+    var(--cattipu-explorer-divider)
+    1fr;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cattipu-explorer__tree {
+  min-width: 0;
+  min-height: 0;
+  padding: var(--cattipu-explorer-pad) 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-explorer__grid {
+  min-width: 0;
+  min-height: 0;
+  padding: var(--cattipu-explorer-pad);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  background: var(--cattipu-cream);
+  background-image: url("/assets/cattipu/engineering-paper-8px.png");
+  background-repeat: repeat;
+  background-size: 8px 8px;
+}
+
+.cattipu-explorer__found {
+  margin: 0 0 var(--cattipu-explorer-pad);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cattipu-outer-frame);
+}
+
+/* auto-fill, so the row count follows the pane width instead of a fixed
+ * column count that would clip when the window is narrowed. */
+.cattipu-explorer__items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: var(--cattipu-explorer-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A grid item's automatic minimum is min-content, so a cell whose label
+ * is one long word grows the whole track and the label is clipped rather
+ * than wrapped. `min-width: 0` lets the track hold the size it was given
+ * and hands the overflow back to the label, which wraps. */
+.cattipu-explorer__items > li {
+  min-width: 0;
+}
+
+.cattipu-explorer__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 6px 2px;
+  background: transparent;
+  border: var(--cattipu-border-size) solid transparent;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: default;
+  user-select: none;
+}
+
+.cattipu-explorer__item:hover {
+  background: rgb(74 69 56 / 6%);
+}
+
+.cattipu-explorer__item[data-selected='true'] {
+  background: var(--cattipu-dark-cream);
+  border-color: var(--cattipu-outer-frame);
+}
+
+.cattipu-explorer__item-plate {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+}
+
+.cattipu-explorer__item-label {
+  /* An explicit width, not max-width: a shrink-to-fit box has no definite
+   * width to wrap against, which is the other half of the clipping above. */
+  width: 100%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  max-width: 100%;
+  max-height: 32px;
+  overflow: hidden;
+  color: var(--color-ink, #141110);
+  font-size: 12px;
+  line-height: 15px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Search results say where they were found; a hit three folders down is
+ * useless if it does not. */
+.cattipu-explorer__item-where {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--cattipu-bevel-bottom);
+  font-size: 10px;
+  line-height: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cattipu-explorer__rename {
+  width: 100%;
+  padding: 0 2px;
+  background: var(--cattipu-cream);
+  border: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  border-radius: 0;
+  color: var(--color-ink, #141110);
+  font: inherit;
+  font-size: 12px;
+  line-height: 15px;
+  text-align: center;
+  outline: none;
+}
+
+.cattipu-explorer__empty {
+  margin: var(--cattipu-explorer-pad) 0 0;
+  font-size: 12px;
+  color: var(--cattipu-bevel-bottom);
+}

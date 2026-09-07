@@ -5,7 +5,11 @@ import { APP_MAP } from "@/lib/apps";
 import { Window } from "./LegacyWindow";
 import { ProjectsApp } from "./ProjectsApp";
 import { PlaceholderApp } from "./PlaceholderApp";
-import { FileExplorerApp } from "./FileExplorerApp";
+// Milestone 17: the mock Explorer this file used was deleted with the
+// static filesystem it displayed. This legacy manager is not mounted
+// anywhere (CattipuShell drives the shell), so it is repointed at the
+// real Explorer rather than deleted in an Explorer sprint.
+import { ExplorerApp } from "@/components/Explorer";
 import { SettingsApp } from "./SettingsApp";
 import { AboutApp } from "./AboutApp";
 import { ArchitectApp } from "../Architect/ArchitectApp";
@@ -22,7 +26,7 @@ export function WindowManager() {
             {win.appId === "home" || win.appId === "projects" ? (
               <ProjectsApp />
             ) : win.appId === "explorer" ? (
-              <FileExplorerApp />
+              <ExplorerApp />
             ) : win.appId === "settings" ? (
               <SettingsApp />
             ) : win.appId === "about" ? (

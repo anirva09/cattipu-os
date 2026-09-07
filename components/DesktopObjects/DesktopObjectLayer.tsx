@@ -16,16 +16,16 @@ import type { ShellIconName } from "../PixelIcon";
 import {
   DESKTOP_GRID,
   cellToPixels,
+  desktopObjects,
   objectLabel,
   pixelsToCell,
   projectsWithoutShortcut,
   sameCell,
-  visibleObjects,
-  type DesktopObject,
   type GridCell,
+  type OsObject,
 } from "@/lib/os/desktop";
 import { orderProjects } from "@/lib/os/projects";
-import { useDesktopStore } from "@/store/useDesktopStore";
+import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { useProjectStore } from "@/store/useProjectStore";
 
 import "./DesktopObjectLayer.css";
@@ -80,19 +80,26 @@ export interface DesktopObjectLayerProps {
   onOpenWindow: (id: "projects" | "explorer") => void;
 }
 
-function iconFor(object: DesktopObject): ShellIconName {
-  return object.kind === "folder" ? "folder" : "projects";
+function iconFor(object: OsObject): ShellIconName {
+  // Milestone 17 moved shortcuts from the `projects` mark to `openfile` —
+  // the folder mark with an arrow leaving it, which is what a shortcut is.
+  // Explorer lists projects AND shortcuts in the same grid, so they need
+  // separate silhouettes there; one object type with two different marks
+  // depending on which window you are looking at would be worse than
+  // either choice. The empty desktop, which is what the Golden Master
+  // locks, is unaffected.
+  return object.kind === "folder" ? "folder" : "openfile";
 }
 
 export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
 
-  const objects = useDesktopStore((s) => s.objects);
-  const createFolder = useDesktopStore((s) => s.createFolder);
-  const createProjectShortcut = useDesktopStore((s) => s.createProjectShortcut);
-  const renameObject = useDesktopStore((s) => s.renameObject);
-  const removeObject = useDesktopStore((s) => s.removeObject);
-  const moveTo = useDesktopStore((s) => s.moveTo);
+  const objects = useFilesystemStore((s) => s.objects);
+  const createFolder = useFilesystemStore((s) => s.createFolder);
+  const createProjectShortcut = useFilesystemStore((s) => s.createProjectShortcut);
+  const renameObject = useFilesystemStore((s) => s.renameObject);
+  const removeObject = useFilesystemStore((s) => s.removeObject);
+  const moveTo = useFilesystemStore((s) => s.moveTo);
 
   const projects = useProjectStore((s) => s.projects);
   const openProject = useProjectStore((s) => s.openProject);
@@ -103,8 +110,12 @@ export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
   const [drag, setDrag] = useState<DragState | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
 
+  // The desktop draws the objects at the OS ROOT. Anything inside a
+  // folder lives in Explorer and nowhere else - that is the whole of
+  // "appears on the desktop if it belongs there", and it is one filter
+  // over the same array Explorer reads, not a synchronised copy.
   const shown = useMemo(
-    () => visibleObjects(objects, projects),
+    () => desktopObjects(objects, projects),
     [objects, projects],
   );
 
@@ -118,7 +129,7 @@ export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
 
   /** Where a dragged object would land if released now. */
   const dropCell = useCallback(
-    (object: DesktopObject, state: DragState): GridCell => {
+    (object: OsObject, state: DragState): GridCell => {
       const base = cellToPixels(object.position);
       return pixelsToCell(base.x + state.dx, base.y + state.dy, bounds());
     },
@@ -129,7 +140,7 @@ export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
 
   const handlePointerDown = (
     event: ReactPointerEvent<HTMLDivElement>,
-    object: DesktopObject,
+    object: OsObject,
   ) => {
     if (event.button !== 0 || renamingId === object.id) return;
     event.stopPropagation();
@@ -159,7 +170,7 @@ export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
 
   const handlePointerUp = (
     event: ReactPointerEvent<HTMLDivElement>,
-    object: DesktopObject,
+    object: OsObject,
   ) => {
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (drag.active) {
@@ -172,7 +183,7 @@ export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
   // ── open ──────────────────────────────────────────────────────────────
 
   const open = useCallback(
-    (object: DesktopObject) => {
+    (object: OsObject) => {
       if (object.kind === "folder") {
         // Folders have no window of their own yet, and inventing one
         // during this sprint would be a feature addition. Explorer is the
@@ -196,7 +207,7 @@ export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
    * anywhere else. There is one name, it lives on the project, and this is
    * an edit of it.
    */
-  const commitRename = (object: DesktopObject, value: string) => {
+  const commitRename = (object: OsObject, value: string) => {
     const next = value.trim();
     setRenamingId(null);
     if (!next) return;
@@ -275,7 +286,7 @@ export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
   }, [createFolder, createProjectShortcut, objects, projects]);
 
   const objectItems = useCallback(
-    (object: DesktopObject): ContextMenuItem[] => {
+    (object: OsObject): ContextMenuItem[] => {
       if (object.kind === "folder") {
         return [
           { id: "open", label: "Open", icon: "openfile", onSelect: () => open(object) },
@@ -392,6 +403,10 @@ export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
                 onPointerDown={(event) => event.stopPropagation()}
                 onBlur={(event) => commitRename(object, event.currentTarget.value)}
                 onKeyDown={(event) => {
+                  // The icon this input sits inside also listens for Enter,
+                  // and opens the object. Without stopping the event here,
+                  // committing a rename immediately opens what was renamed.
+                  event.stopPropagation();
                   if (event.key === "Enter") commitRename(object, event.currentTarget.value);
                   if (event.key === "Escape") setRenamingId(null);
                 }}
