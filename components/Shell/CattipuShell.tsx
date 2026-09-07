@@ -165,8 +165,18 @@ export function CattipuShell() {
       // Milestone 16. The layer owns desktop objects; the desktop owns the
       // window manager, so opening a shortcut's project comes back through
       // this callback rather than through a second copy of window state.
-      desktopLayer={({ openWindow }) => (
-        <DesktopObjectLayer onOpenWindow={openWindow} />
+      desktopLayer={({
+        openWindow,
+        arrangeWindows,
+        restoreAllWindows,
+        visibleWindowCount,
+      }) => (
+        <DesktopObjectLayer
+          onOpenWindow={openWindow}
+          onArrangeWindows={arrangeWindows}
+          onRestoreAllWindows={restoreAllWindows}
+          visibleWindowCount={visibleWindowCount}
+        />
       )}
     />
   );

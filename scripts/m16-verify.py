@@ -123,9 +123,15 @@ with sync_playwright() as p:
     open_desktop_menu(pg, 40, 300)
     items = menu_labels(pg)
     labels = [i["label"] for i in items]
-    check("desktop menu offers the five specified entries",
-          labels == ["New Folder", "New Project Shortcut", "Paste", "Refresh",
-                     "Change Wallpaper"], str(labels))
+    # M16's five, in order, still present. Checked as a SUBSEQUENCE rather
+    # than as the whole list because M18 adds "Window" to the same menu —
+    # a later milestone extending this menu is expected, one that reorders
+    # or drops an entry is not.
+    M16_ENTRIES = ["New Folder", "New Project Shortcut", "Paste", "Refresh",
+                   "Change Wallpaper"]
+    it = iter(labels)
+    check("desktop menu offers the five specified entries, in order",
+          all(e in it for e in M16_ENTRIES), str(labels))
     check("Paste is present but disabled",
           any(i["label"] == "Paste" and i["disabled"] for i in items))
     pg.screenshot(path=f"{OUT}/Desktop_ContextMenu.png")

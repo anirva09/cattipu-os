@@ -158,3 +158,21 @@
   color: var(--cattipu-outer-frame);
   white-space: nowrap;
 }
+
+/* Milestone 18 — the snap preview.
+ *
+ * Deliberately the same two cues as the desktop's drop target: a dashed
+ * 2px frame in the shell's own border colour over a barely-tinted fill.
+ * A snap preview and a drop target are the same idea — "this is where it
+ * will land" — and giving them two different appearances would teach
+ * that they are different things.
+ *
+ * Above every window (they run from z-index 1 upward) but inside the
+ * window layer, so it can never cover the rail or the status bar. */
+.cattipu-interactive-desktop__snap-preview {
+  position: absolute;
+  z-index: 9000;
+  pointer-events: none;
+  border: var(--cattipu-border-size) dashed var(--cattipu-outer-frame);
+  background: rgb(74 69 56 / 8%);
+}
