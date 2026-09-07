@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { InteractiveDesktop } from "@/components/InteractiveDesktop";
-import type { CattipuShellWindowId } from "@/components/InteractiveDesktop";
 import { ArchitectApp } from "@/components/Architect/ArchitectApp";
 import { DesktopObjectLayer } from "@/components/DesktopObjects";
-import { FileExplorerApp } from "@/components/Window/FileExplorerApp";
+import { ExplorerApp } from "@/components/Explorer";
 import { SettingsApp } from "@/components/Window/SettingsApp";
 import { PlaceholderApp } from "@/components/Window/PlaceholderApp";
 import { APP_MAP } from "@/lib/apps";
@@ -77,9 +76,18 @@ function useDateTimeText(): string {
  * through to PlaceholderApp for it and so does this, rather than inventing
  * a Memory feature during an integration sprint.
  */
-const WINDOW_CONTENT: Partial<Record<CattipuShellWindowId, React.ReactNode>> = {
+const WINDOW_CONTENT: NonNullable<
+  React.ComponentProps<typeof InteractiveDesktop>["windowContent"]
+> = {
   architect: <ArchitectApp />,
-  explorer: <FileExplorerApp />,
+  // Milestone 17 - Explorer is now the OS's real project browser and needs
+  // the window manager to open a project, so it arrives as a function.
+  // The other three are plain nodes, exactly as before.
+  explorer: ({ openWindow }) => (
+    <ExplorerApp
+      onOpenWindow={(id) => openWindow(id)}
+    />
+  ),
   settings: <SettingsApp />,
   memory: <PlaceholderApp app={APP_MAP.memory} />,
 };

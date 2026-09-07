@@ -29,7 +29,7 @@ import {
   projectsWithoutShortcut,
   sameCell,
   visibleObjects,
-  type DesktopObject,
+  type OsObject,
 } from "../desktop";
 import { createProject } from "../../project/types";
 import type { CattipuProject } from "../../project/types";
@@ -38,10 +38,11 @@ const tests: Array<[string, () => void]> = [];
 const test = (name: string, fn: () => void) => tests.push([name, fn]);
 
 let seq = 0;
-const folder = (col: number, row: number, label = `F${(seq += 1)}`): DesktopObject => ({
+const folder = (col: number, row: number, label = `F${(seq += 1)}`): OsObject => ({
   id: `f-${seq}`,
   kind: "folder",
   label,
+  parentId: null,
   position: { col, row },
   createdAt: "2026-01-01T00:00:00.000Z",
 });
@@ -51,11 +52,12 @@ const shortcut = (
   col: number,
   row: number,
   label = "",
-): DesktopObject => ({
+): OsObject => ({
   id: `s-${(seq += 1)}`,
   kind: "project-shortcut",
   label,
   projectId,
+  parentId: null,
   position: { col, row },
   createdAt: "2026-01-01T00:00:00.000Z",
 });
@@ -189,7 +191,7 @@ test("a project that already has a shortcut is not offered a second one", () => 
 // ── naming ──────────────────────────────────────────────────────────────
 
 test("folders never share a name on one desktop", () => {
-  let objects: DesktopObject[] = [];
+  let objects: OsObject[] = [];
   const names: string[] = [];
   for (let i = 0; i < 4; i += 1) {
     const name = nextFolderName(objects);
