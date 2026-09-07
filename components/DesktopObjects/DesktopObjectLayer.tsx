@@ -78,6 +78,12 @@ export interface DesktopObjectLayerProps {
    *  the window manager inside InteractiveDesktop, so it arrives as a
    *  callback rather than being reached for here. */
   onOpenWindow: (id: "projects" | "explorer") => void;
+  /** Milestone 18. Cascade and Tile act on the window manager, which
+   *  lives in InteractiveDesktop; this layer only offers the commands. */
+  onArrangeWindows?: (layout: "cascade" | "tile") => void;
+  onRestoreAllWindows?: () => void;
+  /** Used only to disable menu entries that would do nothing. */
+  visibleWindowCount?: number;
 }
 
 function iconFor(object: OsObject): ShellIconName {
@@ -91,7 +97,12 @@ function iconFor(object: OsObject): ShellIconName {
   return object.kind === "folder" ? "folder" : "openfile";
 }
 
-export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
+export function DesktopObjectLayer({
+  onOpenWindow,
+  onArrangeWindows,
+  onRestoreAllWindows,
+  visibleWindowCount = 0,
+}: DesktopObjectLayerProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const objects = useFilesystemStore((s) => s.objects);
@@ -276,6 +287,38 @@ export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
       },
       { kind: "separator", id: "sep-2" },
       {
+        // Milestone 18. The workspace commands live here rather than in a
+        // menu bar: the top bar is a frozen component and adding one
+        // would change the Golden Master, and a right-click on the
+        // desktop is where an OS keeps these anyway.
+        id: "window",
+        label: "Window",
+        icon: "explorer",
+        // Nothing to arrange is not the same as the feature being
+        // missing, so the row stays and dims.
+        disabled: visibleWindowCount === 0,
+        children: [
+          {
+            id: "cascade",
+            label: "Cascade",
+            onSelect: () => onArrangeWindows?.("cascade"),
+          },
+          {
+            id: "tile",
+            label: "Tile",
+            onSelect: () => onArrangeWindows?.("tile"),
+          },
+          { kind: "separator", id: "win-sep" },
+          {
+            id: "restore-all",
+            label: "Restore All",
+            hint: "SIZE + PLACE + ORDER",
+            onSelect: () => onRestoreAllWindows?.(),
+          },
+        ],
+      },
+      { kind: "separator", id: "sep-3" },
+      {
         id: "wallpaper",
         label: "Change Wallpaper",
         icon: "canvas",
@@ -283,7 +326,15 @@ export function DesktopObjectLayer({ onOpenWindow }: DesktopObjectLayerProps) {
         hint: "M19",
       },
     ];
-  }, [createFolder, createProjectShortcut, objects, projects]);
+  }, [
+    createFolder,
+    createProjectShortcut,
+    objects,
+    onArrangeWindows,
+    onRestoreAllWindows,
+    projects,
+    visibleWindowCount,
+  ]);
 
   const objectItems = useCallback(
     (object: OsObject): ContextMenuItem[] => {

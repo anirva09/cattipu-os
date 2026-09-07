@@ -34,7 +34,13 @@ import {
 import {
   CATTIPU_WINDOW_IDS,
   type CattipuWindowId,
+  type WindowArrangement,
 } from '../WindowManager/windowManager.reducer';
+import {
+  snapRect,
+  type SnapRegion,
+  type WorkspaceBox,
+} from '../../lib/os/workspace';
 import { useWindowManager } from '../WindowManager/useWindowManager';
 
 import '../../design-system/bevel.css';
@@ -167,6 +173,18 @@ export interface InteractiveDesktopProps {
    */
   desktopLayer?: (controls: {
     openWindow: (id: CattipuWindowId) => void;
+    /**
+     * Milestone 18. The desktop's own context menu is where Window ▸
+     * Cascade / Tile / Restore All live: the top bar is a frozen
+     * component and bolting a menu bar onto it would change the Golden
+     * Master, and a right-click on the desktop is where an OS puts
+     * workspace commands anyway.
+     */
+    arrangeWindows: (layout: WindowArrangement) => void;
+    restoreAllWindows: () => void;
+    /** How many windows an arrangement would actually move. The menu
+     *  disables itself rather than offering a no-op. */
+    visibleWindowCount: number;
   }) => ReactNode;
 }
 
@@ -222,7 +240,15 @@ export function InteractiveDesktop({
     minimizeWindow,
     maximizeWindow,
     closeWindow,
+    snapWindow,
+    unsnapWindow,
+    restoreAllWindows,
+    arrangeWindows,
   } = useWindowManager();
+
+  // Milestone 18. Which region a drag is currently arming, so the
+  // workspace can show where the window will land before it is dropped.
+  const [snapPreview, setSnapPreview] = useState<SnapRegion | null>(null);
 
   const windowLayerRef = useRef<HTMLDivElement | null>(null);
   const [windowBounds, setWindowBounds] = useState<WindowBounds>(
@@ -254,6 +280,62 @@ export function InteractiveDesktop({
     observer.observe(layer);
     return () => observer.disconnect();
   }, []);
+
+  /**
+   * Milestone 18 — keyboard access to the workspace commands.
+   *
+   * Not a convenience. Cascade, Tile and Restore All live in the
+   * desktop's context menu, and a tiled workspace has no desktop left to
+   * right-click: the arrangement that most needs undoing is the one that
+   * hides the way to undo it. The top bar is a frozen component, so a
+   * menu bar is not available; a keyboard route adds no chrome and is
+   * always reachable.
+   *
+   * Ctrl+Alt rather than Ctrl alone, because Ctrl+T and Ctrl+R belong to
+   * the browser and taking them would be worse than having no shortcut.
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!event.ctrlKey || !event.altKey || event.metaKey) return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const layer = windowLayerRef.current;
+      const box: WorkspaceBox = layer
+        ? {
+            width: Math.round(layer.getBoundingClientRect().width),
+            height: Math.round(layer.getBoundingClientRect().height),
+          }
+        : windowBounds;
+
+      switch (event.key.toLowerCase()) {
+        case 'c':
+          event.preventDefault();
+          arrangeWindows('cascade', box);
+          break;
+        case 't':
+          event.preventDefault();
+          arrangeWindows('tile', box);
+          break;
+        case 'r':
+          event.preventDefault();
+          restoreAllWindows();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [arrangeWindows, restoreAllWindows, windowBounds]);
 
   const activeSidebarItem = useMemo<CattipuSidebarItemId>(() => {
     return state.activeWindowId ?? 'home';
@@ -307,7 +389,31 @@ export function InteractiveDesktop({
         className="cattipu-interactive-desktop__window-layer"
         aria-label="Desktop workspace"
       >
-        {desktopLayer?.({ openWindow: launchWindow })}
+        {desktopLayer?.({
+          openWindow: launchWindow,
+          arrangeWindows: (layout) =>
+            arrangeWindows(layout, windowBounds as WorkspaceBox),
+          restoreAllWindows,
+          visibleWindowCount: CATTIPU_WINDOW_IDS.filter(
+            (id) =>
+              state.windows[id].open && state.windows[id].mode !== 'minimized',
+          ).length,
+        })}
+
+        {snapPreview && (
+          <div
+            className="cattipu-interactive-desktop__snap-preview"
+            data-testid="snap-preview"
+            data-region={snapPreview}
+            aria-hidden="true"
+            style={{
+              left: snapRect(snapPreview, windowBounds).x,
+              top: snapRect(snapPreview, windowBounds).y,
+              width: snapRect(snapPreview, windowBounds).width,
+              height: snapRect(snapPreview, windowBounds).height,
+            }}
+          />
+        )}
 
         <ManagedWindow
           id="projects"
@@ -316,6 +422,9 @@ export function InteractiveDesktop({
           bounds={windowBounds}
           onFocus={() => focusWindow('projects')}
           onMove={(position) => moveWindow('projects', position)}
+          onSnapPreview={setSnapPreview}
+          onSnap={(region) => snapWindow('projects', region)}
+          onUnsnap={(position) => unsnapWindow('projects', position)}
         >
           {renderProjectsWindow?.({
             onMinimize: () => minimizeWindow('projects'),
@@ -342,6 +451,9 @@ export function InteractiveDesktop({
               bounds={windowBounds}
               onFocus={() => focusWindow(definition.id)}
               onMove={(position) => moveWindow(definition.id, position)}
+              onSnapPreview={setSnapPreview}
+              onSnap={(region) => snapWindow(definition.id, region)}
+              onUnsnap={(position) => unsnapWindow(definition.id, position)}
             >
               <Window
                 title={definition.title}

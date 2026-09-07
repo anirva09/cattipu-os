@@ -9,6 +9,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { createPortal } from "react-dom";
 
 import { cattipuTokens } from "../../design-system/tokens";
 import { ShellIcon } from "../PixelIcon";
@@ -37,7 +38,18 @@ import "./ContextMenu.css";
  *    with unreachable items. Measuring costs one layout pass and can
  *    never be wrong.
  *
- * 2. Nested choices DRILL DOWN in place rather than flying out sideways.
+ * 2. The menu is rendered through a PORTAL to <body>.
+ *
+ *    `position: fixed` and a high z-index are not enough on their own: a
+ *    fixed element is still confined to the stacking context it is
+ *    declared in, and this menu is opened from inside the desktop layer
+ *    (z-index 0) and from inside managed windows (z-index 1 upward).
+ *    Left in place it renders UNDER any window stacked above its host —
+ *    the menu is visible, clickable-looking, and every click lands on the
+ *    window covering it. The portal takes it out of every one of those
+ *    contexts, which is the only way "always on top" can be true.
+ *
+ * 3. Nested choices DRILL DOWN in place rather than flying out sideways.
  *    A hover-triggered flyout needs an intent timer, a safe-triangle, and
  *    a story for touch input; a drill-down needs a back row. The list of
  *    projects to make a shortcut for is the only nesting the desktop
@@ -145,6 +157,12 @@ export function ContextMenu({ x, y, title, items, onClose }: ContextMenuProps) {
     rootRef.current?.focus({ preventScroll: true });
   }, []);
 
+  // Portals need a DOM, so the menu renders nothing until it is mounted.
+  // It only ever exists in response to a pointer event, so there is no
+  // first-paint cost to this.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const select = useCallback(
     (item: ContextMenuAction) => {
       if (item.disabled) return;
@@ -169,7 +187,9 @@ export function ContextMenu({ x, y, title, items, onClose }: ContextMenuProps) {
     [position.left, position.top],
   );
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       ref={rootRef}
       className="cattipu-context-menu cattipu-edge--outer cattipu-bevel--raised"
@@ -234,6 +254,7 @@ export function ContextMenu({ x, y, title, items, onClose }: ContextMenuProps) {
           ),
         )}
       </ul>
-    </div>
+    </div>,
+    document.body,
   );
 }

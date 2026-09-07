@@ -8,8 +8,10 @@ import {
   serializeWindowManagerState,
   windowManagerReducer,
   type CattipuWindowId,
+  type WindowArrangement,
   type WindowPosition,
 } from './windowManager.reducer';
+import type { SnapRegion, WorkspaceBox } from '../../lib/os/workspace';
 
 export const CATTIPU_WINDOW_SESSION_KEY =
   'cattipu-os:window-manager:v1';
@@ -81,6 +83,40 @@ export function useWindowManager() {
     dispatch({ type: 'close', id });
   }, []);
 
+  // ── Milestone 18 ────────────────────────────────────────────────────
+  // All of these go through the SAME reducer and the same state. There
+  // is no second store for snapping or arranging; a snapped window is
+  // one of these windows with a region set on it.
+
+  const snapWindow = useCallback(
+    (id: CattipuWindowId, region: SnapRegion) => {
+      dispatch({ type: 'snap', id, region });
+    },
+    [],
+  );
+
+  const unsnapWindow = useCallback(
+    (id: CattipuWindowId, position: WindowPosition) => {
+      dispatch({ type: 'unsnap', id, position });
+    },
+    [],
+  );
+
+  const restoreWindow = useCallback((id: CattipuWindowId) => {
+    dispatch({ type: 'restore', id });
+  }, []);
+
+  const restoreAllWindows = useCallback(() => {
+    dispatch({ type: 'restoreAll' });
+  }, []);
+
+  const arrangeWindows = useCallback(
+    (layout: WindowArrangement, bounds: WorkspaceBox) => {
+      dispatch({ type: 'arrange', layout, bounds });
+    },
+    [],
+  );
+
   return {
     state,
     sessionHydrated,
@@ -90,5 +126,10 @@ export function useWindowManager() {
     minimizeWindow,
     maximizeWindow,
     closeWindow,
+    snapWindow,
+    unsnapWindow,
+    restoreWindow,
+    restoreAllWindows,
+    arrangeWindows,
   };
 }
