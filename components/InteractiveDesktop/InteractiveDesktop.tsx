@@ -139,6 +139,25 @@ export interface InteractiveDesktopProps {
     onMaximize: () => void;
     onClose: () => void;
   }) => ReactNode;
+  /**
+   * Integration hook, added in Milestone 16 (Living Desktop). Renders a
+   * layer inside the window layer, beneath every managed window — the
+   * desktop surface itself, where icons live.
+   *
+   * It is a slot rather than a feature because desktop objects are a
+   * repository concern: they read the project store, they open windows by
+   * name, and neither belongs inside a component whose whole value is that
+   * it knows nothing about this application. Omitted, the window layer is
+   * exactly the engineering-paper background it was signed off as, which
+   * is what keeps the Golden Master render reproducible.
+   *
+   * `openWindow` is handed down because the window manager lives here. A
+   * shortcut has to be able to raise Projects, and reaching for a second
+   * window manager instance to do it is how two of them get out of step.
+   */
+  desktopLayer?: (controls: {
+    openWindow: (id: CattipuWindowId) => void;
+  }) => ReactNode;
 }
 
 type InteractiveDesktopStyle = CSSProperties &
@@ -170,6 +189,7 @@ export function InteractiveDesktop({
   style,
   windowContent,
   renderProjectsWindow,
+  desktopLayer,
 }: InteractiveDesktopProps) {
   const {
     state,
@@ -264,6 +284,8 @@ export function InteractiveDesktop({
         className="cattipu-interactive-desktop__window-layer"
         aria-label="Desktop workspace"
       >
+        {desktopLayer?.({ openWindow: launchWindow })}
+
         <ManagedWindow
           id="projects"
           windowState={state.windows.projects}
