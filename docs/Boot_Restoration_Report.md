@@ -160,9 +160,27 @@ Nothing outside `app/page.tsx` changed, so PixelForge, the Window
 Manager, the Living Desktop, M15–M19, responsive behaviour and the shared
 OS state are untouched by construction, and the four harnesses confirm it.
 
+## One thing worth naming, deliberately not changed
+
+`Boot_600ms.png` catches the overlay **mid fade-in**, with the shell showing
+through it. That is the boot component's own declared animation —
+`initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration:
+0.4 }}` on line 73 of `BootScreen.tsx`, untouched since the original. It
+always faded in over whatever shell was mounted underneath; the difference
+now is that the shell underneath is the busy v0.9 desktop rather than the
+sparse legacy one, so the same 400ms reads louder.
+
+It is left exactly as written. "Copy the existing production implementation
+exactly" rules out shortening that fade, and the shell would have to be
+gated behind `phase === "booted"` to hide it — a startup-flow change, not a
+restoration. Say the word and it is a one-line change; it is not one I will
+make inside a patch that says it changes nothing.
+
 ## Screenshots
 
-- `Boot_600ms.png` — logo up, bar not yet started
-- `Boot_1800ms.png` — INITIALIZING, bar part-filled
+In `docs/boot/`:
+
+- `Boot_600ms.png` — logo up, bar not yet started, overlay still fading in
+- `Boot_1800ms.png` — INITIALIZING, bar part-filled, fully opaque
 - `Boot_3000ms.png` — READY, bar full, skip prompt
 - `Boot_4200ms.png` — the desktop, after hand-off
