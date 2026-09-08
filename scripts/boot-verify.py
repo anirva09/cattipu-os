@@ -39,7 +39,13 @@ PROBE = """() => {
     return bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
   }).length;
   const stage = boot ? [...boot.querySelectorAll('p')].map(p => p.textContent.trim())[0] : null;
-  const skip = boot ? [...boot.querySelectorAll('button')].map(b => b.textContent.trim())[0] : null;
+  // The skip prompt is in the DOM the whole time — BootScreen animates its
+  // OPACITY on `done`, it does not mount it. Asserting on the text alone
+  // passes identically before and after the bar fills, which is no
+  // assertion at all, so the opacity comes back too.
+  const skipEl = boot ? [...boot.querySelectorAll('button')][0] : null;
+  const skip = skipEl ? skipEl.textContent.trim() : null;
+  const skipOpacity = skipEl ? +getComputedStyle(skipEl).opacity : null;
   const logo = boot ? boot.querySelector('img, svg') : null;
   return {
     bootPresent: !!boot,
@@ -48,6 +54,7 @@ PROBE = """() => {
     filled,
     stage,
     skip,
+    skipOpacity,
     logo: !!logo,
     logoBox: logo ? (r => ({w: Math.round(r.width), h: Math.round(r.height)}))(logo.getBoundingClientRect()) : null,
     bg: boot ? getComputedStyle(boot).backgroundColor : null,
@@ -71,9 +78,46 @@ with sync_playwright() as p:
     pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
 
+    # BootScreen's timers start when the component MOUNTS, not when the
+    # document commits, and hydration sits between the two — 250ms on one
+    # run, 90ms on the next. Measuring the bar against navigation time
+    # therefore measures START_DELAY + BAR_DURATION + however long hydration
+    # took today, and an assertion written against 2700ms passes or fails on
+    # machine load rather than on the boot screen. It did exactly that:
+    # 20/20 at 3000ms one run, 19/20 the next, with nothing changed.
+    #
+    # So the page stamps the three moments itself, off rAF, each against the
+    # boot's own mount. The milestone table below still samples on
+    # navigation time because that is what a person watching the screen
+    # experiences; the timing checks read these stamps, because that is what
+    # the constants in BootScreen.tsx actually describe.
+    pg.add_init_script("""
+      window.__t0 = Date.now();
+      window.__bootSeen = null;   // overlay first in the DOM = mount
+      window.__fullAt = null;     // all 20 segments coloured
+      window.__goneAt = null;     // overlay removed after having been seen
+      (function watch() {
+        const boot = document.querySelector('.fixed.inset-0.z-50');
+        const now = Date.now();
+        if (boot) {
+          if (window.__bootSeen === null) window.__bootSeen = now;
+          if (window.__fullAt === null) {
+            const segs = [...boot.querySelectorAll('.h-3\\\\.5')];
+            const filled = segs.filter(s => {
+              const bg = getComputedStyle(s).backgroundColor;
+              return bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
+            }).length;
+            if (segs.length && filled === segs.length) window.__fullAt = now;
+          }
+        } else if (window.__bootSeen !== null && window.__goneAt === null) {
+          window.__goneAt = now;
+        }
+        requestAnimationFrame(watch);
+      })();
+    """)
+
     # Sample the boot from first paint through hand-off.
     pg.goto(URL, wait_until="commit")
-    pg.evaluate("() => { window.__t0 = Date.now(); }")
     timeline = []
     shots = {}
     # Screenshots wait for animations to settle and can take a second or
@@ -134,9 +178,44 @@ with sync_playwright() as p:
     check("the bar fills monotonically, never backwards", monotonic, str(fills))
     check("the bar has not started before START_DELAY",
           at[200]["filled"] == 0, f"{at[200]['filled']} at 200ms (START_DELAY={START_DELAY})")
-    check("the bar is full by START_DELAY + BAR_DURATION",
-          at[3000]["filled"] == TOTAL_SEGMENTS,
-          f"{at[3000]['filled']}/{TOTAL_SEGMENTS} at 3000ms (full at {START_DELAY+BAR_DURATION})")
+
+    # Measured from the boot's own mount, so these test BootScreen's
+    # constants rather than today's hydration cost.
+    #
+    # The tolerance is deliberately ASYMMETRIC, because the two directions
+    # are not the same finding. The bar is driven by twenty setTimeouts
+    # competing with hydration of a heavy shell, so it runs a little LATE —
+    # measured at mount+2938 against a declared 2700, about 9% drift, and it
+    # can only ever drift one way. That is main-thread contention, not a
+    # boot defect. Finishing EARLY cannot happen by contention at all; it
+    # means a constant changed. So: early is fenced tight, late is given
+    # room. A 250ms symmetric window passed at 238ms, which is a test that
+    # was going to fail on someone else's machine for no reason.
+    #
+    # The slack is still far short of hiding a real change: halving
+    # BAR_DURATION completes at ~mount+1600 and trips the early fence,
+    # doubling it completes at ~mount+5100 and trips the late one.
+    EARLY_FENCE = 50
+    LATE_SLACK = 600
+    stamps = pg.evaluate(
+        "() => ({seen: window.__bootSeen, full: window.__fullAt, gone: window.__goneAt, t0: window.__t0})")
+    mount_delay = stamps["seen"] - stamps["t0"]
+    full_after_mount = stamps["full"] - stamps["seen"]
+    gone_after_mount = stamps["gone"] - stamps["seen"]
+    print(f"\n    hydration {mount_delay}ms   bar full at mount+{full_after_mount}ms   "
+          f"boot gone at mount+{gone_after_mount}ms")
+
+    def on_schedule(measured, declared):
+        return declared - EARLY_FENCE <= measured <= declared + LATE_SLACK
+
+    check("the bar completes at START_DELAY + BAR_DURATION after mount",
+          on_schedule(full_after_mount, START_DELAY + BAR_DURATION),
+          f"full at mount+{full_after_mount}ms (declared {START_DELAY+BAR_DURATION}, "
+          f"window {START_DELAY+BAR_DURATION-EARLY_FENCE}..{START_DELAY+BAR_DURATION+LATE_SLACK})")
+    check("the boot hands off at EXIT_DELAY + the exit animation after mount",
+          on_schedule(gone_after_mount, EXIT_DELAY + EXIT_ANIM),
+          f"gone at mount+{gone_after_mount}ms (declared {EXIT_DELAY+EXIT_ANIM}, "
+          f"window {EXIT_DELAY+EXIT_ANIM-EARLY_FENCE}..{EXIT_DELAY+EXIT_ANIM+LATE_SLACK})")
 
     # ── the staged copy ──────────────────────────────────────────────────
     stages = [d["stage"] for d in timeline if d["bootPresent"] and d["stage"]]
@@ -144,13 +223,17 @@ with sync_playwright() as p:
           any("INITIALIZING" in s for s in stages)
           and any("LOADING MODULES" in s for s in stages)
           and any("READY" in s for s in stages), str(stages))
-    check("the skip prompt appears once the bar is full",
-          at[3000]["skip"] == "PRESS ANY KEY TO CONTINUE", str(at[3000]["skip"]))
+    check("the skip prompt is hidden while the bar is still filling, and shown once it is full",
+          at[1800]["skip"] == "PRESS ANY KEY TO CONTINUE"
+          and at[1800]["skipOpacity"] < 0.1
+          and at[3400]["skipOpacity"] > 0.9,
+          f"opacity {at[1800]['skipOpacity']} at 1800ms (filling), "
+          f"{at[3400]['skipOpacity']} at 3400ms (full)")
 
     # ── hand-off ─────────────────────────────────────────────────────────
-    check("the boot is gone after EXIT_DELAY + the exit animation",
+    check("the desktop is up within 4.2s of navigation, hydration included",
           not at[4200]["bootPresent"],
-          f"still present at 4200ms (expected gone by {EXIT_DELAY + EXIT_ANIM})")
+          f"boot present at 4200ms: {at[4200]['bootPresent']}")
     check("the desktop is underneath and remains after hand-off",
           at[4200]["shellPresent"] and at[6000]["shellPresent"]
           and not at[6000]["bootPresent"]

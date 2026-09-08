@@ -3,7 +3,7 @@
 **Result:** the boot screen's implementation was never changed — every
 file is byte-identical to the original. It had been **invisible since
 M-series integration**, painted over by the shell mounted underneath it.
-One wrapper in `app/page.tsx` restores it. 16/16 boot checks pass.
+One wrapper in `app/page.tsx` restores it. 17/17 boot checks pass.
 
 ---
 
@@ -127,7 +127,7 @@ t= 6000ms  desktop
 | **boot is what is actually painted** | `topAtCentre = boot` at 600ms and 1800ms |
 | logo | renders, 223×248 |
 | progress behaviour | 20 segments, fills monotonically, never backwards |
-| timing | bar idle before 500ms, full by 2700ms, gone by 3700ms |
+| timing | bar idle before 500ms; full at mount+2,999ms and gone at mount+3,977ms against declared 2,700 and 3,700 |
 | typography / staged copy | INITIALIZING → LOADING MODULES → READY |
 | colors | background `#e7d7c3`, the app's cream boot surface |
 | transitions | fade in to opacity 1; exits with the scale/blur transition |
@@ -136,13 +136,45 @@ t= 6000ms  desktop
 | skip path | a keypress ends the boot early |
 | errors | none during the whole sequence |
 
-**16/16 checks pass.**
+**17/17 checks pass.**
 
 The check that matters is the third one. "Is the boot screen in the DOM"
 was true for four milestones while it was invisible, so the harness asks
 `elementFromPoint` at the centre of the screen what is actually on top.
 That is the assertion that would have caught this in M15, and the one
 that keeps it caught.
+
+### Two assertions in this harness were wrong, and were fixed rather than tuned
+
+The first version of this harness reported 16/16. Re-running it before
+delivery reported 15/16, with nothing changed. Both numbers were unsound.
+
+**The timing checks measured from the wrong origin.** `BootScreen` starts
+its timers when the component *mounts*; the harness measured from
+navigation, so it was really asserting `START_DELAY + BAR_DURATION +
+however long hydration took` — 40ms on one run, 250ms on another. The
+bar-complete check sat right on that boundary and flipped. The page now
+stamps mount, bar-full and hand-off itself off `requestAnimationFrame`,
+and the timing checks read those, so they test the constants in
+`BootScreen.tsx` rather than the machine's load average.
+
+Their tolerance is deliberately **asymmetric** — early is fenced at 50ms,
+late is given 600ms. Twenty `setTimeout`s competing with hydration of a
+heavy shell can only ever run late (measured drift: ~290ms, about 9%),
+and that is contention, not a boot defect. Finishing *early* cannot
+happen by contention at all; it means a constant moved. So the direction
+that indicates a defect is the direction held tight.
+
+**The skip-prompt check was vacuous.** `BootScreen` animates the prompt's
+opacity on `done` — it never unmounts it — so asserting on its text
+passed identically before and after the bar filled. It now asserts the
+opacity goes 0 → 1, which is the behaviour anyone actually sees.
+
+All three new assertions were mutation-checked against a real build with
+`BAR_DURATION` halved and the prompt's opacity pinned to 1: each fails
+(14/17), and each passes again on restore (17/17). A negative assertion
+is worth exactly what you have proved it can fail on — including, twice
+now, one of mine.
 
 ## No regressions
 
