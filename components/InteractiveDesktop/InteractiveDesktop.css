@@ -36,48 +36,66 @@
   z-index: 9000;
 }
 
-/* RC2 viewport fit. The rail's nine buttons plus the brand plate and the
- * node monitor come to 894px of content. That clears a 900px viewport with
- * 6px to spare and does not fit a 768px one: at 1366x768 the last two items,
- * Explorer and Settings, ran off the bottom. The rail sets `overflow:
- * visible` and the desktop clips, so they were not below a fold - they were
- * unreachable, with no scrollbar and nothing to suggest they existed.
+/* Milestone 19 (Part E) — the rail fits its own box.
  *
- * Scoped to short viewports on purpose. Every ancestor between the rail and
- * the button list is content-sized with no height of its own, so making the
- * list scroll means binding that whole chain to the rail's height - and at
- * 900px that would stretch the chassis from its natural 894 to 900, moving
- * the node monitor 6px. The Golden Master is 1600x900, so the media query
- * keeps it byte-identical and only viewports that genuinely cannot fit the
- * rail pay anything. `min-height: 0` is what lets a flex item shrink below
- * its content; without it the overflow has nowhere to go and `overflow-y`
- * does nothing at all. */
-@media (max-height: 899px) {
-  .cattipu-interactive-desktop__sidebar,
-  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__raised,
-  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__bevel-gap,
-  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__well,
-  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__chassis {
-    height: 100%;
-    min-height: 0;
-  }
+ * Sidebar.css sets `min-height: 100vh` on the rail and `min-height:
+ * inherit` on each of its four nested chassis layers. Two of those layers
+ * carry 2px of padding, so each nesting starts a little lower while still
+ * being asked for a full 100vh — the innermost chassis ended 8px past the
+ * bottom of the viewport at EVERY height, and the desktop clips.
+ *
+ * What that cost was the rail's own bottom frame: at 1920x1080 the node
+ * monitor's plate ran off the screen with no closing bevel under it,
+ * while the status bar beside it had its full edge. It was there at 900
+ * too, which is why the earlier fidelity pass called it parity — the
+ * reference render had the same 8px cut.
+ *
+ * The rail is positioned `top: 0; bottom: 0`, so `height: 100%` is
+ * already exactly the viewport. Binding the chain to it removes the
+ * overflow without changing a single declared size. This costs 8px of
+ * apparent movement in the node monitor against the older render; a
+ * clipped chassis is a defect and 8px of recovered frame is the fix.
+ *
+ * `min-height: 0` is also what lets a flex item shrink below its content,
+ * which is what makes the scroll rule below able to do anything at all. */
+.cattipu-interactive-desktop__sidebar,
+.cattipu-interactive-desktop__sidebar .cattipu-sidebar__raised,
+.cattipu-interactive-desktop__sidebar .cattipu-sidebar__bevel-gap,
+.cattipu-interactive-desktop__sidebar .cattipu-sidebar__well,
+.cattipu-interactive-desktop__sidebar .cattipu-sidebar__chassis {
+  height: 100%;
+  min-height: 0;
+}
 
-  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__navigation {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-  }
+/* The rail scrolls whenever its content does not fit — at ANY height.
+ *
+ * This was scoped to `max-height: 899px` to leave the 1600x900 reference
+ * render untouched. Measuring it showed what that was preserving: at
+ * exactly 900 the rail's content runs to 986px, so the NODE monitor at
+ * the bottom of the rail was not below a fold, it was absent — clipped
+ * away with no scrollbar and nothing to suggest it existed. The
+ * reference render has the same gap, which is why nobody noticed.
+ *
+ * Removing the media query costs a visible change against that render:
+ * the node monitor appears, and the rail gains a thin scrollbar at 900.
+ * A rail whose bottom component is invisible at the reference resolution
+ * is a defect, and the sprint asks for no clipping and a fixed sidebar,
+ * so the render moves and the defect goes. */
+.cattipu-interactive-desktop__sidebar .cattipu-sidebar__navigation {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
 
-  /* The buttons must not pay for the shrink. Without this the column takes
-   * the height it is given and squeezes its children into it - nine rail
-   * keys went from 81px to 64px, which is resizing the design rather than
-   * fitting it. Pinned to their natural size, the shortfall becomes scroll
-   * instead of compression. */
-  .cattipu-interactive-desktop__sidebar .cattipu-sidebar__navigation > * {
-    flex: 0 0 auto;
-  }
+/* The buttons must not pay for the shrink. Without this the column takes
+ * the height it is given and squeezes its children into it - nine rail
+ * keys went from 81px to 64px, which is resizing the design rather than
+ * fitting it. Pinned to their natural size, the shortfall becomes scroll
+ * instead of compression. */
+.cattipu-interactive-desktop__sidebar .cattipu-sidebar__navigation > * {
+  flex: 0 0 auto;
 }
 
 .cattipu-interactive-desktop__topbar {

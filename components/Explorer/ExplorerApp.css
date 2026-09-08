@@ -191,7 +191,14 @@
  * column count that would clip when the window is narrowed. */
 .cattipu-explorer__items {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  /* A fixed track, not `minmax(104px, 1fr)`. `1fr` divides the leftover
+   * space and lands items on fractional x — 730.8, 855.59 — which puts
+   * their 2px selection border on a half-pixel and renders it as 3px of
+   * grey. A fixed column keeps every item on a whole pixel; the layout is
+   * still responsive because auto-fill changes the COLUMN COUNT with the
+   * pane width, which is the part that actually needed to be fluid. */
+  grid-template-columns: repeat(auto-fill, 112px);
+  justify-content: start;
   gap: var(--cattipu-explorer-gap);
   margin: 0;
   padding: 0;

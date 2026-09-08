@@ -25,6 +25,7 @@ import {
   type OsObject,
 } from "@/lib/os/desktop";
 import { orderProjects } from "@/lib/os/projects";
+import { PROJECT_TEMPLATES } from "@/lib/os/templates";
 import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { useProjectStore } from "@/store/useProjectStore";
 
@@ -115,6 +116,7 @@ export function DesktopObjectLayer({
   const projects = useProjectStore((s) => s.projects);
   const openProject = useProjectStore((s) => s.openProject);
   const renameProject = useProjectStore((s) => s.renameProject);
+  const addProjectFromTemplate = useProjectStore((s) => s.addProjectFromTemplate);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -252,6 +254,28 @@ export function DesktopObjectLayer({
         onSelect: () => createFolder(),
       },
       {
+        // Milestone 19 (Part D). The desktop menu is where New Folder and
+        // New Project Shortcut already live, so a project belongs beside
+        // them rather than behind new chrome. The templates drill down in
+        // the same way the shortcut list does.
+        id: "new-project",
+        label: "New Project",
+        icon: "newproject",
+        children: PROJECT_TEMPLATES.map((template) => ({
+          id: template.id,
+          label: template.label,
+          hint: template.summary.toUpperCase(),
+          icon: "projects" as ShellIconName,
+          onSelect: () => {
+            const project = addProjectFromTemplate(template.id);
+            // Creating a project IS opening it — it is what you are now
+            // working on, and the top bar says so from this moment.
+            openProject(project.id);
+            onOpenWindow("projects");
+          },
+        })),
+      },
+      {
         id: "new-shortcut",
         label: "New Project Shortcut",
         icon: "projects",
@@ -327,11 +351,14 @@ export function DesktopObjectLayer({
       },
     ];
   }, [
+    addProjectFromTemplate,
     createFolder,
     createProjectShortcut,
     objects,
     onArrangeWindows,
+    onOpenWindow,
     onRestoreAllWindows,
+    openProject,
     projects,
     visibleWindowCount,
   ]);

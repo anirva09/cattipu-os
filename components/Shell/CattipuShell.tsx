@@ -21,6 +21,7 @@ import {
   toProjectDetails,
   toProjectTree,
   toWindowProject,
+  workspaceTitle,
 } from "@/lib/os/projects";
 
 /**
@@ -39,10 +40,35 @@ import {
  *  comes from the same family. The rail draws nothing of its own. */
 
 function useDateTimeText(): string {
-  // Rendered empty on the server and filled on the client. A date formatted
-  // during SSR is a guaranteed hydration mismatch — the server's clock and
-  // timezone are not the viewer's — and the top bar would flash the wrong
-  // time before correcting itself.
+  /**
+   * Milestone 19 (Part A) — the real clock.
+   *
+   * Three things this has to get right, and one it has to avoid.
+   *
+   * Empty on the server. A date formatted during SSR is a guaranteed
+   * hydration mismatch — the server's clock and timezone are not the
+   * viewer's — and React would discard the whole tree over it. The bar
+   * renders blank for one frame and is correct from then on, which is
+   * cheaper than being wrong.
+   *
+   * Locale and timezone come from the browser. `Intl.DateTimeFormat`
+   * with no locale argument uses the viewer's, and no `timeZone` option
+   * means the viewer's. Nothing here names a zone or a format, so a
+   * person in Hyderabad sees IST in their own conventions without the
+   * shell knowing anything about them.
+   *
+   * It ticks ON the minute, not every 60 seconds. A fixed interval
+   * started at :47 updates at :47 of every following minute, so the
+   * displayed time is on average half a minute stale and the change
+   * never coincides with the minute actually changing. The first
+   * timeout is sized to the remaining milliseconds of the current
+   * minute; after that a steady interval is correct because it is
+   * aligned. `+ 250` is slack so a slightly early wake-up does not
+   * re-render the same minute twice.
+   *
+   * The date is part of the same formatted string, so it cannot drift
+   * out of step with the time — there is nothing to keep in step.
+   */
   const [text, setText] = useState("");
 
   useEffect(() => {
@@ -57,8 +83,22 @@ function useDateTimeText(): string {
       }).format(new Date());
 
     setText(format());
-    const id = window.setInterval(() => setText(format()), 30_000);
-    return () => window.clearInterval(id);
+
+    let interval: number | undefined;
+    const msToNextMinute = () => {
+      const now = new Date();
+      return (60 - now.getSeconds()) * 1000 - now.getMilliseconds() + 250;
+    };
+
+    const timeout = window.setTimeout(() => {
+      setText(format());
+      interval = window.setInterval(() => setText(format()), 60_000);
+    }, msToNextMinute());
+
+    return () => {
+      window.clearTimeout(timeout);
+      if (interval !== undefined) window.clearInterval(interval);
+    };
   }, []);
 
   return text;
@@ -147,6 +187,23 @@ function LiveProjectsWindow({ onMinimize, onMaximize, onClose }: {
 export function CattipuShell() {
   const dateTimeText = useDateTimeText();
 
+  /**
+   * Milestone 19 (Part C) — the title follows the active project.
+   *
+   * Derived from `lastOpenedAt`, which M15 already sets whenever
+   * anything opens a project. So this updates the moment a project is
+   * opened from the desktop, from Explorer or from the Projects tree,
+   * with no `activeProjectId` to keep in step — and `undefined` when
+   * nothing has been opened, which is what makes the TopBar render
+   * "CATTIPU OS" alone.
+   *
+   * Before this, the shell passed nothing and the TopBar fell through to
+   * its own default of "Banking Platform". The name in the Golden Master
+   * render was a hardcoded string, not a project.
+   */
+  const projects = useProjectStore((s) => s.projects);
+  const title = useMemo(() => workspaceTitle(projects), [projects]);
+
   const sidebarIcons = useMemo<CattipuSidebarIcons>(() => {
     const entries = CATTIPU_SIDEBAR_ITEMS.map(({ id, label }) => [
       id,
@@ -160,6 +217,15 @@ export function CattipuShell() {
       brandMark={<PixelLogo variant="topbar" className="h-9 w-9" />}
       sidebarIcons={sidebarIcons}
       dateTimeText={dateTimeText}
+      // `title ?? ""` and not `title`: InteractiveDesktop declares
+      // `workspaceTitle = 'Banking Platform'` as a DEFAULT PARAMETER, and
+      // JavaScript applies a default when the value is `undefined`. So
+      // passing undefined for "no active project" silently reinstated the
+      // hardcoded name this milestone exists to remove. An empty string
+      // is a value, so the default does not fire, and TopBar's own
+      // `workspaceTitle ? ... : null` renders the brand alone.
+      workspaceTitle={title ?? ""}
+      creatorName="Creator"
       windowContent={WINDOW_CONTENT}
       renderProjectsWindow={(controls) => <LiveProjectsWindow {...controls} />}
       // Milestone 16. The layer owns desktop objects; the desktop owns the

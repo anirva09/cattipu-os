@@ -72,3 +72,24 @@
     color var(--cattipu-window-interaction-ms) linear,
     background-color var(--cattipu-window-interaction-ms) linear;
 }
+
+/* Milestone 19 — suppress the user-agent focus ring on the window shell.
+ *
+ * M18 gave the managed window `tabIndex={-1}` and focuses it when it
+ * becomes active, so keyboard input follows the window you are working
+ * in. Chromium draws its default focus ring on a programmatically
+ * focused container, and that ring — a white line over a near-black one
+ * — was painted directly on top of the CATTIPU window's own bevel. It
+ * is the 9,212 pixels that separate the RC2 reference render from every
+ * build since M18, which the M18 fidelity check missed because the image
+ * it compared against had been regenerated from the same build.
+ *
+ * The container is a focus TARGET for routing, not a control anyone
+ * tabs to, so it has no ring to lose. Every real control inside it —
+ * the title-bar buttons, inputs, tree rows — keeps its own
+ * `cattipu-focus--mechanical` ring, which is the shell's own and is
+ * unaffected. */
+.cattipu-managed-window:focus,
+.cattipu-managed-window:focus-visible {
+  outline: none;
+}

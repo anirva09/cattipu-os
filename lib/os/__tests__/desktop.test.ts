@@ -198,11 +198,15 @@ test("folders never share a name on one desktop", () => {
     names.push(name);
     objects = [...objects, folder(0, i, name)];
   }
+  // Milestone 19 changed the numbered form from "Untitled Folder 2" to
+  // "Untitled Folder (2)": the bare number reads as a name someone
+  // chose, the parenthesised one reads as the machine disambiguating,
+  // which is what it is.
   assert.deepEqual(names, [
     "Untitled Folder",
-    "Untitled Folder 2",
-    "Untitled Folder 3",
-    "Untitled Folder 4",
+    "Untitled Folder (2)",
+    "Untitled Folder (3)",
+    "Untitled Folder (4)",
   ]);
   assert.equal(new Set(names).size, names.length);
 });
@@ -211,16 +215,16 @@ test("shortcut labels are not counted when numbering folders", () => {
   // The shortcut carries a residual "Untitled Folder 2" — the kind of
   // leftover a rename or an import can leave on a record whose label is
   // not what is displayed. An implementation that numbers folders off
-  // every object's label answers "Untitled Folder 3" here.
+  // every object's label answers "Untitled Folder (3)" here.
   //
   // (The first version of this test used an empty shortcut label and
   // passed against both implementations. It proved nothing, so it was
   // replaced rather than kept for the count.)
   const objects = [
-    shortcut("p1", 0, 0, "Untitled Folder 2"),
+    shortcut("p1", 0, 0, "Untitled Folder (2)"),
     folder(0, 1, "Untitled Folder"),
   ];
-  assert.equal(nextFolderName(objects), "Untitled Folder 2");
+  assert.equal(nextFolderName(objects), "Untitled Folder (2)");
 });
 
 // ── run ─────────────────────────────────────────────────────────────────

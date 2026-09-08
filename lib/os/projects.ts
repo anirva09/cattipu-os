@@ -5,6 +5,7 @@ import {
 import type { ProjectDetails } from "@/components/DetailsPanel/DetailsPanel";
 import type { ProjectsWindowProject } from "@/components/ProjectsWindow/ProjectsWindow";
 import type { FolderTreeNode } from "@/components/FolderTree/FolderTree";
+import { nextNumberedName } from "./filesystem";
 
 /**
  * Milestone 15 (Living Projects) — the projects slice of the OS state
@@ -212,4 +213,56 @@ export function toProjectTree(projects: readonly CattipuProject[]): FolderTreeNo
       ],
     },
   ];
+}
+
+// ── Milestone 19 ────────────────────────────────────────────────────────
+
+export const UNTITLED_PROJECT = "Untitled Project";
+
+/**
+ * "Untitled Project", "Untitled Project (2)", "Untitled Project (3)".
+ *
+ * The same rule folders use, and the same reason: computed from the
+ * names in use right now, so renaming a project frees its number with no
+ * code to free it. Archived projects still count — they still exist and
+ * a person can still see them, so reusing the name would produce two
+ * projects called the same thing in one list.
+ */
+export function nextProjectName(projects: readonly CattipuProject[]): string {
+  return nextNumberedName(UNTITLED_PROJECT, projects.map((p) => p.name));
+}
+
+/**
+ * The project the shell is currently "in", or null.
+ *
+ * Derived from `lastOpenedAt`, which M15 already sets whenever anything
+ * opens a project — the desktop, Explorer, the Projects tree. There is no
+ * separate `activeProjectId` to keep in step, which is the point: a
+ * second field would be a second answer to the same question, and the
+ * one place it would go wrong is the moment a project is deleted.
+ *
+ * `null` until something has actually been opened. A fresh install has
+ * seed projects that nobody has looked at yet, and claiming one of them
+ * is active would put a name in the title bar the person never chose.
+ */
+export function activeProject(
+  projects: readonly CattipuProject[],
+): CattipuProject | null {
+  let best: CattipuProject | null = null;
+  for (const project of projects) {
+    if (!project.lastOpenedAt) continue;
+    if (!best || project.lastOpenedAt > (best.lastOpenedAt as string)) {
+      best = project;
+    }
+  }
+  return best;
+}
+
+/** What the top bar shows beside the brand: the active project's name,
+ *  or nothing. The TopBar renders "CATTIPU OS" alone when this is
+ *  undefined, which is exactly the "no project active" case. */
+export function workspaceTitle(
+  projects: readonly CattipuProject[],
+): string | undefined {
+  return activeProject(projects)?.name;
 }

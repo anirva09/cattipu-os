@@ -152,7 +152,8 @@ with sync_playwright() as p:
     pg.wait_for_timeout(250)
     objs = objects(pg)
     x1, y1 = cell_px(0, 1)
-    second = [o for o in objs if o["label"] == "Untitled Folder 2"]
+    # Milestone 19 changed the numbered form to "Untitled Folder (2)".
+    second = [o for o in objs if o["label"] == "Untitled Folder (2)"]
     check("a second folder gets a distinct name and the next free cell",
           len(objs) == 2 and second and (second[0]["left"], second[0]["top"]) == (x1, y1),
           f"{[(o['label'], o['left'], o['top']) for o in objs]}")
@@ -186,7 +187,7 @@ with sync_playwright() as p:
 
     # ── 5. no overlap: dropping onto an occupied cell swaps ─────────────
     a = [x for x in objects(pg) if x["label"] == "Untitled Folder"][0]
-    b = [x for x in objects(pg) if x["label"] == "Untitled Folder 2"][0]
+    b = [x for x in objects(pg) if x["label"] == "Untitled Folder (2)"][0]
     a_before, b_before = (a["left"], a["top"]), (b["left"], b["top"])
     drag_object(pg, a["id"], int((b["left"] - GRID["ox"]) / GRID["cw"]),
                 int((b["top"] - GRID["oy"]) / GRID["ch"]))

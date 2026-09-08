@@ -23,7 +23,7 @@ import {
   toProjectTree,
   toWindowProject,
 } from "../projects";
-import { createProject } from "../../project/types";
+import { PROJECT_SCHEMA_VERSION, createProject } from "../../project/types";
 import type { CattipuProject } from "../../project/types";
 
 const tests: Array<[string, () => void]> = [];
@@ -138,8 +138,13 @@ test("a released project shows its latest release", () => {
 });
 
 test("the display version is not the schema version", () => {
+  // Asserted against the CONSTANT, not the literal 2. The point of this
+  // test is that a project's user-facing version label and its storage
+  // schema version are different things; pinning the literal made it
+  // fail for the right reason at the wrong time — M19's bump to 3 is a
+  // schema change, not a regression in what this test is about.
   const p = blank();
-  assert.equal(p.version, 2);
+  assert.equal(p.version, PROJECT_SCHEMA_VERSION);
   assert.notEqual(projectVersionLabel(p), String(p.version));
 });
 

@@ -13,6 +13,9 @@ import {
   type ProjectIcon,
 } from "@/lib/project/types";
 import { migrateProjects } from "@/lib/project/migrate";
+import { nextProjectName } from "@/lib/os/projects";
+import { getTemplate, type ProjectTemplateId } from "@/lib/os/templates";
+import { nextNumberedName } from "@/lib/os/filesystem";
 
 /**
  * Milestone 14A (Universal Project Artifact Foundation) — this store now
@@ -41,7 +44,12 @@ const ICON_COLOR: Record<ProjectIcon, string> = {
 
 interface ProjectState {
   projects: CattipuProject[];
-  addProject: (name: string) => CattipuProject;
+  /** `name` may be omitted — Milestone 19 numbers it from the names in
+   *  use, so "New Project" needs no dialog to produce a sane name. */
+  addProject: (name?: string) => CattipuProject;
+  /** Milestone 19. Creates from a template: the template supplies the
+   *  type and icon, which nothing in a project's artifacts could infer. */
+  addProjectFromTemplate: (template: ProjectTemplateId) => CattipuProject;
   addProjectFromArchitecture: (data: GeneratedArchitecture) => CattipuProject;
   /** Live sync from Architect's editable store — real persistence, not a
    * snapshot taken only on close. Whoever reopens this project (Explorer,
@@ -119,8 +127,32 @@ export const useProjectStore = create<ProjectState>()(
       projects: SEED_PROJECTS,
 
       addProject: (name) => {
-        const project = createProject({ name });
-        set((s) => ({ projects: [project, ...s.projects] }));
+        const projects = get().projects;
+        const project = createProject({
+          name: name?.trim() || nextProjectName(projects),
+        });
+        set({ projects: [project, ...projects] });
+        return project;
+      },
+
+      addProjectFromTemplate: (template) => {
+        const projects = get().projects;
+        const spec = getTemplate(template);
+        const project = createProject({
+          // Named for the template, numbered like everything else: a
+          // second Web App is "Web App (2)", not "Untitled Project (2)".
+          // The name is the first thing a person reads in the list, and
+          // "Untitled" there wastes the one thing the template knew.
+          name: nextNumberedName(
+            spec?.label ?? "Untitled Project",
+            projects.map((p) => p.name),
+          ),
+          template,
+          type: spec?.type,
+          icon: spec?.icon,
+          color: spec ? ICON_COLOR[spec.icon] : undefined,
+        });
+        set({ projects: [project, ...projects] });
         return project;
       },
 
