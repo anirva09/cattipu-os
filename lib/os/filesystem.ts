@@ -253,28 +253,52 @@ export function projectsWithoutShortcut(
 // ── naming ──────────────────────────────────────────────────────────────
 
 /**
- * "Untitled Folder", then "Untitled Folder 2", and so on — unique among
- * its SIBLINGS, not across the whole filesystem. Two folders with the
- * same name in different parents are as distinguishable as two files in
- * different directories; forcing global uniqueness would number the
- * second one for no reason a person could see.
+ * The next unused name in a numbered series: "Untitled Folder",
+ * "Untitled Folder (2)", "Untitled Folder (3)".
+ *
+ * Computed from the names in use RIGHT NOW, never from a counter. That
+ * is what makes "renaming frees the name" true without any code to free
+ * it: rename "Untitled Folder (2)" to "Invoices" and the next new folder
+ * is "Untitled Folder (2)" again, because nothing is holding the number.
+ * A stored counter would keep climbing forever and would have to be
+ * reset by hand, which is a bug waiting to be written.
+ *
+ * The parenthesised form is deliberate. "Untitled Folder 2" reads as a
+ * name someone chose; "Untitled Folder (2)" reads as the machine
+ * disambiguating, which is what it is.
+ */
+export function nextNumberedName(
+  base: string,
+  taken: Iterable<string>,
+): string {
+  const names = new Set<string>();
+  for (const name of taken) names.add(name.trim());
+  if (!names.has(base)) return base;
+  for (let n = 2; n < 10_000; n += 1) {
+    const candidate = `${base} (${n})`;
+    if (!names.has(candidate)) return candidate;
+  }
+  return base;
+}
+
+export const UNTITLED_FOLDER = "Untitled Folder";
+
+/**
+ * Unique among its SIBLINGS, not across the whole filesystem. Two
+ * folders with the same name in different parents are as distinguishable
+ * as two files in different directories; forcing global uniqueness would
+ * number the second one for no reason a person could see.
  */
 export function nextFolderName(
   objects: readonly OsObject[],
   parentId: string | null = null,
 ): string {
-  const base = "Untitled Folder";
-  const names = new Set(
+  return nextNumberedName(
+    UNTITLED_FOLDER,
     objects
       .filter((o) => o.kind === "folder" && o.parentId === parentId)
       .map((o) => o.label),
   );
-  if (!names.has(base)) return base;
-  for (let n = 2; n < 1000; n += 1) {
-    const candidate = `${base} ${n}`;
-    if (!names.has(candidate)) return candidate;
-  }
-  return base;
 }
 
 // ── what Explorer shows ─────────────────────────────────────────────────

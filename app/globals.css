@@ -104,8 +104,31 @@
     window face" is a deeper tan. Every window/panel face darkens with
     this change — the second headline visual shift in this pass. */
   --color-ink: #141110; /* outline — was #17161a, effectively imperceptible */
-  --color-ink-dim: #7a7566;
-  --color-ink-faint: #a39d8c;
+  /* Milestone 19 (Part F) — typography fidelity.
+   *
+   * Measured, not judged. Against the cream and paper surfaces these two
+   * tokens carried contrast ratios of 3.5:1 and 2.0:1, which is below
+   * the 4.5:1 that normal text needs to be comfortably legible — the
+   * "TRY:" and "ARCHITECT · PROMPT" labels and the body copy in
+   * Architect, Memory and Settings were the text that read washed out
+   * against the Golden Master's darker reference.
+   *
+   * Only the darkness changed. Each value is its old colour scaled
+   * toward black, so the warm-grey hue is identical and the hierarchy
+   * ink < ink-dim < ink-faint is preserved — secondary text still
+   * recedes, it is simply legible while doing it. No font, no size, no
+   * spacing, and no frozen component's own colour was touched.
+   *
+   * Solved against the DARKEST surface they sit on (the drafting paper,
+   * not the cream) — the first attempt targeted cream and left the
+   * Architect labels at 4.38:1 on paper, which is the one place they
+   * actually appear.
+   *
+   *   ink-dim    3.30 -> 7.01 on paper, 7.45 on cream
+   *   ink-faint  1.94 -> 4.67 on paper, 4.96 on cream
+   */
+  --color-ink-dim: #46433a;
+  --color-ink-faint: #605d53;
   --color-border: rgba(3, 31, 86, 0.16); /* re-based on new chrome_navy rgb */
   --color-border-strong: rgba(3, 31, 86, 0.3);
 

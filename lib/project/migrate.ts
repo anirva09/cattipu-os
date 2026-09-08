@@ -75,6 +75,10 @@ function backfillMissingArtifacts(project: CattipuProject): CattipuProject {
     pinned: project.pinned ?? false,
     favorite: project.favorite ?? false,
     archived: project.archived ?? false,
+    // Milestone 19. A record written before templates existed was not
+    // made from one, and `null` says that. Guessing a template from the
+    // icon would put a plan on a project whose author never chose one.
+    template: project.template ?? null,
   };
 }
 
@@ -99,6 +103,7 @@ function migrateLegacy(legacy: LegacyProjectV0): CattipuProject {
     pinned: false,
     favorite: false,
     archived: false,
+    template: null,
     idea: { prompt: architecture?.prompt ?? "" },
     architect: { data: architecture },
     canvas: createEmptyCanvasArtifacts(),

@@ -299,10 +299,10 @@ test("search reports where each hit lives", () => {
 test("folder numbering is per-parent, not global", () => {
   // "Untitled Folder" already exists at the root. Inside Work there is
   // none, so the new one there must NOT be numbered — global uniqueness
-  // would name it "Untitled Folder 2" for a reason no one can see.
+  // would name it "Untitled Folder (2)" for a reason no one can see.
   const objects = [folder("u1", "Untitled Folder", null)];
   assert.equal(nextFolderName(objects, "w"), "Untitled Folder");
-  assert.equal(nextFolderName(objects, null), "Untitled Folder 2");
+  assert.equal(nextFolderName(objects, null), "Untitled Folder (2)");
 });
 
 // ── run ─────────────────────────────────────────────────────────────────

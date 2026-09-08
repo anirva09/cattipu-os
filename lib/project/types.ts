@@ -1,4 +1,5 @@
 import type { GeneratedArchitecture } from "@/lib/ai/types";
+import type { ProjectTemplateId } from "@/lib/os/templates";
 
 /**
  * Milestone 14A (Universal Project Artifact Foundation) — the shared
@@ -21,7 +22,7 @@ import type { GeneratedArchitecture } from "@/lib/ai/types";
 
 /** Bump this — and add a branch in migrate.ts — whenever CattipuProject's
  * shape changes in a way old persisted projects can't just be read as. */
-export const PROJECT_SCHEMA_VERSION = 2;
+export const PROJECT_SCHEMA_VERSION = 3;
 
 /** Shown as the owner of anything created locally. A single constant so
  *  the Projects list, the details panel and Explorer cannot disagree. */
@@ -323,6 +324,18 @@ export interface CattipuProject {
   /** The one piece of status a user sets rather than the artifacts imply. */
   archived: boolean;
 
+  /**
+   * Milestone 19 (Project Templates). What KIND of thing this is, chosen
+   * once at creation. `null` for every project that predates templates
+   * and for anything Architect generates from a prompt.
+   *
+   * Only the id is stored. The structure a template implies is derived
+   * from it (lib/os/templates.ts `projectPlan`), so a template can be
+   * corrected in one place and cannot leave a stale copy of its plan
+   * sitting inside a project that was made a month ago.
+   */
+  template: ProjectTemplateId | null;
+
   idea: ProjectIdea;
   architect: ArchitectArtifacts;
   canvas: CanvasArtifacts;
@@ -371,6 +384,8 @@ export interface CreateProjectOptions {
   architect?: ArchitectArtifacts;
   type?: ProjectType;
   owner?: string;
+  /** Milestone 19. Sets type and icon unless they are given explicitly. */
+  template?: ProjectTemplateId | null;
 }
 
 /** The one place a brand-new, schema-current CattipuProject gets built —
@@ -389,6 +404,7 @@ export function createProject(opts: CreateProjectOptions): CattipuProject {
     createdAt: now,
     updatedAt: now,
     type: opts.type ?? PROJECT_TYPE_BY_ICON[opts.icon ?? "generic"],
+    template: opts.template ?? null,
     owner: opts.owner ?? DEFAULT_PROJECT_OWNER,
     lastOpenedAt: null,
     pinned: false,
