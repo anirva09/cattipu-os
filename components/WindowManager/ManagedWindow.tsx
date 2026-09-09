@@ -2,7 +2,6 @@
 
 import type {
   CSSProperties,
-  FocusEvent,
   PointerEvent,
   ReactNode,
 } from 'react';
@@ -326,7 +325,12 @@ export function ManagedWindow({
     onMove(finalPosition);
   };
 
-  const handleFocusCapture = (_event: FocusEvent<HTMLDivElement>) => {
+  // Focus anywhere inside the window raises it, whatever was focused —
+  // which is why this is a capture handler and why it ignores the event.
+  // It took the event only to satisfy the handler signature; React accepts
+  // a zero-argument function, so the parameter was doing nothing but
+  // tripping no-unused-vars.
+  const handleFocusCapture = () => {
     onFocus();
   };
 
