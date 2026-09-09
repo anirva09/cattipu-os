@@ -208,12 +208,25 @@ export function removeSubtree(
 // ── links ───────────────────────────────────────────────────────────────
 
 /** A shortcut shows its project's CURRENT name. Nothing copies it. */
+/** Whether this object takes its name from a project rather than owning
+ *  one. True for shortcuts, and for the workspace folder a template
+ *  creates — one rule, so a linked folder cannot go stale in a way a
+ *  shortcut does not. */
+export function isProjectLinked(object: OsObject): boolean {
+  return Boolean(object.projectId);
+}
+
 export function objectLabel(
   object: OsObject,
   projects: readonly CattipuProject[],
 ): string {
-  if (object.kind !== "project-shortcut") return object.label;
+  if (!isProjectLinked(object)) return object.label;
   const project = projects.find((p) => p.id === object.projectId);
+  // The stored label is a FALLBACK, not a copy in use: it is what the
+  // workspace folder keeps if its project is later deleted, so the
+  // folder degrades into an ordinary named folder instead of an
+  // unnamed one. A shortcut in that position is hidden by
+  // `visibleObjects` and never reaches this fallback.
   return project?.name ?? object.label;
 }
 
@@ -325,7 +338,19 @@ function entryFor(
   projects: readonly CattipuProject[],
 ): ExplorerEntry {
   return object.kind === "folder"
-    ? { id: object.id, kind: "folder", label: object.label, objectId: object.id }
+    ? {
+        id: object.id,
+        kind: "folder",
+        // `objectLabel`, not `object.label`: a workspace folder is linked
+        // to its project and takes its name from it, so Explorer shows
+        // the live name and a rename of the project reaches here with
+        // nothing to propagate.
+        label: objectLabel(object, projects),
+        objectId: object.id,
+        // Present only when the folder is a project's workspace, which is
+        // what tells the rename path to edit the project instead.
+        projectId: object.projectId,
+      }
     : {
         id: object.id,
         kind: "project-shortcut",

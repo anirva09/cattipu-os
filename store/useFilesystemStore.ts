@@ -49,6 +49,24 @@ interface FilesystemState {
     projectId: string,
     parentId?: string | null,
   ) => OsObject;
+  /**
+   * Milestone 19 (Part D) — the workspace a template project gets.
+   *
+   * One folder at the OS root, linked to the project so its name is
+   * resolved from the project rather than copied, holding one empty
+   * sub-folder per section the template's plan actually has, plus a
+   * shortcut back to the project.
+   *
+   * Empty folders and nothing else. A folder is a place to put an
+   * artifact, not an artifact, so `projectProgress` still reads 0% on a
+   * project that has only just been created — which is the same reason
+   * the plan is never written into `canvas.screens`.
+   */
+  createProjectWorkspace: (
+    projectId: string,
+    fallbackLabel: string,
+    sections: readonly string[],
+  ) => OsObject;
   renameObject: (id: string, label: string) => void;
   removeObject: (id: string) => void;
   /** Desktop move: a new grid cell, same parent. */
@@ -100,6 +118,45 @@ export const useFilesystemStore = create<FilesystemState>()(
         };
         set({ objects: [...objects, shortcut] });
         return shortcut;
+      },
+
+      createProjectWorkspace: (projectId, fallbackLabel, sections) => {
+        const objects = get().objects;
+        const createdAt = new Date().toISOString();
+        const root: OsObject = {
+          id: nextId(),
+          kind: "folder",
+          // Stored as the fallback only — `objectLabel` resolves the live
+          // name from the project, so renaming the project renames this
+          // folder and there is no second copy to go stale.
+          label: fallbackLabel,
+          projectId,
+          parentId: null,
+          position: nextFreeCell(objects),
+          createdAt,
+        };
+        const children: OsObject[] = sections.map((name, i) => ({
+          id: `${root.id}-s${i}`,
+          kind: "folder",
+          label: name,
+          parentId: root.id,
+          // Nested objects are laid out by Explorer's grid, which reads
+          // list order, not cells; the cell is stored for the day one of
+          // these is dragged onto the desktop.
+          position: { col: i, row: 0 },
+          createdAt,
+        }));
+        const shortcut: OsObject = {
+          id: `${root.id}-link`,
+          kind: "project-shortcut",
+          label: "",
+          projectId,
+          parentId: root.id,
+          position: { col: sections.length, row: 0 },
+          createdAt,
+        };
+        set({ objects: [...objects, root, ...children, shortcut] });
+        return root;
       },
 
       renameObject: (id, label) => {

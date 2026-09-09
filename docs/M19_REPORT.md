@@ -1,9 +1,55 @@
-# M19 — Project Templates & System Polish
+# M19 — Project Templates & Workspace Intelligence
 
-31/31 behavioural checks pass against the production build at four
-viewports; 17 new unit tests, mutation-checked against seven deliberate
-breakages. Two defects that predate this sprint were found and fixed
-along the way, one of which had been reported as parity in M18.
+**49/49 behavioural checks** against the production build (31 in
+`m19-verify.py`, 18 in `m19b-verify.py`), **36 unit tests**
+mutation-checked against sixteen deliberate breakages, and every earlier
+harness re-run green: M16 27/27, M17 42/42, M18 40/40, boot 17/17.
+
+The sprint ran in two passes. The first (commit `27b6b99`) covered the
+clock, naming, the workspace title, the ten templates, the responsive
+lock and the contrast pass. The second — this pass — covered the parts
+the first did not reach: **Part C's browser-title synchronisation**,
+**Part D's full project identity and folder structure**, and **Part E's
+shared propagation**, which is where the real defect was.
+
+Three defects were found across the two passes, all three mine.
+
+---
+
+## The defect Part E was hiding
+
+**The RECENT PROJECTS widget had never shown a project created after
+boot.** It rendered three hardcoded strings.
+
+```
+RightWidgetStack.tsx
+  const DEFAULT_RECENT_PROJECTS = ['Banking Platform', 'AI SaaS Starter',
+                                   'CATTIPU Website'] as const;
+  ...
+  recentProjects = DEFAULT_RECENT_PROJECTS,      <- default parameter
+```
+
+`InteractiveDesktop` rendered `<RightWidgetStack>` without passing the
+prop at all, so the default fired on every render and the widget was
+blind to the store. It is the **same trap** as the `workspaceTitle =
+'Banking Platform'` default this milestone's first pass removed — a
+hardcoded name that looks correct in the Golden Master render precisely
+because the seed data agrees with it. Two instances, one cause.
+
+Proven by reverting the one-line fix and re-running:
+
+```
+with recentProjects passed      created "Web App" -> widget lists it first
+with the prop removed again     created "Web App" -> widget unchanged
+                                18/18 -> 17/18, and only E2 fails
+```
+
+Only that check fails, which is the point: seventeen other assertions
+about propagation were true while the widget was wrong.
+
+**The Golden Master render is unchanged.** The widget now lists the three
+seed projects ordered by recency, which produces the same three names in
+the same order — identical output, no longer a literal.
 
 ---
 
@@ -102,6 +148,26 @@ The separator is the frozen TopBar's own glyph rather than the em dash in
 the brief; changing it would edit a Golden Master component for
 punctuation.
 
+## Part C (second pass) — the browser title
+
+| State | Tab | Top bar |
+|---|---|---|
+| nothing opened | `CATTIPU OS` | `CATTIPU OS` |
+| AI SaaS Starter opened | `CATTIPU OS — AI SaaS Starter` | `CATTIPU OS │ AI SaaS Starter` |
+| switched to Banking Platform | `CATTIPU OS — Banking Platform` | `CATTIPU OS │ Banking Platform` |
+
+Both read `activeProject`. They cannot disagree about **which** project is
+active, because there is no second field saying so — only about how to
+punctuate it, and that difference is deliberate: the tab is not a Golden
+Master surface and spells the separator the way the sprint writes it (an
+em dash), while the top bar keeps the frozen glyph its signed-off render
+uses. Changing that glyph would edit a Golden Master component for
+punctuation.
+
+Set in an effect rather than in `metadata`, because the title depends on
+client state that does not exist during SSR — the same reason the clock
+renders empty on the server.
+
 ## Part D — project templates
 
 All ten, in the brief's order, under `New Project ▸` in the desktop menu
@@ -129,6 +195,110 @@ about what is being built.
 Schema bumped to v3. A record written before templates existed migrates
 to `template: null` — not to a template guessed from its icon, because
 its author never chose one.
+
+### The full project identity (second pass)
+
+The sprint names eight fields: `template`, `targetPlatform`,
+`stackPreference`, `artifactState`, `createdAt`, `lastOpened`,
+`deploymentTarget`, `buildStatus`. All eight are provided, by
+`projectIdentity(project)`. **Two of them are new stored fields.**
+
+| Field | Stored? | Why |
+|---|---|---|
+| `template` | stored | chosen once; nothing can infer it |
+| `createdAt`, `lastOpened` | stored | already were |
+| `stackPreference` | **stored, nullable** | a Web App built in Rails is still a Web App |
+| `deploymentTarget` | **stored, nullable** | a project can be retargeted after creation |
+| `targetPlatform` | derived | a property of the KIND of thing, not the instance |
+| `artifactState` | derived | literally a count of what the project contains |
+| `buildStatus` | derived | the last Forge build, or none |
+
+`null` on the two stored fields does not mean "unknown" — it means
+"whatever the template says". So correcting `DEFAULT_STACK` for `web-app`
+still reaches every Web App whose author never overrode it, and a project
+written before these fields existed migrates to `null` rather than to a
+frozen copy of the default that was current the day it was made.
+
+`buildStatus` is the one worth spelling out. A **stored** build status
+would let a project claim `success` with an empty Forge, and would go
+stale the moment a build ran. Reading it from `forge.builds` means the
+badge cannot disagree with the builds it describes, because it *is*
+them. That is the same rule M15 exists to enforce, applied to a field the
+sprint explicitly listed as metadata.
+
+Schema bumped v3 → v4 for the two stored fields.
+
+### Folder structure
+
+Creating a project from a template also creates its workspace: one folder
+at the OS root, holding one empty sub-folder per section the plan
+actually has, plus a shortcut back to the project.
+
+```
+Web App/     Screens/  Services/  Environments/  [Web App]
+API/                   Services/  Environments/  [API]
+CLI Tool/              Services/  Environments/  [CLI Tool]
+```
+
+An API and a CLI Tool get no `Screens` folder, for the same reason their
+plans declare no screens: a folder named for something the template never
+intended is the folder equivalent of a plan that lies about the shape of
+the thing.
+
+**Empty folders and nothing else.** A folder is a place to put an
+artifact, not an artifact, so `projectProgress` still reads 0% on a
+project that has only just been created — verified for all ten templates.
+
+The workspace folder is **linked**, not named. It carries the project's
+id and resolves its label through `objectLabel`, exactly as a shortcut
+does; the stored label is a fallback used only if the project is later
+deleted, so the folder degrades into an ordinary named folder instead of
+an unnamed one rather than being destroyed with the project. Renaming it
+on the desktop renames the project:
+
+```
+folders  ['Dashboard']        -> ['Revenue Board']
+cards    ['Dashboard', ...]   -> ['Revenue Board', ...]
+```
+
+That generalisation caught two latent bugs on the way in: Explorer built
+folder entries from `object.label` directly, bypassing `objectLabel`, and
+its rename handler tested the folder branch before the linked branch — so
+a linked folder would have edited a fallback nobody can see while the
+displayed name stayed put. Both now route through one rule.
+
+## Part E — shared propagation
+
+One creation, seven surfaces, measured separately after a single action:
+
+| Surface | Result |
+|---|---|
+| Projects window | lists it |
+| RECENT PROJECTS | lists it, first |
+| Workspace title | follows it |
+| Browser title | follows it |
+| Desktop | its workspace folder appears |
+| Explorer | shows the project **and** its folder |
+| Search | finds it, with no separate index |
+
+`Propagation.png` is all of it in one frame.
+
+**No duplicated records**, asserted rather than assumed: exactly one
+project card and exactly one workspace folder carry the name. Explorer
+listing "Web App" twice is correct and is checked as exactly two — the
+project record and its folder are different objects that share a name,
+which is what two views of one state look like.
+
+**Memory index.** There is nothing to propagate to. `project.memory` is
+the per-project memory slot and it travels inside the record that every
+surface already reads; the Memory *app* in this repository is a
+placeholder with no index of its own. Writing records into that slot at
+creation would fake content the same way seeding `canvas.screens` would,
+so nothing is written. Stated plainly rather than ticked.
+
+**Desktop shortcut (when enabled).** The workspace folder contains one.
+A standalone desktop shortcut remains the explicit `New Project Shortcut`
+command from M16 — that command is the "enabled".
 
 ## Part E — responsive lock
 
@@ -201,7 +371,7 @@ is a redesign, not a contrast fix.
 
 ---
 
-## Two bugs found, one of them mine
+## Three bugs found, all three mine
 
 **A browser focus ring was painted on the window chrome.** M18 gave the
 managed window `tabIndex={-1}` and focuses it when it becomes active, so
@@ -220,7 +390,15 @@ Fixed by suppressing the ring on the container, which is a focus target
 for routing rather than a control anyone tabs to. Every real control
 inside it keeps its own mechanical ring.
 
-**The rail's bottom component was invisible**, covered under Part E.
+**The rail's bottom component was invisible**, covered under the
+responsive audit.
+
+**The RECENT PROJECTS widget was a constant**, covered at the top. It is
+the third instance of one pattern: a frozen component declares a
+plausible default parameter, the shell passes nothing, and the Golden
+Master render looks right because the seed data happens to agree with the
+hardcoded value. `workspaceTitle`, then `recentProjects`. Anything else
+`InteractiveDesktop` defaults is worth the same suspicion.
 
 Both were verified this time against a build of the actual previous
 commit — `git stash`, rebuild, screenshot — rather than against an
@@ -271,19 +449,63 @@ instead: an empty string is a value, so the default does not fire.
 ```
 npm run typecheck   0 errors
 npm run lint        0 errors, 1 pre-existing warning (ManagedWindow.tsx:329)
-npm test            9/9 + 18/18 + 16/16 + 24/24 + 33/33 + 17/17
+npm test            9/9 + 18/18 + 16/16 + 24/24 + 33/33 + 36/36
 npm run build       clean
-M19 harness         31/31
-M16 harness         27/27   (re-run)
-M17 harness         42/42   (re-run)
-M18 harness         40/40   (re-run)
+
+M19  harness  31/31      M16 harness  27/27   (re-run)
+M19b harness  18/18      M17 harness  42/42   (re-run)
+boot harness  17/17      M18 harness  40/40   (re-run)
 ```
 
-The 17 new tests were mutation-checked against seven deliberate
-breakages: numbering by a stored counter, the un-parenthesised form,
-numbering without trimming, `activeProject` returning the first project,
-`activeProject` ignoring a null `lastOpenedAt`, an API template given a
-screen, and migration guessing a template from the icon. Each is caught.
+### What the report confirms
+
+| The brief asks | Status |
+|---|---|
+| live clock verified | 5/5, pinned to a timezone this container is not in |
+| automatic naming works | numbering, and a freed number reused after a rename |
+| dynamic workspace title works | top bar and browser tab, one source |
+| template metadata created | eight fields, two stored, six derived |
+| shared state propagation works | seven surfaces from one action, no duplicates |
+| responsive regression passed | four viewports, nine guarantees each |
+| Golden Master preserved | 0 changed px in workspace, widgets and status bar |
+
+### Mutation testing
+
+The 36 unit tests were mutation-checked against sixteen deliberate
+breakages — nine from the first pass, and eight added here:
+
+```
+recent projects fall back to updatedAt        -> 3 fail
+recent projects keep archived ones            -> 1 fail
+the tab always appends a name                 -> 1 fail
+the identity ignores a stored override        -> 1 fail
+buildStatus takes the first build             -> 1 fail
+planSections always returns all three         -> 1 fail
+objectLabel ignores folder links              -> 1 fail
+visibleObjects hides linked folders too       -> 1 fail
+```
+
+The behavioural harness was mutation-checked too, at the build level: the
+`recentProjects` prop was removed, rebuilt and re-run, and **E2 alone**
+failed.
+
+One of these caught a fault in the mutation harness rather than in the
+code. The "keep archived" mutation first reported 36/36 — my pattern
+`.filter((p) => !p.archived)` matched an **earlier** function in the same
+file, so `recentProjectNames` was never touched and the test was never
+challenged. Aimed correctly with surrounding context, it fails. A
+mutation that does not reach the code under test proves the same nothing
+a vacuous assertion does, and it is harder to spot because the number
+looks better, not worse.
+
+Four earlier tests and two harness assertions were updated rather than
+worked around, and each says why in place.
+
+Three faults in the new behavioural harness were fixed rather than
+tolerated: it opened projects with a gesture the cards do not offer; it
+reused one browser context across scenarios, so every "before" baseline
+after the first inherited the previous scenario's projects; and it aimed
+a right-click at an icon's centre, which sits under the Projects window.
 
 Four earlier tests and two harness assertions were updated rather than
 worked around, and each says why in place: three pinned the old
@@ -291,8 +513,9 @@ un-parenthesised naming, and one pinned the literal `2` for the schema
 version where it meant "the schema version".
 
 A negative assertion is worth exactly what you have proved it can fail
-on — including, this time, an assertion of my own that turned out to be
-comparing a build with itself.
+on — including, across these two passes, one assertion comparing a build
+with itself, and one mutation that never reached the function it claimed
+to break.
 
 ## Screenshots
 
@@ -302,3 +525,5 @@ comparing a build with itself.
 - `Title_NoProject.png` — `CATTIPU OS` alone before anything is opened
 - `Templates_Menu.png` — the ten templates
 - `Rail_Before_After.png` — the node monitor, clipped away and then present
+- `Propagation.png` — one creation reaching the Projects window, RECENT PROJECTS, the desktop folder and the title bar in a single frame
+- `Template_Workspace.png` — an API's workspace folders, with no Screens
