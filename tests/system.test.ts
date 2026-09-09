@@ -24,7 +24,7 @@ import {
   objectLabel,
   visibleObjects,
   type OsObject,
-} from "../filesystem";
+} from "@/lib/os/filesystem";
 import {
   UNTITLED_PROJECT,
   activeProject,
@@ -34,7 +34,7 @@ import {
   projectProgress,
   projectStatus,
   workspaceTitle,
-} from "../projects";
+} from "@/lib/os/projects";
 import {
   DEFAULT_STACK,
   PROJECT_TEMPLATES,
@@ -47,10 +47,10 @@ import {
   isTemplateId,
   planSize,
   projectPlan,
-} from "../templates";
-import { createProject } from "../../project/types";
-import { migrateProject } from "../../project/migrate";
-import type { CattipuProject } from "../../project/types";
+} from "@/lib/os/templates";
+import { createProject } from "@/lib/project/types";
+import { migrateProject } from "@/lib/project/migrate";
+import type { CattipuProject } from "@/lib/project/types";
 
 const tests: Array<[string, () => void]> = [];
 const test = (name: string, fn: () => void) => tests.push([name, fn]);

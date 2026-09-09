@@ -35,7 +35,7 @@ import {
   unsnapPosition,
   type WindowRect,
   type WorkspaceBox,
-} from "../workspace";
+} from "@/lib/os/workspace";
 import {
   CATTIPU_DEFAULT_WINDOW_SIZE,
   createInitialWindowManagerState,
@@ -44,7 +44,7 @@ import {
   windowManagerReducer,
   windowRect,
   type WindowManagerState,
-} from "../../../components/WindowManager/windowManager.reducer";
+} from "@/components/WindowManager/windowManager.reducer";
 
 const tests: Array<[string, () => void]> = [];
 const test = (name: string, fn: () => void) => tests.push([name, fn]);

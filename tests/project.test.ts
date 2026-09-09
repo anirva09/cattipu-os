@@ -20,9 +20,9 @@ import {
   createProject,
   nextProjectId,
   type CattipuProject,
-} from "../types";
-import { migrateProject, migrateProjects } from "../migrate";
-import type { GeneratedArchitecture } from "../../ai/types";
+} from "@/lib/project/types";
+import { migrateProject, migrateProjects } from "@/lib/project/migrate";
+import type { GeneratedArchitecture } from "@/lib/ai/types";
 
 type Test = { name: string; run: () => void };
 const tests: Test[] = [];
