@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { AppDef } from "@/lib/apps";
-import { AppIcon } from "../Dock/AppIcon";
+import { AppIcon } from "@/components/Icons/AppIcon";
 
 export function PlaceholderApp({ app }: { app: AppDef }) {
   return (

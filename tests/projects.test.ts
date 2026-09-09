@@ -22,9 +22,9 @@ import {
   toProjectDetails,
   toProjectTree,
   toWindowProject,
-} from "../projects";
-import { PROJECT_SCHEMA_VERSION, createProject } from "../../project/types";
-import type { CattipuProject } from "../../project/types";
+} from "@/lib/os/projects";
+import { PROJECT_SCHEMA_VERSION, createProject } from "@/lib/project/types";
+import type { CattipuProject } from "@/lib/project/types";
 
 const tests: Array<[string, () => void]> = [];
 const test = (name: string, fn: () => void) => tests.push([name, fn]);

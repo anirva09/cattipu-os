@@ -7,7 +7,7 @@ import { APPS, ABOUT_APP } from "@/lib/apps";
 import { useWindowStore } from "@/store/useWindowStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { useArchitectStore } from "@/store/useArchitectStore";
-import { AppIcon } from "../Dock/AppIcon";
+import { AppIcon } from "@/components/Icons/AppIcon";
 
 interface Command {
   id: string;

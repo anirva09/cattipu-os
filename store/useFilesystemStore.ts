@@ -39,11 +39,6 @@ import {
 
 interface FilesystemState {
   objects: OsObject[];
-  /** Wallpaper is stored here rather than in settings because it is a
-   *  property of the desktop surface. M19 will give it a manager; this is
-   *  the field it will write to, so the shape does not change later. */
-  wallpaper: string | null;
-
   createFolder: (parentId?: string | null) => OsObject;
   createProjectShortcut: (
     projectId: string,
@@ -75,7 +70,6 @@ interface FilesystemState {
    *  (into itself, into its own descendant, or into a missing folder) so
    *  the caller can say so rather than silently doing nothing. */
   moveIntoFolder: (id: string, parentId: string | null) => boolean;
-  setWallpaper: (wallpaper: string | null) => void;
 }
 
 let seq = 0;
@@ -85,7 +79,6 @@ export const useFilesystemStore = create<FilesystemState>()(
   persist(
     (set, get) => ({
       objects: [],
-      wallpaper: null,
 
       createFolder: (parentId = null) => {
         const objects = get().objects;
@@ -196,25 +189,27 @@ export const useFilesystemStore = create<FilesystemState>()(
         return true;
       },
 
-      setWallpaper: (wallpaper) => set({ wallpaper }),
     }),
     {
       name: "cattipu-desktop",
-      version: 2,
+      // v3 drops `wallpaper`. M16 added it here on the reasoning that the
+      // wallpaper is a property of the desktop surface, and said M19 would
+      // give it a manager. M19 did not, and useSettingsStore has owned the
+      // wallpaper the whole time — so this field had two authors and zero
+      // readers, which is the duplicate state the OS layer exists to
+      // prevent. A record persisted by v2 simply drops the key.
+      version: 3,
       partialize: (state) => ({
         objects: state.objects,
-        wallpaper: state.wallpaper,
       }),
       migrate: (persisted, version) => {
         const state = (persisted ?? {}) as Partial<FilesystemState>;
         const objects = state.objects ?? [];
-        const wallpaper = state.wallpaper ?? null;
-        if (version >= 2) return { objects, wallpaper };
+        if (version >= 2) return { objects };
         // M16 wrote a flat desktop. Every object it saved was on the
         // desktop by definition, so the root is where they belong.
         return {
           objects: objects.map((o) => ({ ...o, parentId: o.parentId ?? null })),
-          wallpaper,
         };
       },
     },

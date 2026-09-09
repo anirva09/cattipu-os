@@ -30,9 +30,9 @@ import {
   sameCell,
   visibleObjects,
   type OsObject,
-} from "../desktop";
-import { createProject } from "../../project/types";
-import type { CattipuProject } from "../../project/types";
+} from "@/lib/os/desktop";
+import { createProject } from "@/lib/project/types";
+import type { CattipuProject } from "@/lib/project/types";
 
 const tests: Array<[string, () => void]> = [];
 const test = (name: string, fn: () => void) => tests.push([name, fn]);
