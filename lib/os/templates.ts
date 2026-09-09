@@ -222,3 +222,171 @@ export function projectPlan(project: CattipuProject): TemplatePlan | null {
 export function planSize(plan: TemplatePlan): number {
   return plan.screens.length + plan.services.length + plan.environments.length;
 }
+
+// ---------------------------------------------------------------------
+// Milestone 19 (Part D) — the full project identity
+// ---------------------------------------------------------------------
+
+/**
+ * The sprint asks a template to create persistent metadata: template,
+ * targetPlatform, stackPreference, artifactState, createdAt, lastOpened,
+ * deploymentTarget, buildStatus.
+ *
+ * All eight are provided, as one object, by `projectIdentity` below. Only
+ * TWO of them are new stored fields, and the split is deliberate:
+ *
+ *   STORED, because the value can legitimately diverge from the template
+ *   and only the person knows it has:
+ *     stackPreference   a Web App built in Rails is still a Web App
+ *     deploymentTarget  a project can be retargeted after creation
+ *   Both are `null` until overridden, meaning "whatever the template
+ *   says", so correcting a template still reaches every project that
+ *   never disagreed with it.
+ *
+ *   DERIVED, because storing a copy could only ever make it wrong:
+ *     targetPlatform    a property of the KIND of thing, not the instance
+ *     artifactState     literally a count of what the project contains
+ *     buildStatus       the last Forge build, or none
+ *
+ * `buildStatus` is the one worth spelling out. A stored build status is
+ * the same lie M15 exists to prevent: it would let a project claim
+ * "success" with an empty Forge, and it would go stale the moment a
+ * build ran. Reading it from `forge.builds` means the badge cannot
+ * disagree with the builds it is describing, because it IS them.
+ */
+
+/** Where the finished thing runs. A property of the template. */
+export const TARGET_PLATFORM: Record<ProjectTemplateId, string> = {
+  "web-app": "Browser",
+  "mobile-app": "iOS / Android",
+  api: "Server",
+  "ai-agent": "Server",
+  saas: "Browser",
+  dashboard: "Browser",
+  "chrome-extension": "Chrome",
+  "desktop-app": "Desktop",
+  "cli-tool": "Terminal",
+  game: "Desktop",
+};
+
+/** The stack a template reaches for unless told otherwise. */
+export const DEFAULT_STACK: Record<ProjectTemplateId, string> = {
+  "web-app": "Next.js · Postgres",
+  "mobile-app": "React Native · Expo",
+  api: "Node · Postgres",
+  "ai-agent": "Python · Vector Store",
+  saas: "Next.js · Postgres · Stripe",
+  dashboard: "Next.js · Warehouse",
+  "chrome-extension": "TypeScript · MV3",
+  "desktop-app": "Electron · SQLite",
+  "cli-tool": "Node · TypeScript",
+  game: "TypeScript · Canvas",
+};
+
+/** Where a release of this kind of thing goes. */
+export const DEFAULT_DEPLOYMENT: Record<ProjectTemplateId, string> = {
+  "web-app": "Vercel",
+  "mobile-app": "App Store / Play",
+  api: "Container Host",
+  "ai-agent": "Container Host",
+  saas: "Vercel",
+  dashboard: "Vercel",
+  "chrome-extension": "Chrome Web Store",
+  "desktop-app": "Signed Installer",
+  "cli-tool": "npm",
+  game: "Itch / Steam",
+};
+
+/** How much of each slot actually exists. Counts, not claims. */
+export interface ArtifactState {
+  architect: number;
+  canvas: number;
+  forge: number;
+  memory: number;
+  launch: number;
+}
+
+/** The last Forge build's status, or "none" when nothing has been built.
+ *  Never stored — see the note above. */
+export type ProjectBuildStatus = "none" | "pending" | "success" | "failed";
+
+export interface ProjectIdentity {
+  template: ProjectTemplateId | null;
+  targetPlatform: string | null;
+  stackPreference: string | null;
+  artifactState: ArtifactState;
+  createdAt: string;
+  lastOpened: string | null;
+  deploymentTarget: string | null;
+  buildStatus: ProjectBuildStatus;
+}
+
+export function artifactState(project: CattipuProject): ArtifactState {
+  const a = project.architect.data;
+  return {
+    // An Architect graph is one artifact when present, not a node count:
+    // the slot either holds a design or it does not.
+    architect: a ? 1 : 0,
+    canvas:
+      project.canvas.screens.length +
+      project.canvas.components.length +
+      project.canvas.assets.length +
+      project.canvas.uiStates.length,
+    forge:
+      project.forge.sourceFiles.length +
+      project.forge.builds.length +
+      project.forge.tests.length,
+    memory:
+      project.memory.records.length +
+      project.memory.decisions.length +
+      project.memory.relationships.length,
+    launch:
+      project.launch.releases.length +
+      project.launch.environments.length +
+      project.launch.deployments.length,
+  };
+}
+
+/** The most recent Forge build, by `startedAt`. */
+export function buildStatus(project: CattipuProject): ProjectBuildStatus {
+  let latest: { startedAt: string; status: ProjectBuildStatus } | null = null;
+  for (const build of project.forge.builds) {
+    if (!latest || build.startedAt > latest.startedAt) {
+      latest = { startedAt: build.startedAt, status: build.status };
+    }
+  }
+  return latest?.status ?? "none";
+}
+
+/** The eight-field project identity the sprint specifies, assembled from
+ *  two stored overrides, the template, and the project's own contents. */
+export function projectIdentity(project: CattipuProject): ProjectIdentity {
+  const id = project.template;
+  return {
+    template: id,
+    targetPlatform: id ? TARGET_PLATFORM[id] : null,
+    stackPreference: project.stackPreference ?? (id ? DEFAULT_STACK[id] : null),
+    artifactState: artifactState(project),
+    createdAt: project.createdAt,
+    lastOpened: project.lastOpenedAt,
+    deploymentTarget:
+      project.deploymentTarget ?? (id ? DEFAULT_DEPLOYMENT[id] : null),
+    buildStatus: buildStatus(project),
+  };
+}
+
+/**
+ * The workspace sub-folders a template's plan justifies.
+ *
+ * Only sections the plan actually has: an API and a CLI Tool declare no
+ * screens, so they get no "Screens" folder. An empty folder named for
+ * something the template never intended is the folder equivalent of a
+ * plan that lies about the shape of the thing.
+ */
+export function planSections(plan: TemplatePlan): string[] {
+  const sections: string[] = [];
+  if (plan.screens.length) sections.push("Screens");
+  if (plan.services.length) sections.push("Services");
+  if (plan.environments.length) sections.push("Environments");
+  return sections;
+}

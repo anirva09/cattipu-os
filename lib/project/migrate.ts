@@ -79,6 +79,12 @@ function backfillMissingArtifacts(project: CattipuProject): CattipuProject {
     // made from one, and `null` says that. Guessing a template from the
     // icon would put a plan on a project whose author never chose one.
     template: project.template ?? null,
+    // Milestone 19 (Part D). Both override the template's default, so
+    // `null` is the correct migration for every existing record: it
+    // means "whatever the template says", and a project written before
+    // these fields existed never disagreed with anything.
+    stackPreference: project.stackPreference ?? null,
+    deploymentTarget: project.deploymentTarget ?? null,
   };
 }
 
@@ -104,6 +110,8 @@ function migrateLegacy(legacy: LegacyProjectV0): CattipuProject {
     favorite: false,
     archived: false,
     template: null,
+    stackPreference: null,
+    deploymentTarget: null,
     idea: { prompt: architecture?.prompt ?? "" },
     architect: { data: architecture },
     canvas: createEmptyCanvasArtifacts(),
