@@ -78,7 +78,34 @@ on a different function reports a pass and proves the same nothing a
 vacuous assertion does — harder to spot, because the number looks better
 rather than worse.
 
-## 6. Structural debt
+## 6. Dead weight
+
+Three scans, each of which caught something a directory listing hid.
+
+```bash
+# Zero-byte tracked files. Seven "brand plates" were empty for four
+# milestones and were described from their filenames the whole time.
+git ls-files | while read -r f; do [ -f "$f" ] && [ ! -s "$f" ] && echo "$f"; done
+
+# Duplicate binaries. Content, not names — two identical assets under
+# different names look like two assets in every listing.
+git ls-files '*.png' '*.svg' '*.wav' '*.gif' |
+  while read -r f; do printf "%s  %s\n" "$(sha1sum "$f" | cut -c1-16)" "$f"; done |
+  sort | uniq -w16 -D
+
+# Every dependency, against real usage.
+node -e "const p=require('./package.json');
+  Object.keys(p.dependencies).forEach(d=>console.log(d))" |
+  while read -r d; do
+    n=$(grep -rl "$d" app components lib hooks design-system store scripts 2>/dev/null | wc -l)
+    [ "$n" = "0" ] && echo "unused: $d"
+  done
+```
+
+A file you moved is not a file you audited. `git mv` preserves contents
+you have never looked at.
+
+## 7. Structural debt
 
 ```bash
 python3 - <<'EOF'   # the reachability script in REPOSITORY_AUDIT.md
@@ -96,7 +123,7 @@ Then ask the two questions the OS layer exists to answer:
 - **Does any fact have two homes?** `useFilesystemStore.wallpaper` had two
   authors and zero readers for four milestones.
 
-## 7. Deploy
+## 8. Deploy
 
 ```bash
 git push origin <branch>          # or open a PR into main
@@ -118,6 +145,7 @@ Ship only when every one of these is true:
 
 - [ ] typecheck, lint, tests and build clean — no warnings
 - [ ] 213 behavioural checks green
+- [ ] no zero-byte or duplicate tracked files
 - [ ] Golden Master delta explained pixel by pixel
 - [ ] every new assertion mutation-tested
 - [ ] no unexplained unreachable modules

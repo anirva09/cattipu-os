@@ -1,5 +1,37 @@
 # CATTIPU OS — Changelog
 
+## v0.9 — canonical Golden Master consolidation
+
+The pass that makes this repository the permanent baseline before M20.
+
+### Changed
+
+* `public/assets/pixelforge/` → `public/pixelforge/` — 53 SVGR imports,
+  all inside two files. Golden Master delta across the move: 36 pixels,
+  every one inside the live clock's minute digit.
+* `public/textures/` → `public/wallpapers/`.
+* `lib/useUiSound.ts` → `hooks/useUiSound.ts`. `BootScreen.tsx` therefore
+  differs from `31d6aa0` by one import line and is no longer
+  byte-identical; its behaviour, timing, logo and transitions are
+  unchanged and still measured at 17/17.
+
+### Removed
+
+* Seven zero-byte PNGs in `docs/brand/`, added as placeholders in the
+  foundation commit and never filled, while the folder's README described
+  itself as the single source of truth for CATTIPU branding. The real
+  marks are the seven distinct files in `public/logo/`.
+
+### Added
+
+* `docs/CANONICAL_AUDIT.md`.
+* `scripts/canonical-capture.py` and the seven named release frames in
+  `docs/release/`, including `Naming_Test.png` — the proof that a renamed
+  folder frees its number for the next one created.
+* Zero-byte and duplicate-binary scans in `docs/PRODUCTION_CHECKLIST.md`.
+
+---
+
 ## v0.9 — Living Desktop foundation
 
 The shell moved from a themed page to an OS with real objects. Six

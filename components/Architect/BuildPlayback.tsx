@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useArchitectStore } from "@/store/useArchitectStore";
 import { useProjectStore } from "@/store/useProjectStore";
-import { useUiSound } from "@/lib/useUiSound";
+import { useUiSound } from "@/hooks/useUiSound";
 
 /**
  * Build Playback 2.0 — pure orchestration, no visual output of its own.

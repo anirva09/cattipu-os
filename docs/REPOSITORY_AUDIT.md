@@ -118,14 +118,23 @@ work rather than remove debt.
 | `components/CommandPalette/CommandPalette.tsx` | Complete; needs a keyboard entry point in the v0.9 shell. |
 | `components/UI/{Button,Input,Panel}.tsx` | Generic primitives. |
 
-`public/textures/paper-grain.png` is likewise kept: the Settings wallpaper
+`public/wallpapers/paper-grain.png` (moved there from `public/textures/`
+in the canonical consolidation) is likewise kept: the Settings wallpaper
 picker is live and writes `useSettingsStore.wallpaper`, and the surface
 that paints it is an extension point, not a regression introduced here —
 the wallpaper was already unpainted in the v0.9 shell before this cleanup.
 
 ---
 
-## Two deviations from the requested structure, and why
+## Two deviations from the requested structure — since reversed
+
+> **Superseded.** Both moves were made in the canonical consolidation
+> (`docs/CANONICAL_AUDIT.md`). `public/pixelforge/` and `hooks/` exist, and
+> the Golden Master delta across the move was 36 pixels, all inside the
+> live clock. The reasoning below is kept because it is why the moves were
+> deferred twice, and why deferring them a third time would have been
+> wrong: the risk was real but it was measurable, and measuring it was
+> always cheaper than restating it.
 
 **`public/pixelforge/` was not created.** The PixelForge marks live at
 `public/assets/pixelforge/{shell,toolbox}/` and are imported through SVGR

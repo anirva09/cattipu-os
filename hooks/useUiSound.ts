@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { playSound, type SoundName } from "./sounds";
+import { playSound, type SoundName } from "@/lib/sounds";
 
 /** Settings-aware sound trigger — the hook every component should use. */
 export function useUiSound() {

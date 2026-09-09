@@ -185,7 +185,7 @@ export interface CattipuPlugin {
  * from settings.
  *
  * A wallpaper renders from CSS the shell already ships, or from one asset
- * under `public/textures/`. It never carries per-project state.
+ * under `public/wallpapers/`. It never carries per-project state.
  */
 export interface WallpaperDefinition {
   id: string;
@@ -194,7 +194,7 @@ export interface WallpaperDefinition {
   swatch: string;
   /** How the surface paints. Either is valid; both is not. */
   css?: Readonly<Record<string, string>>;
-  texture?: `/textures/${string}`;
+  texture?: `/wallpapers/${string}`;
 }
 
 // ---------------------------------------------------------------------

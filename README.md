@@ -9,7 +9,7 @@ file explorer and a desktop that are two views of one filesystem, and
 project templates that declare what is being built without pretending any
 of it exists yet.
 
-![The CATTIPU OS desktop at 1600×900](docs/m19/Desktop_1600.png)
+![The CATTIPU OS desktop at 1600×900](docs/release/Desktop_1600.png)
 
 ---
 
@@ -47,7 +47,7 @@ from a single record. No duplicated state.
 
 | | |
 |---|---|
-| ![Boot](docs/boot/Boot_1800ms.png) | ![Explorer](docs/m17/Explorer_WithFolders.png) |
+| ![Boot](docs/release/Boot_1800ms.png) | ![Explorer](docs/m17/Explorer_WithFolders.png) |
 | The boot sequence | Explorer, showing the shared filesystem |
 | ![Tiled windows](docs/m18/Tile.png) | ![Templates](docs/m19/Templates_Menu.png) |
 | Tile, with exact restore | The ten templates |
@@ -109,8 +109,9 @@ Open <http://localhost:3000>.
 ### Behavioural harnesses
 
 `scripts/*-verify.py` drive the production build in a real browser and
-assert against it — 175 checks covering desktop objects, Explorer, the
-window manager, templates, propagation and the boot sequence.
+assert against it — **213 checks** covering desktop objects, Explorer, the
+window manager, templates, propagation, the boot sequence, and every
+application at all four supported viewports.
 
 ```bash
 npm run build && npm start -- -p 3321      # in one shell
@@ -131,12 +132,13 @@ where a test looked fine and turned out to be vacuous.
 app/            Next.js routes, global stylesheet, boot mount
 components/     The shell, its applications, and the frozen v0.9 package
 design-system/  Tokens, bevel primitives, the icon registry
+hooks/          App-level hooks
 lib/            OS state layer — filesystem, projects, workspace, templates
 store/          Zustand stores, persisted and versioned
 tests/          Unit suites
-scripts/        Verification harnesses and asset generators
+scripts/        Verification harnesses, asset generators, release capture
 docs/           Architecture, design system, roadmap; history/ holds the record
-public/         PixelForge marks, cursors, sounds, textures
+public/         pixelforge/ cursors/ wallpapers/ logo/ sounds/ assets/
 ```
 
 `lib/os/extensions.ts` declares the seams the next milestones plug into —

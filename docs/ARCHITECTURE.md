@@ -59,6 +59,10 @@ by an older build is upgraded rather than guessed at.
 | `lib/os/templates.ts` | The ten templates, their derived plans, and the eight-field project identity. |
 | `lib/os/extensions.ts` | Declared seams for what comes next. Contracts only. |
 
+`hooks/useUiSound.ts` is the one app-level hook;
+`components/WindowManager/useWindowManager.ts` stays co-located with the
+component it serves.
+
 ### Three rules it enforces
 
 **`parentId === null` is the OS root, and the OS root is the desktop.**
