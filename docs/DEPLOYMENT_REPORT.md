@@ -1,5 +1,10 @@
 # Deployment Report — v0.9
 
+> **Updated by the canonical consolidation.** Structure completed
+> (`hooks/`, `public/pixelforge/`, `public/wallpapers/`), seven empty brand
+> plates removed, seven release frames captured. 317 tracked files, 213
+> behavioural checks green. Details in `docs/CANONICAL_AUDIT.md`.
+
 **Local status: release-ready and fully verified.**
 **Remote status: not pushed, and not deployed — this environment cannot
 reach the repository or the host.** The commands you need are at the
@@ -53,6 +58,7 @@ upload.
 | `scripts/m19b-verify.py` — Titles, identity, propagation | 18/18 |
 | `scripts/boot-verify.py` — Boot sequence | 17/17 |
 | `scripts/production-verify.py` — **Release verification** | 38/38 |
+| `scripts/canonical-capture.py` — the seven named release frames | 7/7 |
 
 **213 behavioural checks**, all against the production build in a real
 browser.
@@ -81,6 +87,13 @@ placement, and the console.
 35 files moved (sprint reports to `docs/history/`, brand plates to
 `docs/brand/`, test suites to `tests/`). 331 tracked files → 301.
 
+The canonical consolidation then removed **seven more**: every PNG in
+`docs/brand/` was zero bytes — placeholders added in the foundation commit
+and never filled, while the folder's README called itself "the single
+source of truth for CATTIPU branding". The production cleanup had *moved*
+those files without opening one of them. 301 → 317 tracked files overall,
+the rise being the seven release frames and the new documents.
+
 ---
 
 ## Repository structure
@@ -90,23 +103,32 @@ cattipu-os/
 ├── app/                 routes, global stylesheet, boot mount
 ├── components/          shell, applications, frozen v0.9 package
 ├── design-system/       tokens, bevel primitives, icon registry
+├── hooks/               app-level hooks
 ├── lib/                 OS state layer (os/, project/, ai/)
 │   └── os/extensions.ts declared seams for what comes next
 ├── store/               zustand stores, persisted and versioned
 ├── tests/               6 unit suites
-├── scripts/             7 verification harnesses, 3 asset generators
+├── scripts/             8 verification harnesses, 3 asset generators, 1 capture
 ├── docs/                architecture, design system, roadmap
 │   ├── history/         21 sprint and milestone reports
-│   └── brand/           palette, wordmark, typography plates
-├── public/              pixelforge marks, cursors, sounds, textures
+│   ├── release/         the seven named release frames
+│   └── brand/           where the marks live (they live in public/logo/)
+├── public/              pixelforge/ cursors/ wallpapers/ logo/ sounds/ assets/
 ├── next.config.ts  package.json  tsconfig.json
 └── README.md  LICENSE  CLAUDE.md  AGENTS.md  CONTRIBUTING.md
 ```
 
-Two requested directories were deliberately not created —
-`public/pixelforge/` and `hooks/` — because both moves would have edited
-working imports for cosmetic gain, and one of them would have invalidated
-the boot patch's byte-identical guarantee. Reasoning in the audit.
+All requested directories now exist. `public/pixelforge/`, `hooks/` and
+`public/wallpapers/` were created in the canonical consolidation, after
+being deferred twice; the Golden Master delta across all 53 moved
+PixelForge marks was 36 pixels, every one of them inside the live clock's
+minute digit.
+
+`components/Boot/BootScreen.tsx` now differs from `31d6aa0` by one import
+line, so it is no longer byte-identical. Its behaviour, timing, logo and
+transitions are unchanged and still measured at 17/17, including the check
+that the boot screen is what is actually painted. The guarantee that
+mattered holds; the phrasing of it changed.
 
 ---
 
@@ -115,12 +137,13 @@ the boot patch's byte-identical guarantee. Reasoning in the audit.
 Same default state, built before the cleanup and after it:
 
 ```
-59 changed pixels of 1,440,000   (0.0041%)
-bounding box  x 1552-1558, y 31-40
+production cleanup     59 changed px of 1,440,000  (0.0041%)  x 1552-1558, y 31-40
+canonical structure    36 changed px of 1,440,000  (0.0025%)  x 1552-1558, y 33-40
 ```
 
-Seven pixels wide inside the top bar — the live clock's minute digit,
-which advanced between captures. The cleanup is visually inert.
+Both boxes are seven pixels wide inside the top bar — the live clock's
+minute digit, which advanced between captures. Both passes are visually
+inert, including the one that moved all 53 PixelForge marks.
 
 Measured this way on purpose: diffing against the RC2 reference instead
 reports 0.526%, but that number mixes M19's *intended* changes with any

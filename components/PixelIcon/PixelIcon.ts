@@ -6,14 +6,14 @@ import {
   type SVGProps,
 } from 'react';
 
-import IconEntity from '../../public/assets/pixelforge/toolbox/entity-32.svg';
-import IconService from '../../public/assets/pixelforge/toolbox/service-32.svg';
-import IconFlow from '../../public/assets/pixelforge/toolbox/flow-32.svg';
-import IconScreen from '../../public/assets/pixelforge/toolbox/screen-32.svg';
-import IconApi from '../../public/assets/pixelforge/toolbox/api-32.svg';
-import IconJob from '../../public/assets/pixelforge/toolbox/job-32.svg';
-import IconScript from '../../public/assets/pixelforge/toolbox/script-32.svg';
-import IconConfig from '../../public/assets/pixelforge/toolbox/config-32.svg';
+import IconEntity from '../../public/pixelforge/toolbox/entity-32.svg';
+import IconService from '../../public/pixelforge/toolbox/service-32.svg';
+import IconFlow from '../../public/pixelforge/toolbox/flow-32.svg';
+import IconScreen from '../../public/pixelforge/toolbox/screen-32.svg';
+import IconApi from '../../public/pixelforge/toolbox/api-32.svg';
+import IconJob from '../../public/pixelforge/toolbox/job-32.svg';
+import IconScript from '../../public/pixelforge/toolbox/script-32.svg';
+import IconConfig from '../../public/pixelforge/toolbox/config-32.svg';
 
 import { SHELL_ICONS_32 } from './shellIcons';
 

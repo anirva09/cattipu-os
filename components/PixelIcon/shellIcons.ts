@@ -4,7 +4,7 @@
  *
  * These are the manufactured SVGs exactly as emitted by tools/icons.py and
  * signed off on the sheet. Nothing here is drawn by hand and nothing is
- * reinterpreted: the files under public/assets/pixelforge/shell/ are the
+ * reinterpreted: the files under public/pixelforge/shell/ are the
  * production masters, byte-for-byte, and this module only names them.
  *
  * Two sizes because the 16 is a separately handcrafted drawing, never a
@@ -24,54 +24,54 @@
  */
 import type { ComponentType, SVGProps } from 'react';
 
-import Home32 from '../../public/assets/pixelforge/shell/32/home.svg';
-import Projects32 from '../../public/assets/pixelforge/shell/32/projects.svg';
-import Architect32 from '../../public/assets/pixelforge/shell/32/architect.svg';
-import Canvas32 from '../../public/assets/pixelforge/shell/32/canvas.svg';
-import Forge32 from '../../public/assets/pixelforge/shell/32/forge.svg';
-import Memory32 from '../../public/assets/pixelforge/shell/32/memory.svg';
-import Launch32 from '../../public/assets/pixelforge/shell/32/launch.svg';
-import Explorer32 from '../../public/assets/pixelforge/shell/32/explorer.svg';
-import Settings32 from '../../public/assets/pixelforge/shell/32/settings.svg';
-import Search32 from '../../public/assets/pixelforge/shell/32/search.svg';
-import Bell32 from '../../public/assets/pixelforge/shell/32/bell.svg';
-import Clock32 from '../../public/assets/pixelforge/shell/32/clock.svg';
-import Network32 from '../../public/assets/pixelforge/shell/32/network.svg';
-import Volume32 from '../../public/assets/pixelforge/shell/32/volume.svg';
-import Terminal32 from '../../public/assets/pixelforge/shell/32/terminal.svg';
-import Calendar32 from '../../public/assets/pixelforge/shell/32/calendar.svg';
-import NewProject32 from '../../public/assets/pixelforge/shell/32/newproject.svg';
-import Recent32 from '../../public/assets/pixelforge/shell/32/recent.svg';
-import Save32 from '../../public/assets/pixelforge/shell/32/save.svg';
-import OpenFile32 from '../../public/assets/pixelforge/shell/32/openfile.svg';
-import Favorite32 from '../../public/assets/pixelforge/shell/32/favorite.svg';
+import Home32 from '../../public/pixelforge/shell/32/home.svg';
+import Projects32 from '../../public/pixelforge/shell/32/projects.svg';
+import Architect32 from '../../public/pixelforge/shell/32/architect.svg';
+import Canvas32 from '../../public/pixelforge/shell/32/canvas.svg';
+import Forge32 from '../../public/pixelforge/shell/32/forge.svg';
+import Memory32 from '../../public/pixelforge/shell/32/memory.svg';
+import Launch32 from '../../public/pixelforge/shell/32/launch.svg';
+import Explorer32 from '../../public/pixelforge/shell/32/explorer.svg';
+import Settings32 from '../../public/pixelforge/shell/32/settings.svg';
+import Search32 from '../../public/pixelforge/shell/32/search.svg';
+import Bell32 from '../../public/pixelforge/shell/32/bell.svg';
+import Clock32 from '../../public/pixelforge/shell/32/clock.svg';
+import Network32 from '../../public/pixelforge/shell/32/network.svg';
+import Volume32 from '../../public/pixelforge/shell/32/volume.svg';
+import Terminal32 from '../../public/pixelforge/shell/32/terminal.svg';
+import Calendar32 from '../../public/pixelforge/shell/32/calendar.svg';
+import NewProject32 from '../../public/pixelforge/shell/32/newproject.svg';
+import Recent32 from '../../public/pixelforge/shell/32/recent.svg';
+import Save32 from '../../public/pixelforge/shell/32/save.svg';
+import OpenFile32 from '../../public/pixelforge/shell/32/openfile.svg';
+import Favorite32 from '../../public/pixelforge/shell/32/favorite.svg';
 // Milestone 16 - the desktop needs a folder mark. Same frozen family,
 // same manufacturing passes; it is simply not one of Sheet 01's twenty,
 // like `launch`. Copied from the family, not drawn.
-import Folder32 from '../../public/assets/pixelforge/shell/32/folder.svg';
+import Folder32 from '../../public/pixelforge/shell/32/folder.svg';
 
-import Home16 from '../../public/assets/pixelforge/shell/16/home.svg';
-import Projects16 from '../../public/assets/pixelforge/shell/16/projects.svg';
-import Architect16 from '../../public/assets/pixelforge/shell/16/architect.svg';
-import Canvas16 from '../../public/assets/pixelforge/shell/16/canvas.svg';
-import Forge16 from '../../public/assets/pixelforge/shell/16/forge.svg';
-import Memory16 from '../../public/assets/pixelforge/shell/16/memory.svg';
-import Launch16 from '../../public/assets/pixelforge/shell/16/launch.svg';
-import Explorer16 from '../../public/assets/pixelforge/shell/16/explorer.svg';
-import Settings16 from '../../public/assets/pixelforge/shell/16/settings.svg';
-import Search16 from '../../public/assets/pixelforge/shell/16/search.svg';
-import Bell16 from '../../public/assets/pixelforge/shell/16/bell.svg';
-import Clock16 from '../../public/assets/pixelforge/shell/16/clock.svg';
-import Network16 from '../../public/assets/pixelforge/shell/16/network.svg';
-import Volume16 from '../../public/assets/pixelforge/shell/16/volume.svg';
-import Terminal16 from '../../public/assets/pixelforge/shell/16/terminal.svg';
-import Calendar16 from '../../public/assets/pixelforge/shell/16/calendar.svg';
-import NewProject16 from '../../public/assets/pixelforge/shell/16/newproject.svg';
-import Recent16 from '../../public/assets/pixelforge/shell/16/recent.svg';
-import Save16 from '../../public/assets/pixelforge/shell/16/save.svg';
-import OpenFile16 from '../../public/assets/pixelforge/shell/16/openfile.svg';
-import Favorite16 from '../../public/assets/pixelforge/shell/16/favorite.svg';
-import Folder16 from '../../public/assets/pixelforge/shell/16/folder.svg';
+import Home16 from '../../public/pixelforge/shell/16/home.svg';
+import Projects16 from '../../public/pixelforge/shell/16/projects.svg';
+import Architect16 from '../../public/pixelforge/shell/16/architect.svg';
+import Canvas16 from '../../public/pixelforge/shell/16/canvas.svg';
+import Forge16 from '../../public/pixelforge/shell/16/forge.svg';
+import Memory16 from '../../public/pixelforge/shell/16/memory.svg';
+import Launch16 from '../../public/pixelforge/shell/16/launch.svg';
+import Explorer16 from '../../public/pixelforge/shell/16/explorer.svg';
+import Settings16 from '../../public/pixelforge/shell/16/settings.svg';
+import Search16 from '../../public/pixelforge/shell/16/search.svg';
+import Bell16 from '../../public/pixelforge/shell/16/bell.svg';
+import Clock16 from '../../public/pixelforge/shell/16/clock.svg';
+import Network16 from '../../public/pixelforge/shell/16/network.svg';
+import Volume16 from '../../public/pixelforge/shell/16/volume.svg';
+import Terminal16 from '../../public/pixelforge/shell/16/terminal.svg';
+import Calendar16 from '../../public/pixelforge/shell/16/calendar.svg';
+import NewProject16 from '../../public/pixelforge/shell/16/newproject.svg';
+import Recent16 from '../../public/pixelforge/shell/16/recent.svg';
+import Save16 from '../../public/pixelforge/shell/16/save.svg';
+import OpenFile16 from '../../public/pixelforge/shell/16/openfile.svg';
+import Favorite16 from '../../public/pixelforge/shell/16/favorite.svg';
+import Folder16 from '../../public/pixelforge/shell/16/folder.svg';
 
 export type ShellIconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 

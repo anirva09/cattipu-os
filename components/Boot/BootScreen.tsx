@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PixelLogo } from "./PixelLogo";
 import { useBootStore } from "@/store/useBootStore";
-import { useUiSound } from "@/lib/useUiSound";
+import { useUiSound } from "@/hooks/useUiSound";
 
 // segmented loading bar: 5 color groups x 4 segments, filling left to right
 const SEGMENT_COLORS = ["var(--color-red)", "var(--color-green)", "var(--color-blue)", "var(--color-gold)", "var(--color-purple)"];
