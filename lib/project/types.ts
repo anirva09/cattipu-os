@@ -22,7 +22,7 @@ import type { ProjectTemplateId } from "@/lib/os/templates";
 
 /** Bump this — and add a branch in migrate.ts — whenever CattipuProject's
  * shape changes in a way old persisted projects can't just be read as. */
-export const PROJECT_SCHEMA_VERSION = 3;
+export const PROJECT_SCHEMA_VERSION = 4;
 
 /** Shown as the owner of anything created locally. A single constant so
  *  the Projects list, the details panel and Explorer cannot disagree. */
@@ -336,6 +336,25 @@ export interface CattipuProject {
    */
   template: ProjectTemplateId | null;
 
+  /**
+   * Milestone 19 (Part D). The two pieces of the project identity that
+   * can legitimately disagree with the template, and so are the only two
+   * that are stored.
+   *
+   * `null` does not mean "unknown" — it means "whatever the template
+   * says", which is why correcting `DEFAULT_STACK` for `web-app` still
+   * reaches every Web App whose author never overrode it. A project that
+   * predates templates, or has none, resolves both to null.
+   *
+   * The other six fields of `ProjectIdentity` (lib/os/templates.ts) are
+   * derived, not stored: `targetPlatform` belongs to the kind of thing,
+   * and `artifactState` and `buildStatus` are readings of what the
+   * project actually contains. Storing those could only ever let them
+   * be wrong.
+   */
+  stackPreference: string | null;
+  deploymentTarget: string | null;
+
   idea: ProjectIdea;
   architect: ArchitectArtifacts;
   canvas: CanvasArtifacts;
@@ -386,6 +405,10 @@ export interface CreateProjectOptions {
   owner?: string;
   /** Milestone 19. Sets type and icon unless they are given explicitly. */
   template?: ProjectTemplateId | null;
+  /** Milestone 19. Overrides of the template's defaults. Omit for
+   *  "whatever the template says". */
+  stackPreference?: string | null;
+  deploymentTarget?: string | null;
 }
 
 /** The one place a brand-new, schema-current CattipuProject gets built —
@@ -405,6 +428,8 @@ export function createProject(opts: CreateProjectOptions): CattipuProject {
     updatedAt: now,
     type: opts.type ?? PROJECT_TYPE_BY_ICON[opts.icon ?? "generic"],
     template: opts.template ?? null,
+    stackPreference: opts.stackPreference ?? null,
+    deploymentTarget: opts.deploymentTarget ?? null,
     owner: opts.owner ?? DEFAULT_PROJECT_OWNER,
     lastOpenedAt: null,
     pinned: false,
