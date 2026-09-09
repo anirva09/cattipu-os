@@ -115,6 +115,15 @@ export interface InteractiveDesktopProps {
   dateTimeText: string;
   workspaceTitle?: string;
   creatorName?: string;
+  /**
+   * Milestone 19 (Part E). Forwarded to the RECENT PROJECTS widget.
+   *
+   * Undefined leaves RightWidgetStack on its own three hardcoded names,
+   * which is what the Golden Master render used and what made the widget
+   * blind to every project created afterwards. The shell now passes real
+   * ones; the default stays for the package's standalone story.
+   */
+  recentProjects?: readonly string[];
   className?: string;
   style?: CSSProperties;
   /**
@@ -226,6 +235,7 @@ export function InteractiveDesktop({
   dateTimeText,
   workspaceTitle = 'Banking Platform',
   creatorName = 'Creator',
+  recentProjects,
   className,
   style,
   windowContent,
@@ -475,6 +485,7 @@ export function InteractiveDesktop({
       <RightWidgetStack
         className="cattipu-interactive-desktop__right-widgets"
         creatorName={creatorName}
+        recentProjects={recentProjects}
         onViewAll={() => launchWindow('projects')}
       />
 

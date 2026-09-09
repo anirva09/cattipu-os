@@ -266,3 +266,45 @@ export function workspaceTitle(
 ): string | undefined {
   return activeProject(projects)?.name;
 }
+
+/** The brand, alone or with the active project.
+ *
+ * The browser tab is not a Golden Master surface, so it spells the
+ * separator the way the sprint writes it — an em dash. The TopBar keeps
+ * its own frozen glyph; see the note at the call site in CattipuShell.
+ * Both read `activeProject`, so they cannot disagree about WHICH project
+ * is active even though they punctuate it differently. */
+export function documentTitle(projects: readonly CattipuProject[]): string {
+  const name = workspaceTitle(projects);
+  return name ? `CATTIPU OS — ${name}` : "CATTIPU OS";
+}
+
+/**
+ * Milestone 19 (Part E) — what the RECENT PROJECTS widget lists.
+ *
+ * Recency is `lastOpenedAt` when the project has been opened and
+ * `createdAt` when it has not, so a project just created appears at the
+ * top the moment it exists — which is what "creating a project should
+ * immediately update Recent Projects" asks for — and then moves on merit
+ * once things start being opened.
+ *
+ * `updatedAt` is deliberately NOT the fallback, even though
+ * `orderProjects` uses it: editing a project's architecture is not the
+ * same as visiting it, and a background write would otherwise reshuffle
+ * a list labelled "recent". Archived projects are excluded; the widget
+ * is a way back into live work.
+ */
+export function recentProjectNames(
+  projects: readonly CattipuProject[],
+  limit = 3,
+): string[] {
+  return [...projects]
+    .filter((p) => !p.archived)
+    .sort(
+      (a, b) =>
+        Date.parse(b.lastOpenedAt ?? b.createdAt) -
+        Date.parse(a.lastOpenedAt ?? a.createdAt),
+    )
+    .slice(0, limit)
+    .map((p) => p.name);
+}

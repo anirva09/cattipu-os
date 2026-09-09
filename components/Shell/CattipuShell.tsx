@@ -17,7 +17,9 @@ import { PixelLogo } from "@/components/Boot/PixelLogo";
 import { ProjectsWindow } from "@/components/ProjectsWindow/ProjectsWindow";
 import { useProjectStore } from "@/store/useProjectStore";
 import {
+  documentTitle,
   orderProjects,
+  recentProjectNames,
   toProjectDetails,
   toProjectTree,
   toWindowProject,
@@ -204,6 +206,30 @@ export function CattipuShell() {
   const projects = useProjectStore((s) => s.projects);
   const title = useMemo(() => workspaceTitle(projects), [projects]);
 
+  /**
+   * Milestone 19 (Part C) — the browser tab follows the same project.
+   *
+   * Both the tab and the top bar read `activeProject`, so they cannot
+   * disagree about WHICH project is active; there is no second field
+   * saying who is in front. They punctuate it differently on purpose:
+   * the tab is not a Golden Master surface and spells the separator the
+   * way the sprint writes it (an em dash), while the top bar keeps the
+   * frozen glyph its signed-off render uses.
+   *
+   * In an effect and not in `metadata`, because the title depends on
+   * client state that does not exist during SSR — the same reason the
+   * clock renders empty on the server.
+   */
+  useEffect(() => {
+    document.title = documentTitle(projects);
+  }, [projects]);
+
+  // Part E. The widget declares `recentProjects = DEFAULT_RECENT_PROJECTS`
+  // as a DEFAULT PARAMETER — three hardcoded names — so passing nothing
+  // silently reinstated them and no project created after boot ever
+  // appeared. Exactly the trap `workspaceTitle` had, in a second place.
+  const recents = useMemo(() => recentProjectNames(projects), [projects]);
+
   const sidebarIcons = useMemo<CattipuSidebarIcons>(() => {
     const entries = CATTIPU_SIDEBAR_ITEMS.map(({ id, label }) => [
       id,
@@ -225,6 +251,7 @@ export function CattipuShell() {
       // is a value, so the default does not fire, and TopBar's own
       // `workspaceTitle ? ... : null` renders the brand alone.
       workspaceTitle={title ?? ""}
+      recentProjects={recents}
       creatorName="Creator"
       windowContent={WINDOW_CONTENT}
       renderProjectsWindow={(controls) => <LiveProjectsWindow {...controls} />}
