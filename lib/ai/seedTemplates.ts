@@ -112,6 +112,15 @@ const BANKING: Omit<GeneratedArchitecture, "prompt" | "projectName"> = {
     { id: "f5", label: "Fraud Detection", description: "Real-time transaction screening." },
     { id: "f6", label: "Analytics", description: "Spend trends, risk reporting." },
   ],
+  stack: [
+    { id: "s1", category: "Frontend", name: "React + TypeScript", reason: "Typed UI for a data-dense, statement/ledger-heavy interface.", tier: "core" },
+    { id: "s2", category: "Backend", name: "Node.js (NestJS)", reason: "Structured, typed services for auth, payments, and fraud scoring.", tier: "core" },
+    { id: "s3", category: "Database", name: "PostgreSQL", reason: "ACID transactions for the ledger — non-negotiable for money movement.", tier: "core" },
+    { id: "s4", category: "Cache", name: "Redis", reason: "Session store and rate-limit counters at the gateway.", tier: "core" },
+    { id: "s5", category: "Messaging", name: "Kafka", reason: "Durable event bus for payment.settled / fraud-scored fan-out.", tier: "supporting" },
+    { id: "s6", category: "Auth", name: "JWT + MFA", reason: "Short-lived access tokens, step-up MFA on sensitive transfers.", tier: "core" },
+    { id: "s7", category: "Hosting", name: "Kubernetes on AWS", reason: "Autoscaled compute matching the Docker/K8s infra graph.", tier: "supporting" },
+  ],
   nodes: [
     {
       id: "user",
@@ -371,6 +380,15 @@ const ECOMMERCE: Omit<GeneratedArchitecture, "prompt" | "projectName"> = {
     { id: "f5", label: "Notifications", description: "Order + shipping emails." },
     { id: "f6", label: "Analytics", description: "Conversion + revenue reporting." },
   ],
+  stack: [
+    { id: "s1", category: "Frontend", name: "Next.js", reason: "Server-rendered product/category pages for SEO and fast first paint.", tier: "core" },
+    { id: "s2", category: "Backend", name: "Node.js (Express)", reason: "Lightweight services for catalog, checkout, and order handling.", tier: "core" },
+    { id: "s3", category: "Database", name: "PostgreSQL", reason: "Relational fit for orders, line items, and inventory counts.", tier: "core" },
+    { id: "s4", category: "Cache", name: "Redis", reason: "Product listing cache and session-scoped cart storage.", tier: "core" },
+    { id: "s5", category: "Payments", name: "Stripe", reason: "Payment capture, tax, and refunds without owning card data.", tier: "core" },
+    { id: "s6", category: "Messaging", name: "Kafka", reason: "catalog.updated fan-out to search + recommendation consumers.", tier: "supporting" },
+    { id: "s7", category: "Hosting", name: "Kubernetes on AWS", reason: "Autoscaled compute matching the Docker/K8s infra graph.", tier: "supporting" },
+  ],
   nodes: [
     {
       id: "user",
@@ -596,6 +614,15 @@ const SAAS: Omit<GeneratedArchitecture, "prompt" | "projectName"> = {
     { id: "f4", label: "Notifications", description: "In-app + email alerts." },
     { id: "f5", label: "Permissions", description: "Roles + team access." },
     { id: "f6", label: "Analytics", description: "Usage + engagement." },
+  ],
+  stack: [
+    { id: "s1", category: "Frontend", name: "React + TypeScript", reason: "Typed component system for a long-lived, ever-growing app surface.", tier: "core" },
+    { id: "s2", category: "Backend", name: "Node.js (NestJS)", reason: "Multi-tenant-friendly module structure for workspace + billing logic.", tier: "core" },
+    { id: "s3", category: "Database", name: "PostgreSQL", reason: "Team/tenant-scoped relational data with row-level isolation.", tier: "core" },
+    { id: "s4", category: "Cache", name: "Redis", reason: "Session cache and short-lived usage counters for metering.", tier: "core" },
+    { id: "s5", category: "Billing", name: "Stripe Billing", reason: "Plans, seats, and usage-based metering without a billing engine to maintain.", tier: "core" },
+    { id: "s6", category: "Auth", name: "OAuth2 / SSO-ready", reason: "Team accounts today, workspace SSO without a rework later.", tier: "supporting" },
+    { id: "s7", category: "Hosting", name: "Kubernetes on AWS", reason: "Autoscaled compute matching the Docker/K8s infra graph.", tier: "supporting" },
   ],
   nodes: [
     {

@@ -92,7 +92,7 @@ function ArchNodeCard({ data, selected }: NodeProps<{ node: ArchitectNode; revea
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 320, damping: 22 }}
       className={[
-        "cattipu-cursor-hand cattipu-raised group relative flex w-[190px] items-start gap-2.5 rounded-md bg-surface-solid px-3 py-2.5",
+        "cattipu-cursor-hand cattipu-raised group relative flex w-[190px] items-start gap-2.5 bg-surface-solid px-3 py-2.5",
         selected ? "cattipu-window-glow" : "",
       ].join(" ")}
       style={{ borderLeftColor: meta.accent, borderLeftWidth: 4 }}
@@ -174,7 +174,7 @@ function InfraNodeCardView({ data }: NodeProps<{ node: InfraNode }>) {
   const Icon = meta.icon;
   return (
     <div
-      className="cattipu-cursor-hand cattipu-raised flex w-[176px] items-start gap-2.5 rounded-md bg-surface-solid px-3 py-2.5"
+      className="cattipu-cursor-hand cattipu-raised flex w-[176px] items-start gap-2.5 bg-surface-solid px-3 py-2.5"
       style={{ borderLeftColor: meta.accent, borderLeftWidth: 4 }}
     >
       <Handle type="target" position={Position.Left} />
@@ -347,18 +347,39 @@ export function ArchitectureCanvas() {
             <motion.div
               key="blueprint"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.9 }}
+              animate={{ opacity: 0.55 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
               className="pointer-events-none absolute inset-0 z-10"
               style={{
                 backgroundImage:
-                  "linear-gradient(rgba(11,61,145,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(11,61,145,0.35) 1px, transparent 1px)",
+                  "linear-gradient(rgba(31,91,255,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(31,91,255,0.22) 1px, transparent 1px)",
                 backgroundSize: "22px 22px",
                 backgroundColor: "var(--color-surface-solid)",
               }}
               aria-hidden
             />
+          )}
+        </AnimatePresence>
+
+        {/* construction circles — CATTIPU's signature Build Playback beat.
+            A single expanding ring as the first services take shape; purely
+            decorative, scoped to Architect only. */}
+        <AnimatePresence>
+          {playing && (playbackStage === "first-service" || playbackStage === "gateway") && (
+            <motion.div
+              key={`ring-${playbackStage}`}
+              className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+              aria-hidden
+            >
+              <motion.span
+                initial={{ scale: 0.3, opacity: 0.6 }}
+                animate={{ scale: 2.2, opacity: 0 }}
+                transition={{ duration: 0.9, ease: "easeOut" }}
+                className="h-24 w-24 rounded-full border-2"
+                style={{ borderColor: "var(--color-electric)" }}
+              />
+            </motion.div>
           )}
         </AnimatePresence>
 

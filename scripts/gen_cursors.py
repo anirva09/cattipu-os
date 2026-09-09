@@ -125,5 +125,68 @@ for x, y in [(13, 13), (13, 12), (13, 11), (13, 10), (12, 13), (11, 13), (10, 13
 render(g, "public/cursors/resize.png")
 RESIZE_HOTSPOT = (7, 7)
 
+# ---------------------------------------------------------------------
+# Milestone 12 (Constitutional Foundation Retrofit) — "freeze cursor
+# language: Arrow, I-Beam, Move, Resize, Hourglass, Pointing Hand." Arrow/
+# Hand/Text/Resize above already cover four of the six; these two fill
+# the gap (Window.tsx's titlebar drag previously reused hand.png as a
+# disclosed placeholder — see globals.css for the M12 fix that points it
+# at move.png instead).
+# ---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
+# Move: four-way arrow (drag affordance), hotspot dead-center
+# ---------------------------------------------------------------------
+g = new_grid()
+# vertical + horizontal bars, meeting at the center
+for y in range(3, 13):
+    set_px(g, 7, y, NAVY)
+    set_px(g, 8, y, NAVY)
+for x in range(3, 13):
+    set_px(g, x, 7, NAVY)
+    set_px(g, x, 8, NAVY)
+# arrowhead tips — up / down / left / right
+for x, y in [(7, 1), (8, 1), (6, 2), (7, 2), (8, 2), (9, 2)]:
+    set_px(g, x, y, NAVY)
+for x, y in [(7, 14), (8, 14), (6, 13), (7, 13), (8, 13), (9, 13)]:
+    set_px(g, x, y, NAVY)
+for x, y in [(1, 7), (1, 8), (2, 6), (2, 7), (2, 8), (2, 9)]:
+    set_px(g, x, y, NAVY)
+for x, y in [(14, 7), (14, 8), (13, 6), (13, 7), (13, 8), (13, 9)]:
+    set_px(g, x, y, NAVY)
+render(g, "public/cursors/move.png")
+MOVE_HOTSPOT = (8, 8)
+
+# ---------------------------------------------------------------------
+# Hourglass: classic sand-timer silhouette, hotspot dead-center
+# ---------------------------------------------------------------------
+g = new_grid()
+hourglass_rows = {
+    2: range(3, 13),
+    3: range(4, 12),
+    4: range(5, 11),
+    5: range(6, 10),
+    6: range(6, 10),
+    7: range(7, 9),
+    8: range(7, 9),
+    9: range(6, 10),
+    10: range(6, 10),
+    11: range(5, 11),
+    12: range(4, 12),
+    13: range(3, 13),
+}
+for y, xs in hourglass_rows.items():
+    for x in xs:
+        set_px(g, x, y, NAVY)
+render(g, "public/cursors/hourglass.png")
+HOURGLASS_HOTSPOT = (8, 8)
+
 print("hotspots (logical grid coords, multiply by SCALE for css px):")
-print("arrow", ARROW_HOTSPOT, "hand", HAND_HOTSPOT, "text", TEXT_HOTSPOT, "resize", RESIZE_HOTSPOT)
+print(
+    "arrow", ARROW_HOTSPOT,
+    "hand", HAND_HOTSPOT,
+    "text", TEXT_HOTSPOT,
+    "resize", RESIZE_HOTSPOT,
+    "move", MOVE_HOTSPOT,
+    "hourglass", HOURGLASS_HOTSPOT,
+)

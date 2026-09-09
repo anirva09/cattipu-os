@@ -41,8 +41,21 @@ export const useSettingsStore = create<SettingsState>()(
   )
 );
 
+// Sprint 3 — Dock System: every step is an 8px-grid multiple, and the
+// default ("md") lands exactly on the approved 24x24 icon grid.
 export const DOCK_ICON_SIZE_PX: Record<DockIconSize, number> = {
-  sm: 22,
-  md: 28,
-  lg: 36,
+  sm: 16,
+  md: 24,
+  lg: 32,
 };
+
+// Collapsed rail width is the spec'd 72px. Expanded was 196px through
+// Milestone 1; Milestone 2 ("1998 workstation control") pins it to 184px
+// instead — resolving the discrepancy flagged when Milestone 2 was
+// scoped. Framer Motion's `animate` needs a plain number, so these live
+// as a JS constant rather than a CSS custom property — `--dock-width-*`
+// in globals.css documents the same values for anything CSS-only.
+export const DOCK_RAIL_WIDTH_PX = {
+  collapsed: 72,
+  expanded: 184,
+} as const;
