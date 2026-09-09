@@ -222,10 +222,14 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
     const next = value.trim();
     setRenamingId(null);
     if (!next) return;
-    // A shortcut has no name of its own — renaming one renames the
-    // project it points at, which is the same edit the desktop makes.
-    if (entry.kind === "folder" && entry.objectId) renameObject(entry.objectId, next);
-    else if (entry.projectId) renameProject(entry.projectId, next);
+    // Anything LINKED to a project has no name of its own — renaming it
+    // renames the project, which is the same edit the desktop makes.
+    // Tested before the folder branch, because a template's workspace
+    // folder is both a folder and linked, and editing its stored label
+    // would change a fallback nobody can see while the displayed name
+    // stayed put.
+    if (entry.projectId) renameProject(entry.projectId, next);
+    else if (entry.objectId) renameObject(entry.objectId, next);
   };
 
   // ── menus ─────────────────────────────────────────────────────────────

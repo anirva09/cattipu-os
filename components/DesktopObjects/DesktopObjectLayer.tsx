@@ -25,7 +25,8 @@ import {
   type OsObject,
 } from "@/lib/os/desktop";
 import { orderProjects } from "@/lib/os/projects";
-import { PROJECT_TEMPLATES } from "@/lib/os/templates";
+import { PROJECT_TEMPLATES, planSections } from "@/lib/os/templates";
+import { isProjectLinked } from "@/lib/os/filesystem";
 import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { useProjectStore } from "@/store/useProjectStore";
 
@@ -117,6 +118,7 @@ export function DesktopObjectLayer({
   const openProject = useProjectStore((s) => s.openProject);
   const renameProject = useProjectStore((s) => s.renameProject);
   const addProjectFromTemplate = useProjectStore((s) => s.addProjectFromTemplate);
+  const createProjectWorkspace = useFilesystemStore((s) => s.createProjectWorkspace);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -224,7 +226,8 @@ export function DesktopObjectLayer({
     const next = value.trim();
     setRenamingId(null);
     if (!next) return;
-    if (object.kind === "project-shortcut" && object.projectId) {
+    // Any linked object — a shortcut, or a template's workspace folder.
+    if (isProjectLinked(object) && object.projectId) {
       renameProject(object.projectId, next);
       return;
     }
@@ -268,6 +271,17 @@ export function DesktopObjectLayer({
           icon: "projects" as ShellIconName,
           onSelect: () => {
             const project = addProjectFromTemplate(template.id);
+            // One action, one shared state (Part E). The project record
+            // and its workspace folders are created together here rather
+            // than inside useProjectStore, so neither store has to know
+            // the other exists — and every surface that lists projects or
+            // objects picks both up from the same two arrays on the next
+            // render, with nothing to notify and nothing to keep in step.
+            createProjectWorkspace(
+              project.id,
+              project.name,
+              planSections(template.plan),
+            );
             // Creating a project IS opening it — it is what you are now
             // working on, and the top bar says so from this moment.
             openProject(project.id);
@@ -352,6 +366,7 @@ export function DesktopObjectLayer({
     ];
   }, [
     addProjectFromTemplate,
+    createProjectWorkspace,
     createFolder,
     createProjectShortcut,
     objects,

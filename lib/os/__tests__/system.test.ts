@@ -17,18 +17,33 @@
  */
 import assert from "node:assert/strict";
 
-import { nextFolderName, nextNumberedName, type OsObject } from "../filesystem";
+import {
+  isProjectLinked,
+  nextFolderName,
+  nextNumberedName,
+  objectLabel,
+  visibleObjects,
+  type OsObject,
+} from "../filesystem";
 import {
   UNTITLED_PROJECT,
   activeProject,
+  documentTitle,
   nextProjectName,
+  recentProjectNames,
   projectProgress,
   projectStatus,
   workspaceTitle,
 } from "../projects";
 import {
+  DEFAULT_STACK,
   PROJECT_TEMPLATES,
+  TARGET_PLATFORM,
+  artifactState,
+  buildStatus,
   getTemplate,
+  planSections,
+  projectIdentity,
   isTemplateId,
   planSize,
   projectPlan,
@@ -273,6 +288,194 @@ test("a project saved before templates existed migrates to no template", () => {
   assert.equal(migrated.template, null);
   assert.equal(projectPlan(migrated), null);
   assert.equal(migrated.name, "Old Project", "nothing else was lost");
+});
+
+// ── Part C: the browser title ───────────────────────────────────────────
+
+test("the tab shows the brand alone when nothing has been opened", () => {
+  assert.equal(documentTitle([project("Banking Platform")]), "CATTIPU OS");
+});
+
+test("the tab and the top bar name the same project", () => {
+  const projects = [
+    project("Banking Platform", "2026-09-01T10:00:00.000Z"),
+    project("AI SaaS Starter", "2026-09-02T10:00:00.000Z"),
+  ];
+  assert.equal(documentTitle(projects), "CATTIPU OS — AI SaaS Starter");
+  // The point of the pair: different punctuation, never a different
+  // project. A second source of "who is active" is what this rejects.
+  assert.equal(workspaceTitle(projects), "AI SaaS Starter");
+});
+
+// ── Part E: recent projects ─────────────────────────────────────────────
+
+test("a project just created is the most recent, before anything is opened", () => {
+  const older = { ...project("Banking Platform"), createdAt: "2026-08-01T00:00:00.000Z" };
+  const fresh = { ...project("Web App"), createdAt: "2026-09-08T00:00:00.000Z" };
+  assert.deepEqual(recentProjectNames([older, fresh]), ["Web App", "Banking Platform"]);
+});
+
+test("opening an older project moves it above a newer one", () => {
+  const older = {
+    ...project("Banking Platform", "2026-09-09T00:00:00.000Z"),
+    createdAt: "2026-08-01T00:00:00.000Z",
+  };
+  const fresh = { ...project("Web App"), createdAt: "2026-09-08T00:00:00.000Z" };
+  assert.deepEqual(recentProjectNames([older, fresh]), ["Banking Platform", "Web App"]);
+});
+
+test("an edit does not count as a visit", () => {
+  // `updatedAt` moves whenever anything writes to the project — an
+  // Architect run, a rename. Ordering a list called "recent" by it lets a
+  // background write reshuffle what the person sees they last worked on.
+  const edited = {
+    ...project("Banking Platform"),
+    createdAt: "2026-08-01T00:00:00.000Z",
+    updatedAt: "2026-09-09T00:00:00.000Z",
+  };
+  const fresh = { ...project("Web App"), createdAt: "2026-09-08T00:00:00.000Z" };
+  assert.deepEqual(recentProjectNames([edited, fresh]), ["Web App", "Banking Platform"]);
+});
+
+test("archived projects are not recent work", () => {
+  const archived = { ...project("Old Thing"), archived: true, createdAt: "2026-09-09T00:00:00.000Z" };
+  const live = { ...project("Web App"), createdAt: "2026-09-08T00:00:00.000Z" };
+  assert.deepEqual(recentProjectNames([archived, live]), ["Web App"]);
+});
+
+test("the widget takes three, and says so by taking exactly three", () => {
+  const many = ["A", "B", "C", "D"].map((n, i) => ({
+    ...project(n),
+    createdAt: `2026-09-0${i + 1}T00:00:00.000Z`,
+  }));
+  assert.deepEqual(recentProjectNames(many), ["D", "C", "B"]);
+});
+
+// ── Part D: the project identity ────────────────────────────────────────
+
+test("every template resolves all eight identity fields", () => {
+  for (const template of PROJECT_TEMPLATES) {
+    const p = createProject({ name: template.label, template: template.id });
+    const id = projectIdentity(p);
+    assert.equal(id.template, template.id, template.label);
+    assert.ok(id.targetPlatform, `${template.label} has a target platform`);
+    assert.ok(id.stackPreference, `${template.label} has a stack`);
+    assert.ok(id.deploymentTarget, `${template.label} has a deployment target`);
+    assert.equal(id.createdAt, p.createdAt);
+    assert.equal(id.lastOpened, null);
+    assert.equal(id.buildStatus, "none");
+  }
+});
+
+test("a project with no template resolves the template-derived fields to null", () => {
+  const id = projectIdentity(createProject({ name: "Manual" }));
+  assert.equal(id.template, null);
+  assert.equal(id.targetPlatform, null);
+  assert.equal(id.stackPreference, null);
+  assert.equal(id.deploymentTarget, null);
+});
+
+test("an override wins over the template, and only for that project", () => {
+  const overridden = createProject({
+    name: "Rails App",
+    template: "web-app",
+    stackPreference: "Rails · Postgres",
+  });
+  const plain = createProject({ name: "Web App", template: "web-app" });
+  assert.equal(projectIdentity(overridden).stackPreference, "Rails · Postgres");
+  assert.equal(projectIdentity(plain).stackPreference, DEFAULT_STACK["web-app"]);
+});
+
+test("correcting a template reaches every project that never disagreed", () => {
+  // The reason targetPlatform is derived and not stored. A copy written
+  // at creation would leave month-old projects on the old value with no
+  // way to know they were stale.
+  const p = createProject({ name: "Extension", template: "chrome-extension" });
+  assert.equal(projectIdentity(p).targetPlatform, TARGET_PLATFORM["chrome-extension"]);
+  assert.equal(projectIdentity(p).targetPlatform, "Chrome");
+});
+
+test("build status is the LAST build, not the first or a stored claim", () => {
+  const p = createProject({ name: "Web App", template: "web-app" });
+  p.forge.builds = [
+    { id: "b1", status: "success", startedAt: "2026-09-01T00:00:00.000Z" },
+    { id: "b2", status: "failed", startedAt: "2026-09-03T00:00:00.000Z" },
+    { id: "b3", status: "pending", startedAt: "2026-09-02T00:00:00.000Z" },
+  ];
+  assert.equal(buildStatus(p), "failed", "newest by startedAt, not array order");
+});
+
+test("a brand new template project reports nothing built", () => {
+  for (const template of PROJECT_TEMPLATES) {
+    const p = createProject({ name: template.label, template: template.id });
+    const state = projectIdentity(p).artifactState;
+    assert.deepEqual(
+      state,
+      { architect: 0, canvas: 0, forge: 0, memory: 0, launch: 0 },
+      `${template.label} claims an artifact it does not have`,
+    );
+    assert.equal(projectProgress(p), 0);
+  }
+});
+
+test("artifact state counts what is there, per slot", () => {
+  const p = createProject({ name: "Web App", template: "web-app" });
+  p.canvas.screens = [{ id: "s1", name: "Home" }];
+  p.canvas.components = [{ id: "c1", name: "Nav" }];
+  p.launch.environments = [{ id: "e1", name: "production" }];
+  const state = artifactState(p);
+  assert.equal(state.canvas, 2, "screens and components both count");
+  assert.equal(state.launch, 1);
+  assert.equal(state.forge, 0, "an empty slot is 0, not absent");
+});
+
+test("a project saved before these fields existed migrates to no override", () => {
+  const old = {
+    ...createProject({ name: "Old Project", template: "web-app" }),
+    version: 3,
+  } as unknown as Record<string, unknown>;
+  delete old.stackPreference;
+  delete old.deploymentTarget;
+  const migrated = migrateProject(old) as CattipuProject;
+  assert.equal(migrated.stackPreference, null);
+  assert.equal(migrated.deploymentTarget, null);
+  // null means "whatever the template says", so it resolves, not blanks.
+  assert.equal(projectIdentity(migrated).stackPreference, DEFAULT_STACK["web-app"]);
+});
+
+// ── Part D: the workspace folders ───────────────────────────────────────
+
+test("a template only gets folders for sections its plan actually has", () => {
+  assert.deepEqual(planSections(getTemplate("web-app")!.plan), [
+    "Screens",
+    "Services",
+    "Environments",
+  ]);
+  // An API declares no screens, so it gets no Screens folder — the same
+  // rule that keeps `plan.screens` empty rather than inventing one.
+  assert.deepEqual(planSections(getTemplate("api")!.plan), ["Services", "Environments"]);
+  assert.deepEqual(planSections(getTemplate("cli-tool")!.plan), ["Services", "Environments"]);
+});
+
+test("a workspace folder shows the project's live name, not a copy", () => {
+  const linked: OsObject = { ...folder("Web App"), projectId: "p-Web-App" };
+  const renamed = [{ ...project("Payments Rewrite"), id: "p-Web-App" }];
+  assert.ok(isProjectLinked(linked));
+  assert.equal(objectLabel(linked, renamed), "Payments Rewrite");
+});
+
+test("a workspace folder survives its project and keeps a usable name", () => {
+  // Unlike a shortcut, which `visibleObjects` hides: a folder can hold
+  // the person's own files, so deleting the project must not take it —
+  // it degrades into an ordinary folder with the name it had.
+  const linked: OsObject = { ...folder("Web App"), projectId: "gone" };
+  assert.equal(objectLabel(linked, []), "Web App");
+  assert.deepEqual(visibleObjects([linked], []), [linked]);
+});
+
+test("an unlinked folder is not treated as a project", () => {
+  assert.equal(isProjectLinked(folder("Invoices")), false);
+  assert.equal(objectLabel(folder("Invoices"), [project("Invoices")]), "Invoices");
 });
 
 // ── run ─────────────────────────────────────────────────────────────────
