@@ -260,7 +260,7 @@ body.cattipu-cursors .cattipu-resize-handle {
 }
 /* Milestone 4 (Window Interaction Polish) — the blanket
    `body.cattipu-cursors *` rule above (default arrow for everything)
-   otherwise wins over a plain `.cattipu-window-titlebar { cursor: grab }`
+   otherwise wins over a plain `.cattipu-window__titlebar { cursor: grab }`
    rule, the same way it would for any other cursor exception — hence the
    same scoped-selector + !important pattern already used for the resize
    handles just above.
@@ -271,11 +271,19 @@ body.cattipu-cursors .cattipu-resize-handle {
    a real Move glyph (public/cursors/move.png), so dragging a window uses
    its own dedicated asset instead of borrowing Pointing Hand's — the two
    read as distinct affordances (draggable surface vs. clickable control)
-   and now look it. */
-body.cattipu-cursors .cattipu-window-titlebar {
+   and now look it.
+   Milestone 20 (Native Feel Polish) — selector corrected from
+   `.cattipu-window-titlebar` to `.cattipu-window__titlebar`. The title-bar
+   header element has carried the BEM class since the InteractiveDesktop
+   rebuild (see `Window.tsx`, `ManagedWindow.tsx`'s drag-target lookup, and
+   `WindowManager.css`); the hyphenated selector matched nothing in the
+   live tree, so neither the M4 grab/grabbing fallback nor this Move glyph
+   ever applied to an actual window drag. Restoring the documented
+   behavior, not changing it. */
+body.cattipu-cursors .cattipu-window__titlebar {
   cursor: url("/cursors/move.png") 32 32, grab !important;
 }
-body.cattipu-cursors .cattipu-window-titlebar:active {
+body.cattipu-cursors .cattipu-window__titlebar:active {
   cursor: url("/cursors/move.png") 32 32, grabbing !important;
 }
 /* Hourglass — the one existing real "busy" state in the shell today is
@@ -942,11 +950,14 @@ body.cattipu-cursors .cattipu-switch:disabled[data-busy] {
    The opt-in pixel-cursor system (body.cattipu-cursors .cattipu-cursor-
    hand, still applied to ordinary clickable surfaces elsewhere) is a
    higher-specificity, deliberately-scoped rule and still wins over this
-   when that setting is on — this just fills the gap when it's off. */
-.cattipu-window-titlebar {
+   when that setting is on — this just fills the gap when it's off.
+   Milestone 20 — selector corrected from `.cattipu-window-titlebar` to
+   `.cattipu-window__titlebar` (see the M12 block above for why the old
+   selector matched nothing live). */
+.cattipu-window__titlebar {
   cursor: grab;
 }
-.cattipu-window-titlebar:active {
+.cattipu-window__titlebar:active {
   cursor: grabbing;
 }
 

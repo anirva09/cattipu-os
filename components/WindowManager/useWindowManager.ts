@@ -12,6 +12,7 @@ import {
   type WindowPosition,
 } from './windowManager.reducer';
 import type { SnapRegion, WorkspaceBox } from '../../lib/os/workspace';
+import { useUiSound } from '../../hooks/useUiSound';
 
 export const CATTIPU_WINDOW_SESSION_KEY =
   'cattipu-os:window-manager:v1';
@@ -56,9 +57,21 @@ export function useWindowManager() {
     }
   }, [sessionHydrated, state]);
 
+  // Milestone 20 (Native Feel Polish) — the frozen sound vocabulary maps
+  // window-open/window-close to the "mechanical click" (DESIGN_CONSTITUTION
+  // §9), and Settings > Sound already describes it as covering "window
+  // open/close." That wiring existed only on the orphaned, unmounted
+  // `useWindowStore` — the live path (this hook) called no sound at all.
+  // `useUiSound` is the same settings-gated (soundEnabled/soundVolume)
+  // trigger every other live consumer (BootScreen, BuildPlayback) already
+  // uses, so this keeps one canonical sound owner rather than reviving the
+  // dead store's separate `chime()` helper.
+  const playUiSound = useUiSound();
+
   const launchWindow = useCallback((id: CattipuWindowId) => {
+    playUiSound('window-open');
     dispatch({ type: 'launch', id });
-  }, []);
+  }, [playUiSound]);
 
   const focusWindow = useCallback((id: CattipuWindowId) => {
     dispatch({ type: 'focus', id });
@@ -80,8 +93,9 @@ export function useWindowManager() {
   }, []);
 
   const closeWindow = useCallback((id: CattipuWindowId) => {
+    playUiSound('window-close');
     dispatch({ type: 'close', id });
-  }, []);
+  }, [playUiSound]);
 
   // ── Milestone 18 ────────────────────────────────────────────────────
   // All of these go through the SAME reducer and the same state. There
