@@ -1,146 +1,270 @@
-# Milestone 20 — Native Feel Polish
+# CATTIPU OS — M20 Report
 
-**Baseline:** `main` == `origin/main` @ `d7af050` ("docs: establish canonical project
-constitution"), clean working tree, Git identity `anirva09 <anirvavjit2023@gmail.com>`.
-Verified before any change: `npm run verify` (typecheck → lint → test, 136/136) and
-`npm run build` both clean.
+*Updated by the M20R1 correction sprint (base commit `fc4bd42`) to bring this
+report into the format `PROJECT_CONSTITUTION.md` §89 specifies, and to correct
+an inaccurate verification claim in the original M20 pass — see the note at
+the top of Verification and Known Issues.*
 
-## Scope
+## Objective
 
-Per the sprint brief, this milestone audited the eight listed M20 surfaces (cursor
-states/hotspots/reset, drag/resize cursor behavior, sound ownership and window
-open/close wiring, mute/volume/preload, Toolbox actions, focus restoration,
-hover/reset defects, native mechanical polish) and fixed only what the audit
-confirmed as a live regression against already-documented/frozen behavior. Nothing
-here adds a feature, restructures a store, or touches Canvas/Forge/Launch/Memory/
-Project Memory/AI providers.
+M20 — Native Feel Polish. Audit the shell's cursor engine, sound wiring,
+Toolbox actions, and general desktop interaction polish against what
+`docs/DESIGN_CONSTITUTION.md` and the M4/M12 history already document as
+frozen behavior, and fix only confirmed regressions — no new features, no
+Canvas/Forge/Launch/Memory/Project Memory/AI-provider work, no M20.5.
 
-## Confirmed defects fixed
+M20R1 is a correction sprint against the same milestone, fixing two defects
+an independent review found in the M20 commit itself: `launchWindow` played
+the window-open sound on every call (including refocusing an already-open
+window and restoring a minimized one, not only on an actual closed→open
+transition), and the pixel-cursor Move glyph did not cover the whole
+draggable title-bar surface (the title text still showed Arrow).
 
-### 1. Title-bar drag cursor never applied (`app/globals.css`)
+## Baseline
 
-`DESIGN_CONSTITUTION.md` §8/§9 and the Milestone 4 and Milestone 12 reports describe
-a window title bar as showing an idle `grab` / active `grabbing` cursor, and — with
-Settings > Cursor's pixel-cursor mode on — a dedicated Move glyph
-(`public/cursors/move.png`) instead of a plain CSS cursor. Both rules targeted
-`.cattipu-window-titlebar` (hyphenated). The live title bar, rendered by
-`components/Window/Window.tsx` and used as the drag target in
-`components/WindowManager/ManagedWindow.tsx` (`target.closest('.cattipu-window__titlebar')`)
-and styled in `components/WindowManager/WindowManager.css`, has carried the BEM class
-`.cattipu-window__titlebar` since the InteractiveDesktop rebuild. The hyphenated
-selector matched nothing in the current DOM, so neither cursor rule ever fired —
-dragging a window showed the browser's default arrow, not `grab`/`grabbing` or the
-Move glyph, regardless of the Settings > Cursor toggle.
+- Repository: `anirva09/cattipu-os`, branch `main`.
+- M20: `main` == `origin/main` @ `d7af050` ("docs: establish canonical
+  project constitution"), clean working tree, Git identity
+  `anirva09 <anirvavjit2023@gmail.com>`. `npm run verify` and `npm run build`
+  both clean before any change.
+- M20R1: base commit `fc4bd42` (the M20 commit), `origin/main` still at
+  `d7af050` (M20's commit was never pushed), clean working tree, same Git
+  identity confirmed again. `npm run verify` and `npm run build` both clean
+  before any change.
 
-**Fix:** corrected both selector blocks in `app/globals.css` (the M4 plain
-grab/grabbing fallback and the M12 pixel-cursor Move mapping) to
-`.cattipu-window__titlebar`, matching the class the live component tree actually
-renders. No new CSS rule, no visual redesign — the same two rules the constitution
-already documents, now pointed at the element that exists. Verified live: with
-pixel cursors on, `getComputedStyle` on every open window's title bar now resolves
-to `url(".../cursors/move.png") 32 32, grab`.
+## Audit Findings
 
-**Not touched:** `.cattipu-resize-handle` (also in the same globals.css block) is
-vestigial CSS with the same era of naming — but there is no element anywhere in the
-live tree that carries that class, because the current `WindowManager` reducer has
-no resize action at all (windows are moved/snapped/tiled/maximized, never
-free-resized by dragging an edge). `docs/COMPONENT_LIBRARY.md`'s claim of "8
-edges/corners via `RESIZE_HANDLE_CLASSES`" describes the old `react-rnd`-based
-`Desktop`/`Window` system, which no longer exists (`components/Desktop/` is gone).
-Wiring an actual resize-handle interaction would be new capability, not polish —
-out of scope for M20, flagged here as a documentation-vs-reality gap for the
-constitution/roadmap reconciliation the sprint brief explicitly deferred.
+What already existed, per system:
 
-### 2. Window-open/close sound never wired into the live path (`components/WindowManager/useWindowManager.ts`)
+- **Cursor engine** — six frozen roles (Arrow, Hand, Text, Resize, Move,
+  Hourglass) generated by `scripts/gen_cursors.py` into `public/cursors/*.png`,
+  gated by `CursorProvider.tsx` toggling `.cattipu-cursors` on `<body>`,
+  consumed by a block of scoped selectors in `app/globals.css`. The Move
+  glyph and its idle/active cursor rules targeted `.cattipu-window-titlebar`
+  (hyphenated) — a class that matched nothing: the live title bar
+  (`components/Window/Window.tsx`) has carried the BEM class
+  `.cattipu-window__titlebar` since the InteractiveDesktop rebuild, and
+  `ManagedWindow.tsx`'s own drag-target lookup already uses that BEM name.
+- **Sound** — `lib/sounds.ts` (asset cache + `playSound`) and `useUiSound()`
+  (the settings-gated trigger) already existed and were already used live by
+  `BootScreen.tsx` and `BuildPlayback.tsx`. Nothing in the live
+  `WindowManager` (`useWindowManager.ts`, `windowManager.reducer.ts`,
+  `ManagedWindow.tsx`) called either one; the only window-sound wiring in the
+  tree was on the orphaned, unmounted `store/useWindowStore.ts`.
+- **Window transitions** — `windowManager.reducer.ts`'s `launch` action is
+  the single dispatch used for three distinct transitions (closed→open,
+  already-open→refocus, minimized→restore); all three raise the window the
+  same way. A window's `open` flag is `true` in both `normal` and
+  `minimized` mode — only the `close` action sets it `false`.
+- **Toolbox** — `RightWidgetStack.tsx` renders eight tool buttons
+  (Entity/Service/Flow/Screen/API/Job/Script/Config) behind an `onToolSelect`
+  prop that `InteractiveDesktop.tsx` never receives from `CattipuShell.tsx`.
+  `lib/ai/types.ts`'s `ArchitectNodeKind` (`client | gateway | service |
+  datastore | queue`) and `useArchitectStore.ts` have no concept matching
+  any of the eight tool names.
+- **Focus restoration** — `windowManager.reducer.ts`'s `minimize`, `close`,
+  and `restore` actions already recompute `activeWindowId` via
+  `topmostVisibleWindowId()`; `ManagedWindow.tsx` already moves DOM focus to
+  whichever window becomes active.
 
-`DESIGN_CONSTITUTION.md` §9 and Settings > Sound's own copy ("Boot, window
-open/close, and success/error chimes") both describe window-open/close as mapped to
-the frozen "mechanical click" sound, gated by `useSettingsStore.soundEnabled` /
-`soundVolume`. `lib/sounds.ts` and the `useUiSound()` hook that gates it already
-exist and are already used live by `BootScreen.tsx` (boot fanfare) and
-`BuildPlayback.tsx` (success chime). Grepping the entire live `WindowManager`
-(`useWindowManager.ts`, `windowManager.reducer.ts`, `ManagedWindow.tsx`) found zero
-sound calls. The only place `window-open`/`window-close` were ever triggered was
-`store/useWindowStore.ts`'s own `chime()` helper — an orphaned, pre-InteractiveDesktop
-window store whose only consumer, `CommandPalette.tsx`, is itself never mounted. In
-the shipped app, opening or closing a window was silent.
+## Canonical Ownership
 
-**Fix:** wired `useUiSound()` directly into `useWindowManager.ts` — the one hook every
-window action in the live app already funnels through — so `launchWindow` plays
-`"window-open"` and `closeWindow` plays `"window-close"`, gated by the same settings
-every other consumer respects. `useWindowStore.ts` was not touched, revived, or
-extended; there is still exactly one canonical sound owner (`useUiSound` /
-`lib/sounds.ts`), and it is now also the one live window-sound owner. Verified live:
-instrumenting `HTMLMediaElement.prototype.play` and exercising the app confirms
-`window-open.wav` fires on launch and `window-close.wav` fires on close, and that
-turning Settings > Sound off suppresses both calls entirely.
+- Window lifecycle (open/focus/minimize/maximize/close/snap/restore/z-order):
+  `components/WindowManager/windowManager.reducer.ts` +
+  `components/WindowManager/useWindowManager.ts`. Not touched: no second
+  window manager was created; `store/useWindowStore.ts` was neither revived
+  nor extended.
+- Cursor presentation: the opt-in pixel-cursor stylesheet block in
+  `app/globals.css`, toggled by `CursorProvider.tsx` off
+  `useSettingsStore.cursorEnabled`. No second cursor system was introduced;
+  the M20R1 drag-cursor fix reuses `ManagedWindow.tsx`'s existing
+  `data-dragging` attribute rather than adding new state.
+- Sound: `lib/sounds.ts` (`playSound`) + `hooks/useUiSound.ts`, gated by
+  `useSettingsStore.soundEnabled` / `soundVolume`. Still the only sound
+  owner; window-open/close now call into it rather than duplicating it.
 
-**Scope note:** only `launchWindow` (the single call site used whenever a window is
-opened, from the dock, a desktop shortcut, or Explorer) and `closeWindow` were
-wired. Minimize, maximize, focus, snap, and restore were left silent — the frozen
-vocabulary names only "window-open/window-close," and extending the sound map to
-other transitions was not asked for and would be inventing behavior, not restoring
-documented behavior.
+## Changes
 
-## Audited and found correct (no change)
+### M20
 
-- **Cursor hotspots** — cross-checked every hotspot in `app/globals.css` against
-  `scripts/gen_cursors.py`'s logical-grid hotspots × the 4px scale factor. All six
-  (arrow, hand, text, resize, move, hourglass) match exactly; no defect.
-- **Cursor reset behavior** — `CursorProvider.tsx` toggles `.cattipu-cursors` on
-  `<body>` directly off the settings store; toggling off cleanly reverts to native
-  cursors. No stale class or missed reset path.
-- **Mute/volume** — `playSound()` re-reads `soundVolume` on every call (no stale
-  cached volume), and the Settings slider is disabled whenever sound is off. No
-  defect.
-- **Focus restoration** — `windowManager.reducer.ts`'s `minimize`, `close`, and
-  `restore` actions all recompute `activeWindowId` via `topmostVisibleWindowId()`
-  when the closed/minimized window was the active one; `ManagedWindow.tsx` moves DOM
-  focus to whichever window becomes active. Traced through minimize, close, restore,
-  and restoreAll — all correctly hand focus to the next visible window, or to
-  nothing if none remain. No defect found.
-- **Toolbox actions** — traced `RightWidgetStack.tsx`'s eight tool buttons
-  (Entity/Service/Flow/Screen/API/Job/Script/Config) to their `onToolSelect` prop,
-  which `InteractiveDesktop.tsx` never receives from `CattipuShell.tsx` — every
-  button is a confirmed no-op today. Checked whether a canonical target already
-  exists for any of them: `lib/ai/types.ts`'s `ArchitectNodeKind` is only
-  `client | gateway | service | datastore | queue`, and `useArchitectStore.ts` has no
-  concept of entity/flow/screen/api/job/script/config at all. **Classification: all
-  eight are disconnected with no existing canonical target.** Per the sprint brief
-  ("fix disconnected actions only where the canonical target already exists... do
-  not invent future milestone behavior"), none were wired — inventing an Architect
-  node type or a new home-screen action to satisfy a button label would be new
-  product behavior, not M20 polish. Left as-is; worth a product decision in a future
-  milestone, not a fix here.
+1. `app/globals.css` — corrected the M4 grab/grabbing fallback and the M12
+   Move-glyph selectors from `.cattipu-window-titlebar` to
+   `.cattipu-window__titlebar`, matching the class the live DOM renders.
+2. `components/WindowManager/useWindowManager.ts` — added a
+   `useUiSound()` call inside `launchWindow`/`closeWindow` so opening/closing
+   a window plays the documented mechanical-click sound.
+
+### M20R1 (this correction)
+
+3. `components/WindowManager/useWindowManager.ts` — `launchWindow` and
+   `closeWindow` now read the window's `open` flag from a `stateRef` (a ref
+   mirroring the reducer's state, refreshed every render) **before**
+   dispatching, and only call `playUiSound` when that flag shows a genuine
+   transition: `window-open` fires only when the window was not already
+   open (closed→open), `window-close` only when it was open. Refocusing an
+   already-open window and restoring a minimized one (both still dispatched
+   through `launchWindow`, and both leave `open: true` throughout) no longer
+   replay the open chime. The reducer itself was not touched — it takes no
+   new action, branch, or field; the check reads its existing `open` flag
+   from the hook layer, so `windowManagerReducer` remains a pure function of
+   `(state, action)` with no side effects added to it.
+4. `app/globals.css` — two follow-on cursor fixes:
+   - Extended the Move-glyph and grab/grabbing rules from
+     `.cattipu-window__titlebar` alone to every descendant of it *except*
+     `.cattipu-window__controls` and its children (via chained `:not()`).
+     Previously the blanket `body.cattipu-cursors *` rule from M12 set
+     `cursor` directly on every element, including `.cattipu-window__title`
+     — and a direct rule on a descendant is not overridden by inheriting
+     from its ancestor, so the title bar's own background showed Move while
+     the title text sitting on it still showed Arrow.
+   - Replaced the `:active`-pseudo-class trigger for the grabbing cursor
+     (both the pixel-cursor and the plain-CSS fallback blocks) with the
+     `data-dragging="true"` attribute `ManagedWindow.tsx` already sets for
+     the exact lifetime of a title-bar drag (on pointerdown, cleared on
+     pointerup/pointercancel via `finishDrag`), applied to the whole
+     `.cattipu-managed-window` subtree. `:active`'s own hit-testing during a
+     captured pointer drag is not guaranteed to track the whole window, so a
+     fast drag whose pointer strayed outside the 28px title-bar rectangle
+     could revert to Arrow mid-drag; keying off the state WindowManager
+     already tracks removes that dependency on live hit-testing and resets
+     deterministically the moment the attribute clears.
+
+## Existing Systems Reused
+
+- `useUiSound()` / `lib/sounds.ts` — the one sound trigger, already used by
+  `BootScreen.tsx` and `BuildPlayback.tsx`; window-open/close now call the
+  same function rather than introducing a second one.
+- `ManagedWindow.tsx`'s `data-dragging` attribute — already computed for
+  drag-position rendering; M20R1 reads it for cursor state instead of adding
+  a parallel piece of state.
+- `windowManager.reducer.ts`'s existing `open` field — M20R1 reads it via a
+  ref rather than adding a new field or a new reducer action.
+
+## Architecture Impact
+
+No ownership changed. Window lifecycle is still owned exclusively by
+`windowManager.reducer.ts` / `useWindowManager.ts`; sound is still owned
+exclusively by `lib/sounds.ts` / `useUiSound()`; cursor presentation is still
+the single opt-in stylesheet block gated by `CursorProvider.tsx`. The
+reducer stays pure — the M20R1 sound-gating logic lives entirely in the hook
+layer, reading the reducer's own output rather than adding a side effect
+inside `windowManagerReducer`.
+
+## Visual Preservation
+
+No colors, spacing, typography, bevels, or icon artwork changed. The two
+cursor selector corrections restore documented M4/M12 cursor behavior
+exactly as `docs/DESIGN_CONSTITUTION.md` §8/§9 already describes it; no new
+visual language was introduced. Cursor artwork itself was not touched — see
+Known Issues for the asset audit performed before ruling that out.
+
+## Data / Migration Impact
+
+None. No persisted schema, store shape, or session-storage format changed.
 
 ## Verification
 
-- `npm run verify` (typecheck → lint → test): clean, 0 errors, 136/136 assertions,
-  before and after the change.
-- `npm run build`: clean production build, before and after, identical bundle size
-  (no code-weight added by either fix).
-- Manual regression in a live `next dev` session: pixel-cursor Move glyph confirmed
-  via computed style on every window's title bar; `window-open.wav`/`window-close.wav`
-  confirmed firing through the live dock → `launchWindow`/`closeWindow` path via an
-  instrumented `HTMLMediaElement.play`; confirmed silent when Settings > Sound is
-  off. No regressions observed in drag, snap, tile, minimize, maximize, or restore
-  during manual exercise.
+*Note: the original M20 report claimed "`window-open.wav` fires on launch"
+as passing verification. That was true as stated but incomplete — it did not
+disclose that the same sound also fired when merely refocusing an
+already-open window or restoring a minimized one, which is the defect M20R1
+fixes. The results below are re-run against the corrected code.*
 
-## Files changed
+- `npm run verify` (typecheck → lint → test): clean, exit 0, 136/136
+  assertions — run before M20's change, after M20's change, before M20R1's
+  change, and after M20R1's change.
+- `npm run build`: clean production build at each of the same four points;
+  identical route/bundle sizes throughout (165 kB / 268 kB First Load JS for
+  `/`).
+- Manual regression in a live `next dev` session, driven via dispatched
+  `PointerEvent`s and an instrumented `HTMLMediaElement.prototype.play`:
+  - closed → open: exactly one `window-open.wav`.
+  - already-open → focus (a second dock click on an open, inactive window):
+    window became active, zero sound calls.
+  - minimized → restore: window returned to `mode: "normal"`, zero sound
+    calls.
+  - open → close: exactly one `window-close.wav`.
+  - Settings > Sound off: a genuine closed→open transition produced zero
+    sound calls.
+  - Pixel cursors on: `.cattipu-window__titlebar` and its
+    `.cattipu-window__title` descendant both resolve to
+    `url(.../move.png) 32 32, grab`; the control buttons still resolve to
+    `url(.../hand.png) 24 4, pointer`.
+  - Simulated title-bar drag (`pointerdown` → `pointermove` to a point deep
+    inside the window body, well outside the 28px title-bar strip):
+    `data-dragging` becomes `"true"` and the cursor at that deep point
+    resolves to `url(.../move.png) 32 32, grabbing` — confirming the cursor
+    does not revert when the pointer leaves the title-bar rectangle.
+  - `pointerup` after a drag: `data-dragging` returns to `"false"`.
+  - A second drag started and ended with `pointercancel`: `data-dragging`
+    returns to `"false"` and the title bar's cursor reverts to
+    `url(.../move.png) 32 32, grab`.
 
-- [`app/globals.css`](app/globals.css) — corrected two cursor selector blocks
-  (`.cattipu-window-titlebar` → `.cattipu-window__titlebar`) so the M4 grab/grabbing
-  fallback and the M12 Move pixel-cursor glyph apply to the title bar that actually
-  exists in the live DOM.
-- [`components/WindowManager/useWindowManager.ts`](components/WindowManager/useWindowManager.ts) —
-  wired `useUiSound()` into `launchWindow`/`closeWindow` so window-open/close plays
-  the documented mechanical-click sound through the canonical live path, respecting
-  `soundEnabled`/`soundVolume`.
+## Regressions Checked
 
-## Explicitly not started
+- Window drag, snap, tile, minimize, maximize, restore, and close all
+  exercised manually in the same session; no behavior change beyond the
+  cursor/sound fixes.
+- Window control buttons (Minimize/Maximize/Close) confirmed still showing
+  the Hand cursor after the title-bar descendant rule was widened — the
+  `:not(.cattipu-window__controls)` exclusion was verified via computed
+  style, not assumed.
+- `npm run verify` / `npm run build` re-run clean after every change in both
+  the M20 and M20R1 passes (see Verification).
 
-M20.5 and every deferred item from the earlier onboarding audit (mounting
-`NotificationCenter`/`CommandPalette`, reviving or deleting `useWindowStore`,
-Canvas/Forge/Launch/Memory implementation, AI provider layer, roadmap
-reconciliation) — all out of scope per the sprint brief and left for their own
-milestones.
+## Known Issues
+
+- **Cursor asset audit (no redraw performed or warranted).** Before touching
+  any cursor CSS, inspected: actual PNG dimensions (`file public/cursors/*.png`
+  → all six are 64×64 RGBA, matching `scripts/gen_cursors.py`'s
+  `GRID(16) * SCALE(4)`), the CSS hotspot coordinates in `app/globals.css`,
+  and `gen_cursors.py`'s own declared logical-grid hotspots. Every hotspot
+  in CSS equals the script's logical hotspot × 4 exactly (e.g. Move:
+  logical `(8,8)` × 4 = CSS `32 32`, confirmed for all six roles). This
+  matches `docs/DESIGN_CONSTITUTION.md` §8's frozen six-role spec with no
+  discrepancy. Conclusion: the artwork and hotspots do not violate the
+  existing specification, so none were redrawn — only the CSS *selectors*
+  that failed to reach the live DOM were corrected.
+- **`.cattipu-resize-handle`** (flagged in the original M20 report, still
+  true): vestigial CSS with no live element carrying that class — the
+  current `WindowManager` reducer has no free-resize action at all.
+  `docs/COMPONENT_LIBRARY.md`'s "8 edges/corners via `RESIZE_HANDLE_CLASSES`"
+  describes the retired `react-rnd`-based `Desktop`/`Window` system.
+  Building a real resize-handle interaction is new capability, not
+  polish — still out of scope.
+- **`.cattipu-window__glyph` (the 14×14 icon inside each window-control
+  button) resolves to Arrow, not Hand, under the pixel-cursor system** —
+  found incidentally while verifying finding 2's fix. Same root cause as the
+  title/titlebar mismatch (the M12 blanket `body.cattipu-cursors *` rule
+  sets `cursor` directly on every element, including this glyph span, and
+  nothing gives the glyph its own Hand rule), but on a different, unrelated
+  surface: the button element itself (`.cattipu-window__control`) already
+  correctly resolves to Hand, so a user clicking anywhere on a
+  Minimize/Maximize/Close button sees the correct affordance — only the
+  exact pixels of the small icon glyph inside it show Arrow on close
+  inspection. Pre-existing on `origin/main` before M20 touched anything, not
+  a regression from either the M20 or M20R1 change, and not one of the
+  three findings this correction sprint was scoped to. Documented per
+  §47/§70 rather than fixed inline.
+- **Toolbox** — all eight tool buttons remain disconnected with no existing
+  canonical target (see Audit Findings); still not wired, per the original
+  M20 sprint's scope decision, unchanged by M20R1.
+
+## Git
+
+- Branch: `main`.
+- Author: `anirva09 <anirvavjit2023@gmail.com>` (confirmed via
+  `git config user.name` / `user.email` before committing, both sprints).
+- M20 commit: `fc4bd42` — `fix(shell): wire live window drag cursor and
+  open/close sound`.
+- M20R1 commit: this sprint's single commit on top of `fc4bd42` (see
+  `git log -1` on `main` for its hash) — `fix(shell): correct window sounds
+  and drag cursors`.
+- No AI attribution in either commit.
+- Working tree clean after each commit.
+
+## Next Milestone
+
+M20.5 (Developer Diagnostics) and every other reserved milestone in
+`PROJECT_CONSTITUTION.md` §92 remain unimplemented and unstarted by this
+sprint. Not begun automatically; roadmap context only.

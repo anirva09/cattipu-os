@@ -279,11 +279,43 @@ body.cattipu-cursors .cattipu-resize-handle {
    `WindowManager.css`); the hyphenated selector matched nothing in the
    live tree, so neither the M4 grab/grabbing fallback nor this Move glyph
    ever applied to an actual window drag. Restoring the documented
-   behavior, not changing it. */
-body.cattipu-cursors .cattipu-window__titlebar {
+   behavior, not changing it.
+   Milestone 20R1 (correction) — two follow-on defects in that fix, found
+   in independent review:
+   (1) the blanket `body.cattipu-cursors *` rule above sets cursor on
+   EVERY element directly, including `.cattipu-window__title` and any
+   other plain content inside the title bar — a descendant does not
+   inherit `cursor` from its ancestor when a rule targets the descendant
+   itself, and `*` targets literally everything. So the title bar's own
+   background showed the Move glyph while the title text sitting on top
+   of it still showed Arrow: the same surface, two cursors. The fix
+   extends the Move rule to every titlebar descendant except the window
+   controls (which must keep their own Hand-cursor affordance — the
+   `:not()` pair below excludes `.cattipu-window__controls` and
+   everything inside it).
+   (2) the `:active` pseudo-class is hit-tested live: once
+   `setPointerCapture` locks the drag to the title bar element,
+   `:active`'s own hit-testing during a fast drag is not guaranteed
+   consistent across browsers, and it also never engaged if a drag's
+   pointer briefly left the 28px title-bar rectangle while still
+   captured. `ManagedWindow.tsx` already tracks exactly this with the
+   `data-dragging` attribute on `.cattipu-managed-window`, set the moment
+   a title-bar drag starts and cleared on both pointerup and
+   pointercancel (`finishDrag`) — the same lifecycle a cursor needs, and
+   already correct. Keying the grabbing cursor off that attribute instead
+   of `:active` covers the whole window while a drag is in progress,
+   independent of where the browser thinks the pointer currently is, and
+   resets the moment the attribute clears. No second cursor system: this
+   reuses the one WindowManager already tracks for exactly this
+   purpose. */
+body.cattipu-cursors .cattipu-window__titlebar,
+body.cattipu-cursors
+  .cattipu-window__titlebar
+  :not(.cattipu-window__controls):not(.cattipu-window__controls *) {
   cursor: url("/cursors/move.png") 32 32, grab !important;
 }
-body.cattipu-cursors .cattipu-window__titlebar:active {
+body.cattipu-cursors .cattipu-managed-window[data-dragging="true"],
+body.cattipu-cursors .cattipu-managed-window[data-dragging="true"] * {
   cursor: url("/cursors/move.png") 32 32, grabbing !important;
 }
 /* Hourglass — the one existing real "busy" state in the shell today is
@@ -953,11 +985,26 @@ body.cattipu-cursors .cattipu-switch:disabled[data-busy] {
    when that setting is on — this just fills the gap when it's off.
    Milestone 20 — selector corrected from `.cattipu-window-titlebar` to
    `.cattipu-window__titlebar` (see the M12 block above for why the old
-   selector matched nothing live). */
+   selector matched nothing live).
+   Milestone 20R1 (correction) — `:active` swapped for the same
+   `data-dragging` attribute the pixel-cursor block above now uses,
+   for the same reason: it is the state ManagedWindow.tsx already
+   tracks for the exact lifetime of a title-bar drag (set on pointerdown,
+   cleared on pointerup/pointercancel), so the grabbing cursor no longer
+   depends on the browser's own live `:active` hit-testing while the
+   pointer is captured to the title bar. Idle `grab` still applies to the
+   whole title bar by ordinary inheritance — there is no blanket
+   "arrow for everything" rule outside the opt-in pixel-cursor system for
+   it to fight, so `.cattipu-window__title` and the rest of the bar's
+   plain content already read `grab` from their parent without needing a
+   descendant rule here. */
 .cattipu-window__titlebar {
   cursor: grab;
 }
-.cattipu-window__titlebar:active {
+.cattipu-managed-window[data-dragging="true"] {
+  cursor: grabbing;
+}
+.cattipu-managed-window[data-dragging="true"] * {
   cursor: grabbing;
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useReducer, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import {
   createInitialWindowManagerState,
@@ -68,8 +68,28 @@ export function useWindowManager() {
   // dead store's separate `chime()` helper.
   const playUiSound = useUiSound();
 
+  // Milestone 20R1 (correction) — `launchWindow`/`closeWindow` are also
+  // the single call site used to refocus an already-open window or
+  // restore one from minimized (the reducer's `launch` case handles all
+  // three transitions identically). The M20 pass played "window-open" on
+  // every call, so clicking an already-open dock icon — or restoring a
+  // minimized window — replayed the open chime as if the window had just
+  // appeared. A window's `open` flag is true in BOTH the normal and
+  // minimized modes (only `close` sets it false), so reading it from
+  // BEFORE the dispatch is exactly the "was this window actually closed"
+  // check the sound needs, with no change to the reducer: the reducer
+  // stays a pure function of state and action, and this ref only mirrors
+  // its output for a hook-level side effect. A plain closure over `state`
+  // would go stale (these callbacks are memoized once), so a ref keeps
+  // the read current without adding `state` to either callback's deps.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   const launchWindow = useCallback((id: CattipuWindowId) => {
-    playUiSound('window-open');
+    const wasOpen = stateRef.current.windows[id].open;
+    if (!wasOpen) {
+      playUiSound('window-open');
+    }
     dispatch({ type: 'launch', id });
   }, [playUiSound]);
 
@@ -93,7 +113,10 @@ export function useWindowManager() {
   }, []);
 
   const closeWindow = useCallback((id: CattipuWindowId) => {
-    playUiSound('window-close');
+    const wasOpen = stateRef.current.windows[id].open;
+    if (wasOpen) {
+      playUiSound('window-close');
+    }
     dispatch({ type: 'close', id });
   }, [playUiSound]);
 
