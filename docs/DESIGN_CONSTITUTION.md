@@ -77,7 +77,7 @@ reach for the role (`font-menu` / `font-window-title` / `font-label` / `font-cod
 | Role | Maps to | Use |
 |---|---|---|
 | Menu | Press Start 2P | Command Palette groups, dropdown/menu chrome |
-| Window Title | Press Start 2P | Window.tsx / Panel.tsx title-bar text |
+| Window Title | Press Start 2P | Panel.tsx title-bar text (the live Window.tsx title uses the shell face below) |
 | Labels | Press Start 2P | Compact chrome labels, eyebrows, section headers |
 | Code | VT323 | SQL/technical/mono readouts (also `--font-mono`) |
 | Status Bar | VT323 | Smallest readable text — Press Start 2P's glyphs stop reading below ~0.4rem; VT323 stays legible smaller |
@@ -95,6 +95,14 @@ values `font-pixel-ui`/`font-code` already did) and was left for organic adoptio
 OS-shell surfaces most worth using as the reference pattern (Window.tsx's title, Panel.tsx's
 title, TopBar's labels, Command Palette's group headers) were switched over as the initial,
 disclosed example set.
+
+**Shell face (M20T1).** The v0.9 Golden Master shell components (Window, Sidebar, TopBar,
+widget stack, status bar, Projects/Explorer surfaces) do not use these role classes. They use the
+design-system stack in `design-system/tokens.ts`: `'Px437 IBM VGA8', 'VT323', …`. Its first family
+is now self-hosted: VileR's IBM VGA 8x16, CC BY-SA 4.0, from `public/fonts/`, registered once in
+`app/globals.css`. Before M20T1 it was missing, and the shell silently rendered in VT323. Every
+shipped face is weight 400 only, so `body` disables synthetic bold (`font-synthesis-weight: none`).
+Details and measurements: `docs/TYPOGRAPHY.md` §1a.
 
 Corner-radius and one-off arbitrary text-size consolidation (documented in `docs/TYPOGRAPHY.md`)
 remain open, separate from the font-role freeze above — a scale-consolidation pass, not a family

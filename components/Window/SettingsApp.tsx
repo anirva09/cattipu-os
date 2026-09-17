@@ -69,7 +69,7 @@ export function SettingsApp() {
               key={s.id}
               onClick={() => setSection(s.id)}
               className={[
-                "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] font-medium transition-colors",
+                "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] leading-5 font-medium transition-colors",
                 active ? "bg-navy text-white" : "text-ink hover:bg-navy/[0.06]",
               ].join(" ")}
             >

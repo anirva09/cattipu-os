@@ -17,7 +17,7 @@ length). Six roles map onto them; a component should use the role's utility clas
 | Role | Utility class | Maps to | Use |
 |---|---|---|---|
 | Menu | `font-menu` | Press Start 2P | Command Palette groups, menu/dropdown chrome |
-| Window Title | `font-window-title` | Press Start 2P | Window.tsx / Panel.tsx title-bar text |
+| Window Title | `font-window-title` | Press Start 2P | Panel.tsx title-bar text (the live Window.tsx title uses the shell face, §1a) |
 | Labels | `font-label` | Press Start 2P | Compact chrome labels, eyebrows, dock labels |
 | Code | `font-code` | VT323 | SQL/technical/mono readouts (also `--font-mono`) |
 | Status Bar | `font-status` | VT323 | Smallest readable text |
@@ -35,6 +35,38 @@ difference today; see `docs/DESIGN_CONSTITUTION.md` §5 for why that sweep was l
 adoption). `font-code`/`font-mono` usage stays narrow and specific:
 `components/Architect/DatabasePanel.tsx`, `NodeInspector.tsx`, and `ApiCatalogPanel.tsx` — SQL
 schema readouts, node property values, and API route listings. Nowhere else in the app.
+
+## 1a. Shell face — the design-system stack (M20T1)
+
+The v0.9 Golden Master shell does not use the role classes above. Its components — `Window`,
+`Sidebar`, `SidebarButton`, `TopBar`, `RightWidgetStack`, `BottomStatusBar`, `ProjectCard`,
+`DetailsPanel`, `FolderTree`, `FolderTreeItem`, `Explorer`, `ContextMenu`, `DesktopObjectLayer`,
+`InteractiveDesktop` — set `font-family: var(--cattipu-font-family)`, defined in
+`design-system/tokens.ts`:
+
+```text
+'Px437 IBM VGA8', 'VT323', 'Perfect DOS VGA', monospace
+```
+
+Content rendered inside a `Window` (for example Settings) inherits it. Sizes come from the same
+token file (`desktopTitle` 26, `windowTitle` 18, `widgetHeader` 15, `body` 13, `status` 11) and the
+component CSS.
+
+- **Px437 IBM VGA8** is the intended face. Until M20T1 it was never shipped, so every shell
+  surface fell back to VT323. It is now self-hosted from `public/fonts/Web437_IBM_VGA_8x16.woff`
+  (VileR's *Ultimate Oldschool PC Font Pack* v2.2, CC BY-SA 4.0 — attribution in
+  `public/fonts/README.md`). One `@font-face` in `app/globals.css` registers it under the
+  token's family name. v2.x of the pack renamed "IBM VGA8" to "IBM VGA 8x16".
+- Metrics: 1em = 16 font pixels; advance 0.5em; cap height 0.625em; x-height 0.4375em;
+  ascent + descent = 1em. It is pixel-exact at 16px and 32px (at a device pixel ratio of 1).
+  The 13/15/18/26px token sizes sit off that grid. M20T1 kept them anyway: measured at
+  1366×768, 1440×900, 1600×900 and 1920×1080, nothing overflows.
+- VT323 remains the second family (and the `--font-code` / `--font-body` face). `'Perfect DOS VGA'`
+  is not shipped.
+- **Weight:** every self-hosted face (IBM VGA 8x16, VT323, Press Start 2P) has weight 400 only.
+  `body` sets `font-synthesis-weight: none`, so the `font-weight: 600/700` and
+  `font-medium`/`font-semibold` declarations still in the code no longer render as Chromium faux
+  bold. They render at the face's single weight.
 
 ## 2. `font-pixel-ui` sizes in use
 
@@ -79,7 +111,8 @@ No enforced case rule exists in code — headings and labels appear in whatever 
 source string is (`"Welcome back,"`, `"Your projects"`, `"CATTIPU OS"` are all authored
 directly, not transformed via CSS `text-transform`). Weight is set per-element via Tailwind's
 `font-medium`/`font-semibold` utilities; there's no fixed weight-per-role table like a formal
-type system would have.
+type system would have. Since M20T1 those weights are not synthesized (see §1a): with only a 400
+face available, they render at regular weight.
 
 ## 5. What this means for future work
 

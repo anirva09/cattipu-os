@@ -268,3 +268,259 @@ fixes. The results below are re-run against the corrected code.*
 M20.5 (Developer Diagnostics) and every other reserved milestone in
 `PROJECT_CONSTITUTION.md` §92 remain unimplemented and unstarted by this
 sprint. Not begun automatically; roadmap context only.
+
+---
+
+# M20T1 — Typography Fidelity
+
+*Follow-on sprint in the M20 milestone (base commit `30ba937`, the M20R1
+commit). Cursor assets, M20.5 and every other milestone were not touched.*
+
+## Objective
+
+Restore the intended CATTIPU shell typography without modernizing it:
+ship the missing face that the design-system stack names first, stop
+Chromium from faking bold on a face that only has weight 400, and fix
+the Settings navigation's fractional line-height. The locked 13/15/18/26
+sizes stay unless measurement proves one unusable.
+
+## Baseline
+
+- `main` at `30ba937`, 2 commits ahead of `origin/main` (`d7af050`). Both
+  are the unpushed M20/M20R1 commits. The working tree was clean.
+- Git identity: `anirva09 <anirvavjit2023@gmail.com>`.
+- `npm run verify`: exit 0 before any change (136/136 assertions).
+
+## Audit Findings
+
+- Fourteen v0.9 shell stylesheets set
+  `font-family: var(--cattipu-font-family)`. `design-system/tokens.ts`
+  defines it as `'Px437 IBM VGA8', 'VT323', 'Perfect DOS VGA', monospace`.
+  The repo had no `@font-face` or font file for Px437 or Perfect DOS VGA,
+  and neither is installed on the test machine.
+  `docs/v0.9/RELEASE_REPORT.md` already listed "Finalize the font pack" as
+  open.
+- Most chrome text requests `font-weight: 700` (Settings headings 600,
+  Settings nav 500). All shipped faces are 400-only and font synthesis was
+  `auto`, so Chromium drew faux bold. At 13px that added about 46% more ink,
+  with about 88% of ink pixels partly transparent.
+- The Settings nav buttons use `text-[13px]` with Tailwind's default 1.5
+  leading: line-height 19.5px, button height 35.5px.
+
+## Licence / Source Decision
+
+- **Source:** VileR, *The Ultimate Oldschool PC Font Pack* v2.2
+  (2020-11-21), <https://int10h.org/oldschool-pc-fonts/>. This is the
+  publisher's own site.
+- **Archive:** `oldschool_pc_font_pack_v2.2_web.zip` (4.78 MB). Its MD5
+  `614e7eb1541cff3e6a163df43c0ad6da` matches the value on the download page.
+  Downloaded to a scratch directory; nothing in it was executed.
+- **Licence:** CC BY-SA 4.0. The pack's `README.TXT` and `LICENSE.TXT`, the
+  font's own `name` table (IDs 13/14) and the site's readme all say so. The
+  readme explicitly permits redistribution and embedding with attribution.
+  **Decision: redistribution allowed; shipped.**
+- **Identity:** the pack readme says v1.x "IBM VGA8" was renamed
+  "IBM VGA 8x16" in v2.x, and that `Web437` fonts are the web-optimized
+  versions of the square-pixel `Px437` outlines. Only
+  `Web437_IBM_VGA_8x16.woff` (9,788 bytes, MD5
+  `342b88aacf9bb4e01595ac5f80711ce8`) was copied, unmodified.
+- **Font metrics** (from the file): upem 1600; advance 800 (0.5em); cap
+  height 1000 (0.625em); x-height 700; ascent/descent 1200/400; weight 400
+  only.
+- **Attribution:** `public/fonts/README.md` (author, source, licence, no
+  changes) and `public/fonts/LICENSE-oldschool-pc-font-pack.txt`. The latter
+  is the pack's full licence text; one trailing space and the final blank
+  line were trimmed for `git diff --check`, and the wording is unchanged.
+
+## Canonical Ownership
+
+- Font families and tokens: `app/globals.css` (the one `@font-face`) and
+  `design-system/tokens.ts`, which was **not** changed. The new face is
+  registered under the token's existing family name, so the stack resolves
+  as written.
+- Bundled static assets: `public/`. `public/fonts/` is new, matching the
+  `fonts/` slot the v0.9 package reserved.
+
+## Changes
+
+1. `public/fonts/Web437_IBM_VGA_8x16.woff`: the face (new).
+2. `public/fonts/README.md` and
+   `public/fonts/LICENSE-oldschool-pc-font-pack.txt`: CC BY-SA attribution
+   and licence (new).
+3. `app/globals.css`:
+   - One `@font-face` for `"Px437 IBM VGA8"`: weight 400,
+     `font-display: block` (avoids a visible VT323 → VGA reflow; the file is
+     about 10 KB and same-origin).
+   - `font-synthesis-weight: none` on `body`. It is inherited by every app
+     element; only `<head>` nodes and the Next dev overlay report `auto`.
+     No declared `font-weight` was edited.
+4. `components/Window/SettingsApp.tsx`: the Settings nav button gains
+   `leading-5`, so line-height goes from 19.5px to 20px and button height
+   from 35.5px to 36px. There is no Golden Master reference for Settings.
+   The change is +0.5px per row, with no other layout change.
+5. `docs/TYPOGRAPHY.md`: new §1a (shell face, metrics, weight rule); the
+   Window Title role row and §4 weight note corrected.
+6. `docs/DESIGN_CONSTITUTION.md` §5: the Window Title row corrected, plus
+   one "Shell face (M20T1)" paragraph. Both previously said `Window.tsx`
+   uses the Press Start 2P role class; the live `Window.css` uses the
+   design-system stack.
+7. `M20_REPORT.md`: this section.
+
+## Existing Systems Reused
+
+The design-system font token (`--cattipu-font-family`) and every
+component stylesheet that already consumes it. No component font
+declarations were changed, no new token was added, and no second font
+system was created. VT323 and Press Start 2P (@fontsource) are unchanged.
+
+## Architecture Impact
+
+None. The only changes are presentation: one font asset, one
+`@font-face`, and one inherited CSS property. No state, store,
+persistence or routing changed.
+
+## Visual Preservation
+
+- Sizes (13/15/18/26 and the rest), line-heights (except the Settings
+  nav), letter-spacing, colors, bevels, spacing, icons, cursors and boot
+  are untouched.
+- The canonical family is unchanged: the fix makes the existing stack
+  resolve to its intended first family.
+- No Inter, system-ui or other modern face was introduced.
+
+### Computed typography: before → after
+
+All values below are identical at 1366×768, 1440×900, 1600×900 and
+1920×1080. Browser zoom was 100%; device pixel ratio was 1.25 (the OS
+scale on the test machine). Letter-spacing is `normal` except the brand
+(`1px`). Widths are the sample text's width in CSS px.
+
+| Surface | Size / line-height / weight | Face before → after | Synthesis | Sample width |
+|---|---|---|---|---|
+| Window title | 18 / 28 / 700 | VT323 → Px437 IBM VGA8 | auto → none | "Projects" 57.6 → 72.0 |
+| Sidebar label | 13 / 18 / 700 | VT323 → Px437 | auto → none | "Home" 20.8 → 26.0 |
+| Settings nav | 13 / **19.5 → 20** / 500 | VT323 → Px437 | auto → none | "Appearance" 52 → 65 |
+| Settings body | 14 / 20 / 400 | VT323 → Px437 | auto → none | 134.4 → 168.0 |
+| Settings heading | 16 / 24 / 600 | VT323 → Px437 | auto → none | "Appearance" 64 → 80 |
+| Widget header | 15 / 20 / 700 | VT323 → Px437 | auto → none | "WELCOME" 42 → 52.5 |
+| Widget body | 13 / 20 / 400 | VT323 → Px437 | auto → none | 124.8 → 156.0 |
+| Widget status row | 13 / 20 / 700 | VT323 → Px437 | auto → none | 67.6 → 84.5 |
+| Status bar | 13 / 18 / 400 | VT323 → Px437 | auto → none | "PROJECT SAVED" 67.6 → 84.5 |
+| Top-bar clock | 15 / 16 / 700 | VT323 → Px437 | auto → none | 126.0 → 157.5 |
+| Top-bar brand | 26 / 32 / 400 | VT323 → Px437 | auto → none | "CATTIPU OS" 104 → 130 |
+| Project card title | 18 / 24 / 700 | VT323 → Px437 | auto → none | 172.8 → 216.0 |
+
+The resolved face was determined by comparing each element's text width
+under its computed font with each candidate family alone, plus
+`document.fonts` status. `Web437_IBM_VGA_8x16.woff` loads with HTTP 200 in
+both `next dev` and `next start`.
+
+### Golden Master comparison
+
+`docs/GoldenMaster_Comparison.png` was measured at its 1:1 scale (the
+Projects window frame is 918px against the 920px reference).
+
+| Declared size | Golden Master (advance / cap) | VT323 before | IBM VGA 8x16 after |
+|---|---|---|---|
+| 13px | 7.8 / 9 | 5.2 / 8 | 6.5 / 8.1 |
+| 18px | 10.8 / 13 | 7.2 / 10 | 9.0 / 11.25 |
+
+- Text width went from 67% of the Golden Master to 83%.
+- The Golden Master PNG was itself rendered with a fallback font: smooth,
+  rounded outlines with a 0.6em advance, and a proportional sans for the
+  sidebar labels. Neither is a period face, so it cannot be matched exactly
+  without introducing a modern font. The intended face is the one that
+  `tokens.ts` and the v0.9 package name.
+- The GM's layout (sizes, positions, window geometry) already matched, and
+  still does.
+
+### Token sizes
+
+The 13/15/18/26px sizes are off IBM VGA 8x16's native 16px grid: one font
+pixel is 0.81 / 0.94 / 1.13 / 1.63 CSS px. They were kept:
+
+- Nothing overflows at any viewport.
+- Text stays legible.
+- The rule for this sprint allows a size change only when a token is
+  proven unusable, and none was.
+
+Moving to grid-exact sizes (16/32) would be a layout change and needs its
+own decision.
+
+## Data / Migration Impact
+
+None.
+
+## Verification
+
+- `npm run verify` after the change: exit 0.
+  - typecheck clean, `eslint` 0 problems.
+  - Tests 9/9, 18/18, 16/16, 24/24, 33/33, 36/36 (136/136).
+- `npm run build`: compiled successfully. Route sizes are unchanged (`/`
+  165 kB / 268 kB First Load JS). The built CSS contains the `@font-face`,
+  `font-synthesis-weight:none` and `leading-5`.
+- Manual browser inspection (built-in Chromium, zoom 100%, DPR 1.25):
+  - `next dev` at all four viewports, before and after.
+  - `next start` at 1600×900 after.
+
+## Regressions Checked
+
+Measured as rendered text versus its container, at all four viewports,
+before and after:
+
+- **Sidebar keys (80px):** widest label "Architect" 46.8 → 58.5px. OK.
+- **Toolbox labels (50.4–52.4px):** widest "Service" 36.4 → 45.5px. OK.
+- **Right widget column (224px):** no horizontal scroll; headers, body
+  copy, recent list, status rows and VIEW ALL all inside their bodies.
+- **Project cards:** titles and metadata inside their cards.
+- **Status segments:**
+  - "PROJECT SAVED" 84.5 of 280px; "BUILD QUEUE: 0" 91 of 176px.
+  - Meter segments: "MEMORY INDEXED" and "C: 412MB FREE" labels fit their
+    boxes with 41.8px and 16.3px to spare, clear of the meters.
+- **Clock:** 157.5px in a 197.5px cluster (it grew from 166px). The top-bar
+  right cluster still starts after the branding: 1048.9 vs 1024.9 at 1366.
+  No top-bar overflow.
+- **Window titles vs controls:** every visible window has 721px or more of
+  clearance.
+- **Whole-page scan:** no element with clipped overflow or ellipsis has
+  `scrollWidth > clientWidth`, at 1366×768 or 1920×1080. The same scan with
+  VT323 re-forced in page memory (the "before" rendering) was also clean, so
+  there is no new truncation.
+- **Weights:** every in-app element reports `font-synthesis-weight: none`.
+
+## Known Issues
+
+- **Faux bold is gone.** Chrome that relied on 600/700 now renders at the
+  single 400 weight. This is intended by the sprint rules; hierarchy is
+  still carried by size, colour and title plates. Any future "bold" look
+  must come from a real face, not synthesis.
+- **Glyph crispness.** Non-16px sizes and a fractional DPR (1.25) still
+  resample the pixel outlines. Several text origins also sit on
+  sub-device-pixel positions at DPR 1.25; this is pre-existing and comes
+  from layout offsets. Both are left for a size-scale decision.
+- **Stale constitution text.** `PROJECT_CONSTITUTION.md` §21 still lists
+  Inter as "established typography", while the Design Constitution retired
+  it in M12. Not edited: out of scope, and the section defers exact usage to
+  `DESIGN_CONSTITUTION.md` / `TYPOGRAPHY.md`.
+- **`'Perfect DOS VGA'`** stays in the token stack but is not shipped (dead
+  fallback). `tokens.ts` was left unchanged.
+- **Inaccurate M20R1 cursor claim.** The M20R1 Known Issues entry says all
+  cursor hotspots were verified. That is wrong for Arrow: the tip is at
+  (0,0), but the CSS hotspot is `8 8` (the generator's `ARROW_HOTSPOT` is
+  itself wrong). Deferred to the proposed M20C1 cursor sprint; no cursor
+  files were touched here.
+- **Out of scope, noted only:**
+  - A React hydration mismatch on Explorer `data-entry-id` (§51).
+  - Settings uses `rounded-md` / `rounded-lg` (Design Constitution §13).
+
+## Git
+
+- Branch `main`; one commit on top of `30ba937`:
+  `style(ui): restore CATTIPU typography fidelity`.
+- Author `anirva09 <anirvavjit2023@gmail.com>`; no AI attribution.
+- Working tree clean after commit.
+
+## Next Milestone
+
+M20C1 (cursor artwork fidelity) is proposed but not started. M20.5 is not
+started.

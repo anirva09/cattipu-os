@@ -188,6 +188,27 @@
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ---- Shell face — M20T1 (Typography Fidelity) ----
+   The v0.9 shell components (Window, Sidebar, TopBar, RightWidgetStack,
+   BottomStatusBar, ProjectCard, FolderTree, ...) all set
+   `font-family: var(--cattipu-font-family)`, which design-system/tokens.ts
+   defines as 'Px437 IBM VGA8', 'VT323', 'Perfect DOS VGA', monospace. The
+   first family was never shipped, so every shell surface fell back to VT323.
+   This is the one declaration for that face: VileR's "IBM VGA 8x16" (the
+   v2.x name of v1.x's "IBM VGA8"), self-hosted, CC BY-SA 4.0 — see
+   public/fonts/README.md. It is registered under the token's existing
+   family name, so the design-system stack resolves to it unchanged.
+   Metrics: 1em = 16 font pixels, 0.5em advance, 0.625em cap height, 400
+   only. `block` avoids a visible VT323 -> VGA reflow on first paint (the
+   two faces have different advances); the file is ~10 KB and same-origin. */
+@font-face {
+  font-family: "Px437 IBM VGA8";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("/fonts/Web437_IBM_VGA_8x16.woff") format("woff");
+}
+
 html,
 body {
   height: 100%;
@@ -199,6 +220,11 @@ body {
   font-family: var(--font-body);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  /* M20T1: every self-hosted face (IBM VGA 8x16, VT323, Press Start 2P)
+     ships weight 400 only, so any 500-700 request was rendered as Chromium
+     faux bold — smeared, partly transparent strokes on a pixel grid. Declared
+     weights are left as they are; they just no longer get synthesized. */
+  font-synthesis-weight: none;
 }
 
 * {
