@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Palette, LayoutGrid, MousePointer2, Volume2, Info, Check, Bell } from "lucide-react";
 import { UtilityIcon, type UtilityIconId } from "@/components/Icons";
+import { ShellIcon } from "@/components/PixelIcon";
 import {
   useSettingsStore,
   DOCK_ICON_SIZE_PX,
@@ -14,8 +15,26 @@ import {
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { PixelLogo } from "../Boot/PixelLogo";
 import { CATTIPU_VERSION, CATTIPU_BUILD, CATTIPU_TAGLINE } from "@/lib/version";
+import { DeveloperDiagnostics } from "@/components/Diagnostics/DeveloperDiagnostics";
 
-type Section = "appearance" | "dock" | "cursor" | "sound" | "notifications" | "about";
+type Section =
+  | "appearance"
+  | "dock"
+  | "cursor"
+  | "sound"
+  | "notifications"
+  | "diagnostics"
+  | "about";
+
+// M20.5D — the SECTIONS nav icon type is the same lucide-shaped signature
+// every other section already uses. Reaching for a NEW lucide-react icon
+// here would spread the flagged dependency (Constitution §26) further, so
+// this wraps the canonical PixelForge terminal mark (CAT-SYS-001, "open
+// NODE/terminal" — the same engineering-console meaning this panel wants)
+// in that exact shape instead of drawing a new icon or importing lucide.
+function DiagnosticsNavIcon({ className }: { className?: string; strokeWidth?: number }) {
+  return <ShellIcon name="terminal" size={16} className={className} />;
+}
 
 const SECTIONS: {
   id: Section;
@@ -32,6 +51,7 @@ const SECTIONS: {
   // already a grid of self-contained preference sections, so a fifth one
   // doesn't touch any other app's layout.
   { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "diagnostics", label: "Diagnostics", icon: DiagnosticsNavIcon },
   { id: "about", label: "About", icon: Info },
 ];
 
@@ -86,6 +106,7 @@ export function SettingsApp() {
         {section === "cursor" && <CursorSection />}
         {section === "sound" && <SoundSection />}
         {section === "notifications" && <NotificationsSection />}
+        {section === "diagnostics" && <DeveloperDiagnostics />}
         {section === "about" && <AboutSection />}
       </div>
     </div>
