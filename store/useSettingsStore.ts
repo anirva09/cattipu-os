@@ -1,18 +1,26 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type WallpaperVariant = "paper-grain" | "blueprint-grid" | "sunrise-geometry";
+import {
+  DEFAULT_WALLPAPER_ID,
+  WALLPAPER_SETTINGS_VERSION,
+  migrateWallpaperSetting,
+  resolveWallpaperId,
+  type WallpaperId,
+} from "@/lib/os/wallpapers";
+
 export type DockMode = "hover" | "always";
 export type DockIconSize = "sm" | "md" | "lg";
 
 interface SettingsState {
-  wallpaper: WallpaperVariant;
+  /** The applied desktop wallpaper. The family itself lives in lib/os/wallpapers.ts. */
+  wallpaper: WallpaperId;
   dockMode: DockMode;
   dockIconSize: DockIconSize;
   cursorEnabled: boolean;
   soundEnabled: boolean;
   soundVolume: number; // 0..1
-  setWallpaper: (v: WallpaperVariant) => void;
+  setWallpaper: (v: WallpaperId) => void;
   setDockMode: (v: DockMode) => void;
   setDockIconSize: (v: DockIconSize) => void;
   setCursorEnabled: (v: boolean) => void;
@@ -23,7 +31,7 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      wallpaper: "paper-grain",
+      wallpaper: DEFAULT_WALLPAPER_ID,
       dockMode: "hover",
       dockIconSize: "md",
       cursorEnabled: true,
@@ -37,7 +45,25 @@ export const useSettingsStore = create<SettingsState>()(
       setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
       setSoundVolume: (soundVolume) => set({ soundVolume }),
     }),
-    { name: "cattipu-settings" }
+    {
+      name: "cattipu-settings",
+      // M21 — the first shape change since this record was created, so the
+      // first version. Pre-M21 records load as version 0 and only their
+      // `wallpaper` is rewritten (see migrateWallpaperSetting); cursor,
+      // sound, volume and dock preferences pass through untouched.
+      version: WALLPAPER_SETTINGS_VERSION,
+      migrate: (persisted, version) => {
+        const state = (persisted ?? {}) as Partial<SettingsState>;
+        return { ...state, wallpaper: migrateWallpaperSetting(state.wallpaper, version) };
+      },
+      // A current-version record can still carry an id this build does not
+      // know (hand-edited storage, a rolled-back release). Resolve it on
+      // load so the store itself never holds an unrenderable wallpaper.
+      merge: (persisted, current) => {
+        const state = (persisted ?? {}) as Partial<SettingsState>;
+        return { ...current, ...state, wallpaper: resolveWallpaperId(state.wallpaper) };
+      },
+    }
   )
 );
 

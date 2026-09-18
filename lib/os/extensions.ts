@@ -1,6 +1,7 @@
 import type { ProjectTemplateId } from "@/lib/os/templates";
 import type { AppId } from "@/store/useWindowStore";
 import type { ArtifactRef, CattipuProject } from "@/lib/project/types";
+import type { WallpaperDefinition } from "@/lib/os/wallpapers";
 
 /**
  * The seams CATTIPU grows along.
@@ -184,18 +185,12 @@ export interface CattipuPlugin {
  * It is a property of the desktop surface. The desktop surface reads it
  * from settings.
  *
- * A wallpaper renders from CSS the shell already ships, or from one asset
- * under `public/wallpapers/`. It never carries per-project state.
+ * M21 moved the definition itself to `lib/os/wallpapers.ts`, which now
+ * holds the live registry the desktop and Wallpaper Studio both read. It
+ * is re-exported here, not re-declared, so a plugin contribution and the
+ * built-in family can never drift into two shapes.
  */
-export interface WallpaperDefinition {
-  id: string;
-  label: string;
-  /** A swatch for the picker — a CSS colour or gradient, not an image. */
-  swatch: string;
-  /** How the surface paints. Either is valid; both is not. */
-  css?: Readonly<Record<string, string>>;
-  texture?: `/wallpapers/${string}`;
-}
+export type { WallpaperDefinition };
 
 // ---------------------------------------------------------------------
 // 6. Cursor themes

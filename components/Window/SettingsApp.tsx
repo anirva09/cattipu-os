@@ -8,11 +8,11 @@ import { ShellIcon } from "@/components/PixelIcon";
 import {
   useSettingsStore,
   DOCK_ICON_SIZE_PX,
-  type WallpaperVariant,
   type DockMode,
   type DockIconSize,
 } from "@/store/useSettingsStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
+import { WALLPAPERS } from "@/lib/os/wallpapers";
 import { PixelLogo } from "../Boot/PixelLogo";
 import { CATTIPU_VERSION, CATTIPU_BUILD, CATTIPU_TAGLINE } from "@/lib/version";
 import { DeveloperDiagnostics } from "@/components/Diagnostics/DeveloperDiagnostics";
@@ -53,26 +53,6 @@ const SECTIONS: {
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "diagnostics", label: "Diagnostics", icon: DiagnosticsNavIcon },
   { id: "about", label: "About", icon: Info },
-];
-
-const WALLPAPERS: { id: WallpaperVariant; label: string; swatch: string }[] = [
-  {
-    id: "paper-grain",
-    label: "Paper Grain",
-    swatch: "radial-gradient(rgba(11,61,145,0.4) 1px, #ede4c7 1px)",
-  },
-  {
-    id: "blueprint-grid",
-    label: "Blueprint Grid",
-    swatch:
-      "linear-gradient(#0b3d9130 1px, transparent 1px), linear-gradient(90deg, #0b3d9130 1px, #ede4c7 1px)",
-  },
-  {
-    id: "sunrise-geometry",
-    label: "Sunrise Geometry",
-    swatch:
-      "repeating-linear-gradient(45deg, #d6403a26 0px, #d6403a26 4px, transparent 4px, transparent 8px), repeating-linear-gradient(-45deg, #0b3d9120 0px, #0b3d9120 4px, transparent 4px, transparent 8px)",
-  },
 ];
 
 export function SettingsApp() {
@@ -143,7 +123,7 @@ function AppearanceSection() {
             >
               <div
                 className="relative h-16 w-full overflow-hidden rounded-md border border-black/10"
-                style={{ backgroundImage: w.swatch, backgroundColor: "#ede4c7", backgroundSize: "10px 10px" }}
+                style={w.surface}
               >
                 {active && (
                   <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-navy text-white">
@@ -151,7 +131,7 @@ function AppearanceSection() {
                   </span>
                 )}
               </div>
-              <span className="text-[12px] font-medium text-ink">{w.label}</span>
+              <span className="text-[12px] font-medium text-ink">{w.name}</span>
             </button>
           );
         })}
