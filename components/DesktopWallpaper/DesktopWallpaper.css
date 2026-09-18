@@ -1,0 +1,12 @@
+/* M21 — the desktop surface. Same box and stacking slot as the desktop
+ * object layer (inset 0, z-index 0 inside the window layer); it is rendered
+ * first, so desktop objects and every managed window paint above it. It
+ * starts at the window layer's own origin, so Engineering Paper lands on
+ * exactly the pixels the frozen window-layer background already uses. */
+.cattipu-desktop-wallpaper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+}

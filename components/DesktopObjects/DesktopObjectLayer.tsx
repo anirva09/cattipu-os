@@ -86,6 +86,9 @@ export interface DesktopObjectLayerProps {
   onRestoreAllWindows?: () => void;
   /** Used only to disable menu entries that would do nothing. */
   visibleWindowCount?: number;
+  /** M21. The applied wallpaper's tone. Labels carry no plate of their own,
+   *  so on a dark surface they get a cream one to stay readable. */
+  surfaceTone?: "light" | "dark";
 }
 
 function iconFor(object: OsObject): ShellIconName {
@@ -104,6 +107,7 @@ export function DesktopObjectLayer({
   onArrangeWindows,
   onRestoreAllWindows,
   visibleWindowCount = 0,
+  surfaceTone = "light",
 }: DesktopObjectLayerProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -431,6 +435,7 @@ export function DesktopObjectLayer({
       ref={rootRef}
       className="cattipu-desktop-objects"
       style={layerStyle}
+      data-surface-tone={surfaceTone}
       data-testid="desktop-object-layer"
       onPointerDown={() => {
         setSelectedId(null);

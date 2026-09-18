@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { InteractiveDesktop } from "@/components/InteractiveDesktop";
 import { ArchitectApp } from "@/components/Architect/ArchitectApp";
 import { DesktopObjectLayer } from "@/components/DesktopObjects";
+import { DesktopWallpaper, useAppliedWallpaper } from "@/components/DesktopWallpaper";
 import { ExplorerApp } from "@/components/Explorer";
 import { SettingsApp } from "@/components/Window/SettingsApp";
 import { PlaceholderApp } from "@/components/Window/PlaceholderApp";
@@ -230,6 +231,11 @@ export function CattipuShell() {
   // appeared. Exactly the trap `workspaceTitle` had, in a second place.
   const recents = useMemo(() => recentProjectNames(projects), [projects]);
 
+  // M21. The applied wallpaper, from Settings through the registry. The
+  // desktop slot paints it and tells the object layer its tone; nothing
+  // else in the shell reads it, so a dark wallpaper never recolours chrome.
+  const wallpaper = useAppliedWallpaper();
+
   const sidebarIcons = useMemo<CattipuSidebarIcons>(() => {
     const entries = CATTIPU_SIDEBAR_ITEMS.map(({ id, label }) => [
       id,
@@ -264,12 +270,16 @@ export function CattipuShell() {
         restoreAllWindows,
         visibleWindowCount,
       }) => (
-        <DesktopObjectLayer
-          onOpenWindow={openWindow}
-          onArrangeWindows={arrangeWindows}
-          onRestoreAllWindows={restoreAllWindows}
-          visibleWindowCount={visibleWindowCount}
-        />
+        <>
+          <DesktopWallpaper wallpaper={wallpaper} />
+          <DesktopObjectLayer
+            onOpenWindow={openWindow}
+            onArrangeWindows={arrangeWindows}
+            onRestoreAllWindows={restoreAllWindows}
+            visibleWindowCount={visibleWindowCount}
+            surfaceTone={wallpaper.tone}
+          />
+        </>
       )}
     />
   );
