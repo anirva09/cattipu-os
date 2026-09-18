@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Palette, LayoutGrid, MousePointer2, Volume2, Info, Check, Bell } from "lucide-react";
+import { LayoutGrid, MousePointer2, Volume2, Info, Bell } from "lucide-react";
 import { UtilityIcon, type UtilityIconId } from "@/components/Icons";
 import { ShellIcon } from "@/components/PixelIcon";
 import {
@@ -12,13 +12,13 @@ import {
   type DockIconSize,
 } from "@/store/useSettingsStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
-import { WALLPAPERS } from "@/lib/os/wallpapers";
 import { PixelLogo } from "../Boot/PixelLogo";
 import { CATTIPU_VERSION, CATTIPU_BUILD, CATTIPU_TAGLINE } from "@/lib/version";
 import { DeveloperDiagnostics } from "@/components/Diagnostics/DeveloperDiagnostics";
+import { WallpaperStudio } from "@/components/WallpaperStudio/WallpaperStudio";
 
 type Section =
-  | "appearance"
+  | "wallpaper"
   | "dock"
   | "cursor"
   | "sound"
@@ -36,12 +36,20 @@ function DiagnosticsNavIcon({ className }: { className?: string; strokeWidth?: n
   return <ShellIcon name="terminal" size={16} className={className} />;
 }
 
+// M21 — Wallpaper Studio follows the same rule: the canonical PixelForge
+// Canvas mark (CAT-CANVAS-001, a framed drafting sheet — the desktop
+// context menu's "Change Wallpaper" entry already uses it) replaces the
+// old Appearance section's lucide Palette glyph.
+function WallpaperNavIcon({ className }: { className?: string; strokeWidth?: number }) {
+  return <ShellIcon name="canvas" size={16} className={className} />;
+}
+
 const SECTIONS: {
   id: Section;
   label: string;
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
 }[] = [
-  { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "wallpaper", label: "Wallpaper", icon: WallpaperNavIcon },
   { id: "dock", label: "Dock", icon: LayoutGrid },
   { id: "cursor", label: "Cursor", icon: MousePointer2 },
   { id: "sound", label: "Sound", icon: Volume2 },
@@ -56,7 +64,7 @@ const SECTIONS: {
 ];
 
 export function SettingsApp() {
-  const [section, setSection] = useState<Section>("appearance");
+  const [section, setSection] = useState<Section>("wallpaper");
 
   return (
     <div className="flex h-full bg-surface-solid">
@@ -81,7 +89,7 @@ export function SettingsApp() {
       </nav>
 
       <div className="min-w-0 flex-1 overflow-auto px-6 py-5">
-        {section === "appearance" && <AppearanceSection />}
+        {section === "wallpaper" && <WallpaperStudio />}
         {section === "dock" && <DockSection />}
         {section === "cursor" && <CursorSection />}
         {section === "sound" && <SoundSection />}
@@ -98,44 +106,6 @@ function SectionTitle({ title, sub }: { title: string; sub: string }) {
     <div className="mb-5">
       <h2 className="text-base font-semibold text-ink">{title}</h2>
       <p className="text-sm text-ink-dim">{sub}</p>
-    </div>
-  );
-}
-
-function AppearanceSection() {
-  const wallpaper = useSettingsStore((s) => s.wallpaper);
-  const setWallpaper = useSettingsStore((s) => s.setWallpaper);
-
-  return (
-    <div>
-      <SectionTitle title="Appearance" sub="Choose the desktop's mood." />
-      <div className="grid grid-cols-3 gap-3">
-        {WALLPAPERS.map((w) => {
-          const active = w.id === wallpaper;
-          return (
-            <button
-              key={w.id}
-              onClick={() => setWallpaper(w.id)}
-              className={[
-                "group flex flex-col items-center gap-2 rounded-lg border-2 p-2 transition-colors",
-                active ? "border-navy" : "border-border hover:border-border-strong",
-              ].join(" ")}
-            >
-              <div
-                className="relative h-16 w-full overflow-hidden rounded-md border border-black/10"
-                style={w.surface}
-              >
-                {active && (
-                  <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-navy text-white">
-                    <Check className="h-2.5 w-2.5" strokeWidth={3} />
-                  </span>
-                )}
-              </div>
-              <span className="text-[12px] font-medium text-ink">{w.name}</span>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }

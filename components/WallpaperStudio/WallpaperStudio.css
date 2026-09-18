@@ -1,0 +1,247 @@
+.cattipu-wallpaper-studio,
+.cattipu-wallpaper-studio *,
+.cattipu-wallpaper-studio *::before,
+.cattipu-wallpaper-studio *::after {
+  box-sizing: border-box;
+}
+
+/* Same section grammar as Developer Diagnostics: shell face, 13px body,
+ * 15px header, 16px between groups, cream wells cut with the shared
+ * raised/inset bevels. No radius, no blur, no soft shadow. */
+.cattipu-wallpaper-studio {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-family);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.cattipu-wallpaper-studio__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.cattipu-wallpaper-studio__title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.cattipu-wallpaper-studio__applied {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cattipu-bevel-right);
+}
+
+.cattipu-wallpaper-studio__bench {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* The preview monitor: a raised cream housing around an inset screen. */
+.cattipu-wallpaper-studio__monitor {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 8px 8px 4px;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-wallpaper-studio__preview {
+  width: 244px;
+  height: 148px;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-wallpaper-studio__caption {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.cattipu-wallpaper-studio__desk {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-repeat: repeat;
+}
+
+.cattipu-wallpaper-studio__desk-icon {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 32px;
+}
+
+.cattipu-wallpaper-studio__desk-mark {
+  width: 16px;
+  height: 12px;
+  background: var(--cattipu-studio-mark);
+  border: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+}
+
+.cattipu-wallpaper-studio__desk-label {
+  width: 24px;
+  height: 4px;
+  background: var(--cattipu-outer-frame);
+}
+
+/* Mirrors the real desktop: labels get a cream plate on dark surfaces. */
+.cattipu-wallpaper-studio__desk[data-wallpaper-tone='dark'] .cattipu-wallpaper-studio__desk-label {
+  border: 1px solid var(--cattipu-cream);
+  height: 6px;
+}
+
+.cattipu-wallpaper-studio__desk-window {
+  position: absolute;
+  left: 64px;
+  top: 24px;
+  width: 132px;
+  height: 84px;
+  background: var(--cattipu-cream);
+  border: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+}
+
+.cattipu-wallpaper-studio__desk-titlebar {
+  display: block;
+  height: 12px;
+  background: var(--cattipu-studio-titlebar);
+}
+
+.cattipu-wallpaper-studio__picker {
+  display: flex;
+  flex: 1 1 220px;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cattipu-wallpaper-studio__label {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cattipu-wallpaper-studio__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 4px;
+  background: var(--cattipu-bevel-top);
+  list-style: none;
+  outline-offset: 2px;
+}
+
+.cattipu-wallpaper-studio__option {
+  display: grid;
+  grid-template-columns: 12px 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  padding: 0 4px;
+  white-space: nowrap;
+  cursor: default;
+  user-select: none;
+}
+
+.cattipu-wallpaper-studio__option[data-selected] {
+  background: var(--cattipu-menu-highlight);
+  color: var(--cattipu-cream);
+}
+
+.cattipu-wallpaper-studio__marker {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.cattipu-wallpaper-studio__swatch {
+  width: 24px;
+  height: 16px;
+  border: 1px solid var(--cattipu-outer-frame);
+  background-repeat: repeat;
+}
+
+.cattipu-wallpaper-studio__option[data-selected] .cattipu-wallpaper-studio__swatch {
+  border-color: var(--cattipu-cream);
+}
+
+.cattipu-wallpaper-studio__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cattipu-wallpaper-studio__flag {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cattipu-wallpaper-studio__info {
+  padding: 12px;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-wallpaper-studio__info-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.cattipu-wallpaper-studio__readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px 16px;
+  margin: 0;
+}
+
+.cattipu-wallpaper-studio__readout > div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.cattipu-wallpaper-studio__readout dt,
+.cattipu-wallpaper-studio__readout dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.cattipu-wallpaper-studio__readout dt {
+  color: var(--cattipu-bevel-right);
+}
+
+.cattipu-wallpaper-studio__description {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: var(--cattipu-border-size) solid var(--cattipu-bevel-bottom);
+}
+
+.cattipu-wallpaper-studio__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cattipu-wallpaper-studio__button {
+  min-width: 120px;
+  padding: 6px 12px;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: default;
+}
+
+.cattipu-wallpaper-studio__button:disabled {
+  opacity: 0.6;
+}

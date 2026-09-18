@@ -79,7 +79,7 @@ export interface DesktopObjectLayerProps {
   /** Raises (and if needed launches) one of the shell's windows. Owned by
    *  the window manager inside InteractiveDesktop, so it arrives as a
    *  callback rather than being reached for here. */
-  onOpenWindow: (id: "projects" | "explorer") => void;
+  onOpenWindow: (id: "projects" | "explorer" | "settings") => void;
   /** Milestone 18. Cascade and Tile act on the window manager, which
    *  lives in InteractiveDesktop; this layer only offers the commands. */
   onArrangeWindows?: (layout: "cascade" | "tile") => void;
@@ -364,8 +364,9 @@ export function DesktopObjectLayer({
         id: "wallpaper",
         label: "Change Wallpaper",
         icon: "canvas",
-        disabled: true,
-        hint: "M19",
+        // M21. Wallpaper Studio is the Settings section that opens first,
+        // so raising Settings is the whole command — no second picker here.
+        onSelect: () => onOpenWindow("settings"),
       },
     ];
   }, [
