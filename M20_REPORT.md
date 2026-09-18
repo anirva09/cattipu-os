@@ -757,3 +757,138 @@ None.
 
 M20.5 (Developer Diagnostics) and every other reserved milestone remain
 unstarted.
+
+---
+
+# M20C1R1 — Hand Cursor Fidelity Correction
+
+*Correction sprint against M20C1 (base commit `f5f473f`). The product owner
+rejected the Hand silhouette on visual inspection: it read as a
+middle-finger gesture rather than a pointing hand. Artwork only — no cursor
+behaviour, no typography, no M20.5.*
+
+## Objective
+
+Redraw only the Hand cursor so it reads immediately as a classic 1990s
+workstation pointing hand, and rederive its hotspot from the final artwork.
+
+## Baseline
+
+- `main` at `f5f473f`, 4 commits ahead of `origin/main`, clean tree.
+- Git identity `anirva09 <anirvavjit2023@gmail.com>`.
+- The other five roles were correct and stayed untouched.
+
+## Audit Findings
+
+The rejected art put a 2-cell finger in the **middle** of the top edge of a
+plain rectangular palm (`......##` over `..#########`), with the thumb as a
+1-cell bump. Nothing in the silhouette said "hand": no knuckles, no
+separation between the raised finger and the fist, and the finger sat on the
+centre line — which is exactly the gesture reading the owner called out.
+
+## Changes
+
+1. `scripts/gen_cursors.py` — `HAND` redrawn, and its grid offset changed to
+   `(1, 1)` so the outline wraps the fingertip. The new construction:
+   - index finger raised **left of centre** (2 cells wide, 5 cells clear of
+     the fist), so it is the dominant feature but never the central one;
+   - two folded fingers as knuckle bumps to its right, the 1-cell gaps
+     between them turned into white creases by the existing `halo()` pass,
+     giving the fist visible articulation;
+   - a thumb protruding 2 cells from the left edge, set **below** the index
+     and clear of it, so the hand identity is unmistakable;
+   - a compact fist body carrying enough mass that the raised finger cannot
+     read as a lone digit.
+   - `LIMITS["hand"]` raised from 22×26 to 26×26 (the brief allows a few px;
+     still far below 32×32). The guard caught the first attempt at 24×26
+     rather than silently shipping it.
+2. `public/cursors/hand.png` — regenerated. **The other five PNGs are
+   byte-identical to `f5f473f`** (verified with `git diff --quiet` per file).
+3. `app/globals.css` — Hand hotspot `11 2` → `9 2`, and the size list in the
+   block comment updated. No selector, role or fallback keyword touched.
+4. `components/Window/SettingsApp.tsx` — the Hand preview's declared
+   intrinsic size 22×26 → 26×26, so the preview is not stretched.
+5. `docs/DESIGN_CONSTITUTION.md` §8 — Hand size updated, plus one sentence
+   describing the frozen silhouette.
+6. `M20_REPORT.md` — this section.
+
+Three iterations were drawn and compared side by side at 10× on cream and on
+navy before choosing: (v1) finger hard left, 1-cell thumb; (v2) same with
+deeper knuckle creases; (v3, shipped) thumb widened and moved clear of the
+index, finger left of centre. v1/v2 stacked the thumb directly beneath the
+finger, which kept the silhouette ambiguous.
+
+## Exact geometry
+
+| | Canvas = silhouette | Hotspot | Notes |
+|---|---|---|---|
+| Hand (M20C1R1) | 26×26 | `9 2` | on the navy fingertip |
+| Hand (M20C1, rejected) | 22×26 | `11 2` | centred finger |
+| Hand (pre-M20C1) | 64×64 | `24 4` | oversized |
+
+Hotspot derived by the generator's `top` rule — the horizontal midpoint of
+the topmost navy row — not copied from a constant, and asserted to land on a
+navy pixel.
+
+## Verification
+
+- Generator: regenerated through `python scripts/gen_cursors.py`; its own
+  assertions (silhouette within limit, hotspot on navy) pass.
+- Independent decode of `hand.png`: 26×26, **three colours only** (navy
+  `#0b3d91`, white, transparent), transparent background, every pixel an
+  exact 2×2 block, no anti-aliasing, hotspot `9 2` on navy.
+- `npm run verify`: exit 0 — typecheck clean, eslint 0 problems, 136/136.
+- `npm run build`: clean, route sizes unchanged (165 kB / 268 kB). Built CSS
+  contains `url(/cursors/hand.png) 9 2`.
+- Live (`next dev`, 100% zoom, DPR 1.25 and 1) at 1366×768, 1440×900,
+  1600×900 and 1920×1080:
+  - **58–60 Hand-mapped elements checked per viewport; every one resolves to
+    `hand 9,2 (pointer)` and none to any other cursor.** That covers sidebar
+    buttons, window controls, Settings controls, project buttons, Toolbox
+    buttons, VIEW ALL and every other `button`/`a`/`[role=button]`.
+  - Settings previews: 18×28 / 26×26 / 16×28 / 28×28, three colours each,
+    correct aspect — no stretching.
+  - Settings cursor toggle off → native `auto`/`default`/`grab`; on again →
+    Arrow, Hand and Move all restored.
+  - Arrow, Move, I-Beam and Hourglass unchanged on their surfaces.
+- **No viewport-edge regression.** Chromium drops a custom cursor that does
+  not fit wholly inside the viewport; for the Hand that zone is driven by its
+  hotspot and size:
+
+  | Hand version | Left dead zone | Bottom dead zone |
+  |---|---|---|
+  | pre-M20C1 (64×64 @ `24 4`) | 24px | 60px |
+  | M20C1 (22×26 @ `11 2`) | 11px | 24px |
+  | **M20C1R1 (26×26 @ `9 2`)** | **9px** | 24px |
+
+  The left zone improves by 2px (it matters for the sidebar rail, which
+  starts 4px from the edge) and the bottom zone is unchanged, since the
+  height is still 26. The only flagged controls are the bottom pixels of the
+  Toolbox buttons at 1366×768, which behaved identically before this sprint.
+
+## Regressions Checked
+
+- The five other cursor PNGs are byte-identical to the previous commit.
+- Cursor selectors, roles, fallback keywords, drag ownership
+  (`data-dragging`) and the Settings toggle are untouched.
+- Hand-mapped surfaces enumerated programmatically rather than spot-checked.
+
+## Known Issues
+
+- Carried over from M20C1, unchanged and out of scope: sidebar labels and
+  window-control glyphs still resolve to Arrow inside Hand buttons (M12
+  blanket `*` rule); the title text keeps `grab` as its fallback keyword
+  mid-drag; DPR 1.25 resamples the pixel art.
+- `.cattipu-right-widget-stack__control` is a `<span>` with no `role`, so it
+  is not Hand-mapped. Pre-existing markup, not artwork.
+
+## Git
+
+- Branch `main`; one commit on top of `f5f473f`:
+  `style(cursor): refine retro hand silhouette`.
+- Author `anirva09 <anirvavjit2023@gmail.com>`; no AI attribution.
+- Working tree clean after commit.
+
+## Next Milestone
+
+M20.5 and Wallpaper Studio (M21) remain unstarted.

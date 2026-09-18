@@ -268,9 +268,9 @@ body {
    Toggled by the .cattipu-cursors class on <body> (see CursorProvider).
    M20C1 (Cursor Artwork Fidelity): each asset is the 16x16 art grid at 2x
    (a 32x32 CSS px frame) cropped to the glyph and its outline — Arrow
-   18x28, Hand 22x26, I-Beam 16x28, Resize 28x28, Move 30x30, Hourglass
-   24x28 — drawn by Chromium at that natural CSS size. The 64x64 assets
-   this replaces rendered 2.5-3x the size of an OS pointer. Cropping is not
+   18x28, Hand 26x26 (M20C1R1), I-Beam 16x28, Resize 28x28, Move 30x30,
+   Hourglass 24x28 — drawn by Chromium at that natural CSS size. The 64x64
+   assets this replaces rendered 2.5-3x the size of an OS pointer. Cropping is not
    cosmetic: Chromium swaps in the native cursor whenever the whole image
    does not fit inside the visual viewport, so transparent margin would
    only widen that fallback zone along the right/bottom edges.
@@ -288,7 +288,7 @@ body.cattipu-cursors button,
 body.cattipu-cursors a,
 body.cattipu-cursors [role="button"],
 body.cattipu-cursors .cattipu-cursor-hand {
-  cursor: url("/cursors/hand.png") 11 2, pointer;
+  cursor: url("/cursors/hand.png") 9 2, pointer;
 }
 body.cattipu-cursors input,
 body.cattipu-cursors textarea,

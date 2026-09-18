@@ -38,7 +38,7 @@ SCALE = 2  # 16x16 grid -> 32x32 CSS px frame, cropped per cursor
 # Maximum visible silhouette (= PNG size), halo included, in CSS px.
 LIMITS = {
     "arrow": (18, 28),
-    "hand": (22, 26),
+    "hand": (26, 26),  # M20C1R1: +4px wide for a thumb clear of the index
     "text": (16, 28),
     "resize": (28, 28),
     "move": (30, 30),
@@ -157,21 +157,27 @@ ARROW = [
 ]
 
 # ---------------------------------------------------------------------
-# Hand: pointing hand for links/buttons; the index finger is the hotspot.
+# Hand: pointing hand for links/buttons; the index fingertip is the hotspot.
+# M20C1R1: the previous silhouette put a lone 2-cell finger in the middle
+# of a plain rectangular palm, which read as an obscene gesture rather than
+# a pointing hand. Now the index rises left of centre, the two folded
+# fingers show as knuckle bumps to its right (halo() turns the 1-cell gaps
+# into the white creases between them), and the thumb protrudes two cells
+# from the left edge, below the index and clear of it — so the fist reads
+# as a fist and the raised finger is unmistakably the index.
 # ---------------------------------------------------------------------
 HAND = [
-    "",
-    "......##",
-    "......##",
-    "......##",
-    "......##",
-    "......##",
-    "....#######",
-    "....#######",
+    "...##",
+    "...##",
+    "...##",
+    "...##",
+    "...##",
+    "...##.##.##",
+    "..###.##.##",
     "..#########",
+    "###########",
+    "###########",
     "..#########",
-    "..#########",
-    "....#######",
 ]
 
 # ---------------------------------------------------------------------
@@ -256,7 +262,7 @@ HOURGLASS = [
 
 CURSORS = [
     ("arrow", grid_from(ARROW, 1, 1), "tip"),
-    ("hand", grid_from(HAND), "top"),
+    ("hand", grid_from(HAND, 1, 1), "top"),
     ("text", grid_from(TEXT), "centre"),
     ("resize", grid_from(RESIZE), "centre"),
     ("move", grid_from(MOVE, 1, 1), "centre"),
