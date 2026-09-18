@@ -209,11 +209,31 @@ test("every check nested under a not-implemented service is itself not-implement
 });
 
 // ── 7. components/WindowManager remains the canonical window owner ──────
+//
+// The roadmap will legitimately add windows (Canvas, Forge, Launch, ...),
+// so CATTIPU_WINDOW_IDS must be free to grow. What has to stay true is
+// OWNERSHIP, not the list's current length: exactly one hook produces
+// window state, and "diagnostics" specifically never becomes a window id
+// (M20.5D's whole point was routing it through Settings instead).
 
-test("CATTIPU_WINDOW_IDS is still exactly the five-window fixed set — no silent growth", () => {
+test("CATTIPU_WINDOW_IDS holds unique ids and \"diagnostics\" is never one of them", () => {
+  const ids = [...CATTIPU_WINDOW_IDS];
+  assert.ok(ids.length > 0, "CATTIPU_WINDOW_IDS must not be empty");
+  assert.equal(new Set(ids).size, ids.length, "CATTIPU_WINDOW_IDS has a duplicate id");
+  assert.ok(
+    !ids.includes("diagnostics" as never),
+    "diagnostics must not become a managed WindowManager window id",
+  );
+});
+
+test("exactly one useWindowManager hook exists — window state has one owner", () => {
+  const hookFiles = listSourceFiles("components", [".ts", ".tsx"]).filter((file) =>
+    /export function useWindowManager\b/.test(readSource(file)),
+  );
   assert.deepEqual(
-    [...CATTIPU_WINDOW_IDS],
-    ["projects", "architect", "memory", "explorer", "settings"],
+    hookFiles,
+    ["components/WindowManager/useWindowManager.ts"],
+    "window state must be produced by exactly one hook, owned by components/WindowManager",
   );
 });
 
@@ -247,25 +267,20 @@ test("only the three known legacy call sites import store/useWindowStore.ts", ()
 });
 
 // ── 9. No second application/window registry ────────────────────────────
+//
+// APP_MAP and CATTIPU_SIDEBAR_ITEMS are both live, actively-consumed
+// registries (APP_MAP is imported by the live components/Shell/
+// CattipuShell.tsx, not just the legacy CommandPalette) — the roadmap
+// will legitimately add entries to both as real apps ship, so their exact
+// current counts are not an invariant worth freezing. What has to stay
+// true: no entry was added just to give Diagnostics its own app/sidebar
+// identity (it lives inside Settings, on purpose), the ids each registry
+// already has stay unique as it grows, and the legacy AppId type
+// (store/useWindowStore.ts) never becomes what components/WindowManager
+// takes its window ids from — that would quietly re-canonicalize the
+// orphaned store BOUNDARY_AUDIT.md §2.3 says must not be revived.
 
-test("the legacy AppId registry (APP_MAP) has not silently grown beyond its known 11 ids", () => {
-  const ids = Object.keys(APP_MAP).sort();
-  assert.deepEqual(ids, [
-    "about",
-    "architect",
-    "canvas",
-    "explorer",
-    "forge",
-    "home",
-    "launch",
-    "memory",
-    "projects",
-    "settings",
-    "templates",
-  ]);
-});
-
-test("CATTIPU_SIDEBAR_ITEMS has not silently grown beyond its known 9 ids", () => {
+function sidebarItemIds(): string[] {
   // Sidebar.tsx cannot be imported directly in this plain tsx/node test
   // runner — it side-effect-imports its own .css, and this suite has no
   // bundler (the same reason every other suite in tests/ only imports
@@ -276,19 +291,36 @@ test("CATTIPU_SIDEBAR_ITEMS has not silently grown beyond its known 9 ids", () =
     /export const CATTIPU_SIDEBAR_ITEMS = \[([\s\S]*?)\] as const;/,
   );
   assert.ok(match, "CATTIPU_SIDEBAR_ITEMS literal not found in Sidebar.tsx");
+  return [...match![1].matchAll(/id:\s*'([a-z]+)'/g)].map((m) => m[1]);
+}
 
-  const ids = [...match![1].matchAll(/id:\s*'([a-z]+)'/g)].map((m) => m[1]).sort();
-  assert.deepEqual(ids, [
-    "architect",
-    "canvas",
-    "explorer",
-    "forge",
-    "home",
-    "launch",
-    "memory",
-    "projects",
-    "settings",
-  ]);
+test("neither APP_MAP nor CATTIPU_SIDEBAR_ITEMS has grown a diagnostics-specific entry", () => {
+  assert.ok(!("diagnostics" in APP_MAP), 'APP_MAP must not gain a "diagnostics" app id');
+  assert.ok(
+    !sidebarItemIds().includes("diagnostics"),
+    "the sidebar rail must not gain a diagnostics entry — the panel lives inside Settings",
+  );
+});
+
+test("APP_MAP and CATTIPU_SIDEBAR_ITEMS ids stay unique as the roadmap adds to them", () => {
+  const appIds = Object.keys(APP_MAP);
+  assert.equal(new Set(appIds).size, appIds.length, "APP_MAP has a duplicate app id");
+
+  const sidebarIds = sidebarItemIds();
+  assert.equal(
+    new Set(sidebarIds).size,
+    sidebarIds.length,
+    "CATTIPU_SIDEBAR_ITEMS has a duplicate id",
+  );
+});
+
+test("components/WindowManager does not source its window ids from the legacy AppId registry", () => {
+  const reducerSource = readSource("components/WindowManager/windowManager.reducer.ts");
+  assert.doesNotMatch(
+    reducerSource,
+    /from\s+["'][^"']*\/(useWindowStore|lib\/apps)["']/,
+    "CattipuWindowId must stay independent of AppId — APP_MAP/useWindowStore must not become the canonical window registry",
+  );
 });
 
 // ── 10. React components must not import an AI provider SDK ─────────────
@@ -331,15 +363,13 @@ test("no .tsx component performs network calls, spawns processes, or reads proce
   }
 });
 
-// ── 12. The diagnostics panel stays inside Settings, no new window id ───
+// ── 12. The diagnostics panel stays inside Settings ─────────────────────
+// (the "diagnostics is never a window id" half of this moved up to §7,
+// beside the rest of the window-id invariants it belongs with.)
 
-test("SettingsApp still renders the diagnostics section, and no window id named \"diagnostics\" exists", () => {
+test("SettingsApp still renders the diagnostics section", () => {
   const settingsSource = readSource("components/Window/SettingsApp.tsx");
   assert.match(settingsSource, /"diagnostics"/, "SettingsApp must still expose a diagnostics section");
-  assert.ok(
-    !(CATTIPU_WINDOW_IDS as readonly string[]).includes("diagnostics"),
-    "diagnostics must not become a managed WindowManager window id",
-  );
 });
 
 // ── 13. Known architecture-drift checks remain visible ──────────────────
