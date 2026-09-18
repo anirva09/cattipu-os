@@ -29,7 +29,7 @@ export function useAppliedWallpaper(): WallpaperDefinition {
  * The desktop surface itself. It fills the window layer beneath the
  * desktop objects and every managed window, takes no pointer events, and
  * paints only the registry's static surface — it never touches windows,
- * bars, the sidebar or `document.body`.
+ * bars, the sidebar or the page body.
  */
 export function DesktopWallpaper({ wallpaper }: { wallpaper: WallpaperDefinition }) {
   return (
