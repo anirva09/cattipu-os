@@ -524,3 +524,236 @@ before and after:
 
 M20C1 (cursor artwork fidelity) is proposed but not started. M20.5 is not
 started.
+
+---
+
+# M20C1 — Cursor Artwork Fidelity
+
+*Follow-on sprint in the M20 milestone (base commit `acfc582`, the M20T1
+commit). Cursor interaction logic (M20R1) was not changed, typography was
+not touched, and M20.5 was not started.*
+
+## Objective
+
+Redraw the six frozen cursor roles as a compact, manufactured, pixel-sharp
+family that reads as an operating-system cursor rather than a large
+decorative sprite, and derive every hotspot from the final artwork. Artwork,
+proportions and hotspots only.
+
+## Baseline
+
+- `main` at `acfc582`, 3 commits ahead of `origin/main` (`d7af050`); all
+  three are unpushed M20 work. Clean working tree. `PROJECT_CONSTITUTION.md`
+  unchanged since `d7af050`.
+- Git identity `anirva09 <anirvavjit2023@gmail.com>`.
+- `npm run verify`: exit 0 before any change (136/136).
+
+## Audit Findings
+
+Confirmed against the assets and the browser, before changing anything:
+
+- All six PNGs were 64×64; Chromium draws a `url()` cursor at its natural
+  CSS size, so the Arrow's visible glyph was 32×52 CSS px — roughly 2.5–3×
+  a native OS pointer.
+- Arrow's visible tip was at pixel (0,0) while CSS said hotspot `8 8`; the
+  generator's own `ARROW_HOTSPOT` constant was wrong, which is why M20R1's
+  "hotspots verified" check (CSS == constant × 4) did not catch it.
+- I-Beam (`28 32`) and Resize (`28 28`) hotspots were ~4px off the glyph's
+  visual centre.
+- Arrow had no white outline along its top and left edges (the tip sat on
+  the canvas border) and its tail had outline pixels inside the body.
+- Move filled the whole canvas and read as a plus sign: a 2-cell shaft with
+  arrowheads only 2 cells wider.
+- `scripts/gen_cursors.py` needed Pillow and NumPy, neither of which is a
+  project dependency nor installed, so it could not be run from a clean
+  checkout.
+
+## Canonical Ownership
+
+- Cursor artwork: `scripts/gen_cursors.py` → `public/cursors/*.png`. Still
+  the only generator; no second art pipeline.
+- Cursor presentation: the one opt-in stylesheet block in `app/globals.css`,
+  gated by `CursorProvider` off `useSettingsStore.cursorEnabled`. Untouched
+  selectors; only `url()` hotspot values changed.
+- Drag state: `ManagedWindow.tsx`'s `data-dragging` attribute (M20R1). Read,
+  not modified.
+
+## Changes
+
+1. `scripts/gen_cursors.py` — rewritten around the same technique:
+   - `SCALE` 4 → 2. The 16×16 logical art grid now renders into a 32×32 CSS
+     px frame, and each PNG is cropped to its glyph plus outline.
+   - Art is authored as ASCII maps instead of coordinate lists.
+   - Arrow redrawn: inset one cell so the outline wraps the tip, repaired
+     stepped tail with its notch.
+   - Move redrawn: 1-cell shaft with a true centre cell and 5-cell
+     arrowheads.
+   - `halo()` also fills any transparent cell the outline encloses, so Move
+     reads as one solid object instead of one with pinholes.
+   - Hotspots are computed from the final pixels (`hotspot()`): Arrow = its
+     tip, Hand = the midpoint of its fingertip row, the rest = the midpoint
+     of the navy bounding box. Printed for copying into the CSS.
+   - Asserts each silhouette is within its size limit and that the hotspot
+     lands on a navy pixel.
+   - Standard library only (`zlib`/`struct`); Pillow and NumPy are no longer
+     needed.
+2. `public/cursors/{arrow,hand,text,resize,move,hourglass}.png` — regenerated.
+3. `app/globals.css` — the six hotspot pairs updated, plus a comment
+   recording the canvas rule, why cropping matters, and why `image-set()`
+   is not used. No selector, role, `!important` or fallback keyword changed.
+4. `components/Window/SettingsApp.tsx` — the Settings → Cursor previews now
+   declare each asset's real size, render at true pixel size centred in the
+   same 32px slot (a fixed square box would stretch the now non-square art),
+   and use `unoptimized`.
+5. `docs/DESIGN_CONSTITUTION.md` §8 — the frozen "4× nearest-neighbor scale"
+   sentence updated to the 2×-plus-crop rule, with the size table.
+6. `M20_REPORT.md` — this section.
+
+## Exact geometry
+
+Every PNG equals its visible silhouette (glyph + 1px outline), so canvas
+size and silhouette size are the same number. Hotspots are in CSS px from
+the PNG's top-left corner.
+
+| Cursor | Canvas = silhouette | Old canvas / silhouette | Hotspot | Derived from |
+|---|---|---|---|---|
+| Arrow | 18×28 | 64×64 / 32×52 | `2 2` | tip pixel |
+| Hand | 22×26 | 64×64 / 44×52 | `11 2` | fingertip row midpoint |
+| I-Beam | 16×28 | 64×64 / 32×56 | `7 13` | visual centre |
+| Resize | 28×28 | 64×64 / 56×56 | `13 13` | visual centre |
+| Move | 30×30 | 64×64 / 64×64 | `14 14` | visual centre (true centre cell) |
+| Hourglass | 24×28 | 64×64 / 48×56 | `11 13` | visual centre |
+
+Old hotspots were `8 8`, `24 4`, `28 32`, `28 28`, `32 32`, `32 32`. Each
+file is 115–166 bytes, RGBA, exactly three colours (navy `#0b3d91`, white,
+transparent), every pixel a clean 2×2 block — verified by decoding the PNGs
+with an independent decoder, not by trusting the generator.
+
+## Browser behaviour
+
+- **Rendering size.** Chromium draws a `url()` cursor at the image's natural
+  CSS size and scales it by the device pixel ratio. At this machine's DPR
+  1.25 the Arrow is 18×28 CSS px → 22.5×35 physical px.
+- **Sharpness.** Cursor bitmaps are resampled with Skia `RESIZE_BEST`
+  (`ui/wm/core/cursor_util.cc`) whenever the scale is not 1, so the art is
+  pixel-exact only at DPR 1. No cursor technique fixes DPR 1.25: a 2×-scaled
+  16-grid cell is 2.5 device px there.
+- **`image-set()` was rejected**, per the brief's instruction to check
+  support first. Unprefixed `image-set()` only became widely available in
+  September 2023 (MDN), well after this project's browser targets (Next's
+  default: Chrome 64, Edge 79, Firefox 67, Opera 51, Safari 12), and it
+  could not make DPR 1.25 exact anyway. One canonical asset per role.
+- **Edge fallback.** Chromium replaces a custom cursor with the native one
+  when the cursor image does not fit entirely inside the visual viewport —
+  in current Chromium this applies at *any* size, not only above 32px as the
+  earlier audit note said (`third_party/blink/renderer/core/input/event_handler.cc`,
+  "Limit custom cursors from covering UI elements…"). Shrinking the assets
+  shrinks that zone; cropping shrinks it further:
+
+  | Asset | Arrow fallback zone (right / bottom) |
+  |---|---|
+  | Old 64×64, hotspot `8 8` | last 56px / 56px |
+  | Uniform 32×32 canvas | last 30px / 30px |
+  | **Shipped, cropped 18×28** | **last 16px / 26px** |
+
+  Measured consequence: the rightmost widget control (its centre 25–32px
+  from the right edge, depending on viewport) keeps the CATTIPU Arrow at all
+  four viewports; with a 32×32 canvas it fell back to the native cursor at
+  1440 and above. The top ~20px of the 50px status bar also keeps it. The
+  last 26px above the bottom edge still falls back; that is inherent to any
+  cursor whose art extends below the pointer, and the fallback is the
+  native cursor, as the CSS fallback keywords already specify.
+- Image size limits are not a factor: browsers cap cursors at 128×128 and
+  recommend 32×32 (MDN).
+
+## Existing Systems Reused
+
+The generator, the single opt-in cursor stylesheet block, `CursorProvider`,
+the Settings cursor toggle, `ManagedWindow.tsx`'s `data-dragging`, and the
+six frozen cursor roles. Nothing new was introduced.
+
+## Architecture Impact
+
+None. Artwork plus CSS values only; no state, store, selector or component
+behaviour changed.
+
+## Visual Preservation
+
+Navy/white palette, pixel construction, no anti-aliasing, and all six
+semantic roles are unchanged. Typography, colours, bevels, spacing, icons
+and boot were not touched. The cursors are smaller and, for Arrow and Move,
+redrawn — which is the sprint's purpose, and follows the constitution's own
+"oversized cursor" backlog entry (§53).
+
+## Data / Migration Impact
+
+None.
+
+## Verification
+
+- `npm run verify` after the change: exit 0 — typecheck clean, `eslint` 0
+  problems, tests 9/9, 18/18, 16/16, 24/24, 33/33, 36/36 (136/136).
+- `npm run build`: compiled successfully, route sizes unchanged (`/` 165 kB
+  / 268 kB First Load JS). Built CSS carries all six new hotspots.
+- `npx next start`: all six PNGs serve 200 at their new sizes, and the live
+  computed cursors match.
+- Manual browser inspection (built-in Chromium, 100% zoom, DPR 1.25) at
+  1366×768, 1440×900, 1600×900 and 1920×1080. Identical at all four:
+
+  | Check | Result |
+  |---|---|
+  | Default / desktop | `arrow 2,2` (fallback `auto`) |
+  | Buttons, sidebar keys, title-bar controls | `hand 11,2` (`pointer`) |
+  | Text field | `text 7,13` (`text`) |
+  | Title-bar empty area and title text | `move 14,14` (`grab`) |
+  | Active drag (deep inside the window body) | `move 14,14` (`grabbing`), `data-dragging="true"` |
+  | pointerup | `data-dragging="false"`, title bar back to `grab` |
+  | pointercancel | `data-dragging="false"`, title bar back to `grab` |
+  | Pressing a window control | no drag starts, stays `hand` |
+  | Architect busy (real generate run) | `hourglass 11,13` (`wait`), back to `hand` when idle |
+  | Settings → Cursor toggle off | `cattipu-cursors` removed; native `auto`/`default`/`grab` |
+  | Settings → Cursor toggle on again | all roles restored |
+  | Settings previews | render 18×28 / 22×26 / 16×28 / 28×28, three colours, correct aspect |
+  | Viewport edges | as tabulated above |
+
+## Regressions Checked
+
+- Window drag, snap release, focus and control clicks exercised during the
+  drag tests; the window returned to its exact starting position.
+- Window controls still show Hand after the artwork swap.
+- Settings cursor toggle round-trips, and `useSettingsStore` was not touched.
+- The two demo projects created by the Architect busy-state test were
+  deleted through the app's own Explorer UI; only the three original demo
+  projects remain.
+
+## Known Issues
+
+- **Descendant surfaces still show Arrow inside Hand controls** —
+  `.cattipu-sidebar-button__label` and `.cattipu-window__glyph` (both
+  measured) resolve to Arrow because the M12 blanket
+  `body.cattipu-cursors *` rule sets `cursor` on every element directly.
+  Pre-existing (M20R1 recorded the glyph case); it is interaction wiring,
+  not artwork, so it stays out of this sprint.
+- **Mid-drag, the title text keeps `grab` as its fallback keyword** while
+  the rest of the window reads `grabbing`. A selector-specificity detail
+  from M20R1. No visible difference — both draw `move.png` at `14 14`, and
+  the keyword only applies if the image fails to load.
+- **DPR 1.25 resampling** softens the pixel edges slightly (see Browser
+  behaviour). Only a device pixel ratio of 1 or 2 is exact.
+- **Boot logo still goes through the lossy image optimizer**
+  (`components/Boot/PixelLogo.tsx`), the same issue fixed for the cursor
+  previews here. Boot is protected by §27, so it is reported, not changed.
+- `.cattipu-resize-handle` remains vestigial (no live element), so the
+  Resize cursor still has no surface in the app — unchanged from M20.
+
+## Git
+
+- Branch `main`; one commit on top of `acfc582`:
+  `style(cursor): refine CATTIPU cursor proportions`.
+- Author `anirva09 <anirvavjit2023@gmail.com>`; no AI attribution.
+- Working tree clean after commit.
+
+## Next Milestone
+
+M20.5 (Developer Diagnostics) and every other reserved milestone remain
+unstarted.

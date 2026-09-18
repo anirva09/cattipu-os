@@ -265,24 +265,38 @@ body {
 
 /* ---- Pixel cursor system (Settings > Cursor) ---- */
 /* Crisp, no-anti-aliasing pixel cursors replacing the browser defaults.
-   Toggled by the .cattipu-cursors class on <body> (see CursorProvider). */
+   Toggled by the .cattipu-cursors class on <body> (see CursorProvider).
+   M20C1 (Cursor Artwork Fidelity): each asset is the 16x16 art grid at 2x
+   (a 32x32 CSS px frame) cropped to the glyph and its outline — Arrow
+   18x28, Hand 22x26, I-Beam 16x28, Resize 28x28, Move 30x30, Hourglass
+   24x28 — drawn by Chromium at that natural CSS size. The 64x64 assets
+   this replaces rendered 2.5-3x the size of an OS pointer. Cropping is not
+   cosmetic: Chromium swaps in the native cursor whenever the whole image
+   does not fit inside the visual viewport, so transparent margin would
+   only widen that fallback zone along the right/bottom edges.
+   Hotspots are computed from the artwork by scripts/gen_cursors.py
+   (Arrow: its tip; Hand: its fingertip; the rest: the glyph's visual
+   centre) and printed by it — regenerate and copy them here whenever the
+   art changes. A plain url() is used rather than image-set(): unprefixed
+   image-set() in `cursor` is newer than the project's browser targets,
+   and it could not make a fractional device-pixel ratio exact anyway. */
 body.cattipu-cursors,
 body.cattipu-cursors * {
-  cursor: url("/cursors/arrow.png") 8 8, auto;
+  cursor: url("/cursors/arrow.png") 2 2, auto;
 }
 body.cattipu-cursors button,
 body.cattipu-cursors a,
 body.cattipu-cursors [role="button"],
 body.cattipu-cursors .cattipu-cursor-hand {
-  cursor: url("/cursors/hand.png") 24 4, pointer;
+  cursor: url("/cursors/hand.png") 11 2, pointer;
 }
 body.cattipu-cursors input,
 body.cattipu-cursors textarea,
 body.cattipu-cursors [contenteditable="true"] {
-  cursor: url("/cursors/text.png") 28 32, text;
+  cursor: url("/cursors/text.png") 7 13, text;
 }
 body.cattipu-cursors .cattipu-resize-handle {
-  cursor: url("/cursors/resize.png") 28 28, nwse-resize !important;
+  cursor: url("/cursors/resize.png") 13 13, nwse-resize !important;
 }
 /* Milestone 4 (Window Interaction Polish) — the blanket
    `body.cattipu-cursors *` rule above (default arrow for everything)
@@ -338,11 +352,11 @@ body.cattipu-cursors .cattipu-window__titlebar,
 body.cattipu-cursors
   .cattipu-window__titlebar
   :not(.cattipu-window__controls):not(.cattipu-window__controls *) {
-  cursor: url("/cursors/move.png") 32 32, grab !important;
+  cursor: url("/cursors/move.png") 14 14, grab !important;
 }
 body.cattipu-cursors .cattipu-managed-window[data-dragging="true"],
 body.cattipu-cursors .cattipu-managed-window[data-dragging="true"] * {
-  cursor: url("/cursors/move.png") 32 32, grabbing !important;
+  cursor: url("/cursors/move.png") 14 14, grabbing !important;
 }
 /* Hourglass — the one existing real "busy" state in the shell today is
    the Architect Generate switch, which already carries `data-busy` (see
@@ -351,7 +365,7 @@ body.cattipu-cursors .cattipu-managed-window[data-dragging="true"] * {
    file is touched, and no new busy state is invented; per the Milestone
    12 brief, Architect's own content is out of this milestone's scope. */
 body.cattipu-cursors .cattipu-switch:disabled[data-busy] {
-  cursor: url("/cursors/hourglass.png") 32 32, wait !important;
+  cursor: url("/cursors/hourglass.png") 11 13, wait !important;
 }
 
 /* ---- React Flow: strip the default modern/glass look, go pixel ---- */

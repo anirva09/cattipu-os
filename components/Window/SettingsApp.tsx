@@ -196,6 +196,14 @@ function DockSection() {
   );
 }
 
+/** Intrinsic size of each cropped cursor PNG (scripts/gen_cursors.py). */
+const CURSOR_PREVIEWS = [
+  { id: "arrow", width: 18, height: 28 },
+  { id: "hand", width: 22, height: 26 },
+  { id: "text", width: 16, height: 28 },
+  { id: "resize", width: 28, height: 28 },
+] as const;
+
 function CursorSection() {
   const cursorEnabled = useSettingsStore((s) => s.cursorEnabled);
   const setCursorEnabled = useSettingsStore((s) => s.setCursorEnabled);
@@ -210,16 +218,24 @@ function CursorSection() {
         onChange={setCursorEnabled}
       />
       <div className="mt-5 flex items-center gap-4 rounded-lg border border-border bg-surface px-4 py-3">
-        {["arrow", "hand", "text", "resize"].map((c) => (
-          <div key={c} className="flex flex-col items-center gap-1.5">
-            <Image
-              src={`/cursors/${c}.png`}
-              alt={c}
-              width={64}
-              height={64}
-              className="pixelated h-8 w-8"
-            />
-            <span className="text-[11px] capitalize text-ink-dim">{c}</span>
+        {CURSOR_PREVIEWS.map((c) => (
+          <div key={c.id} className="flex flex-col items-center gap-1.5">
+            {/* M20C1: each cursor PNG is cropped to its own glyph, so the
+                sizes differ and a fixed square box would stretch them.
+                Every preview renders at its true pixel size, centred in a
+                common 32px slot, and `unoptimized` keeps the two-colour
+                artwork out of the lossy WebP pipeline. */}
+            <span className="flex h-8 w-8 items-center justify-center">
+              <Image
+                src={`/cursors/${c.id}.png`}
+                alt={c.id}
+                width={c.width}
+                height={c.height}
+                unoptimized
+                className="pixelated"
+              />
+            </span>
+            <span className="text-[11px] capitalize text-ink-dim">{c.id}</span>
           </div>
         ))}
       </div>
