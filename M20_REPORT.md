@@ -1054,3 +1054,254 @@ None. Static assets and CSS constants only; no persisted schema touched.
 ## Next Milestone
 
 M20.5 and Wallpaper Studio (M21) remain unstarted.
+
+---
+
+# M20C1R3 — Hand and Hourglass Shape Correction (Reference Image)
+
+*Correction sprint against M20C1R2 (base commit `a10d758`). Product-owner review
+rejected the Hand again and asked that both the Hand and the Hourglass be
+redrawn against a newly supplied reference image — an outlined 1990s-style
+arrow/hand/hourglass set — matching its SHAPE only. CATTIPU's own navy/white,
+transparent, hard-pixel, no-antialiasing construction is unchanged. Artwork
+only — no cursor behaviour, no other cursor role, no M20.5, no Wallpaper
+Studio.*
+
+## Objective
+
+Redraw the Hand and Hourglass so their silhouettes match the supplied
+reference's shape closely — a genuine multi-finger staircase and a visibly
+separated thumb for the Hand; a flat cap, frame flange and crisp diagonal
+taper for the Hourglass — while keeping CATTIPU's own colour and
+construction language, and rederive both hotspots from the final artwork.
+
+## Baseline
+
+- `main` at `a10d758`, clean tree except an untracked `.claude/launch.json`
+  (a local Browser-pane preview config, unrelated to this sprint, left
+  alone), 6 commits ahead of `origin/main`.
+- Git identity `anirva09 <anirvavjit2023@gmail.com>`.
+- `npm run verify` passing before any change (typecheck, lint, 136/136).
+- `PROJECT_CONSTITUTION.md` unchanged since `d7af050` — reread in full.
+- Arrow, Text, Resize and Move were not part of the brief and stayed
+  untouched (verified byte-identical afterwards).
+
+## Audit Findings
+
+Decoded the reference image and cropped its Hand and Hourglass regions for
+direct pixel-level comparison against the then-current shipped artwork
+(from `a10d758`):
+
+- **Hand.** The reference is a genuine 4-finger staircase — index tallest,
+  then middle, ring, pinky each one step shorter, each separated by a thin
+  gap — with a thumb that visibly protrudes to the left of the palm's own
+  edge, and a flared, inset "cuff" base. The M20C1R2 Hand had only one
+  finger plus two small knuckle bumps (not four distinct fingers), and its
+  thumb — while now its own lobe — never stuck out further left than the
+  palm below it, so it read as a step-in notch rather than a protruding
+  digit.
+- **Hourglass.** The reference shows a flat horizontal cap, a short
+  ledge/flange inset from the cap before the taper starts, then a crisp
+  *linear* diagonal down to a narrow neck — and an asymmetric base with a
+  small sand-pile bulge, not a mirror of the top. The M20C1R2 Hourglass had
+  a flat cap but the taper began immediately under it with no held ledge,
+  and it curved rather than stepped in a straight diagonal, reading closer
+  to a rounded diamond/spool than the reference's geometric taper.
+
+## Canonical Ownership
+
+Both glyphs remain owned by `scripts/gen_cursors.py`, the one cursor-artwork
+generator (§8 of `docs/DESIGN_CONSTITUTION.md`). No second generator, no
+hand-edited PNG.
+
+## Changes
+
+1. `scripts/gen_cursors.py`
+   - `HAND` redrawn on the same 16×16 grid / 2× scale / halo pipeline:
+     - Four fingers — index, middle, ring, pinky — each 2 cells wide,
+       1-cell gaps between them, each starting one row later (and so one
+       row shorter) than its neighbour to its left. `halo()` turns the
+       gaps into white creases, exactly as it already did for the
+       previous 2-knuckle version.
+     - The thumb is a plain rectangular block (matching the reference,
+       not a rounded lobe): a 1-cell "web" gap at its top row, then it
+       merges in and — for two rows — extends past the palm's own left
+       edge (columns the fingers-and-palm block never reaches), so it
+       visibly protrudes rather than sitting flush, before retreating
+       over two more rows into a tapered, two-step cuffed base.
+     - `LIMITS["hand"]` raised from 30×28 to 32×32. The extra room comes
+       from the 4-finger span (index through pinky needs 11 columns of
+       fingers+gaps versus the old 2-column knuckle cluster) plus the
+       thumb's own protrusion; both ends of the glyph now touch the
+       16-cell grid's margin, so 32×32 (grid width/height + the 1-cell
+       halo on each side) is the natural, not padded, result.
+   - `HOURGLASS` redrawn:
+     - Row 0: flat cap (14 cells).
+     - Row 1: a one-cell-inset "flange" row — the frame's ledge sitting
+       proud of the taper, which M20C1R2 did not have.
+     - Rows 2–5: a straight linear taper, narrowing by 2 cells per row
+       (12→10→8→6→4), giving a crisp diagonal rather than a curve.
+     - Rows 6–7: a 2-cell neck, held for two rows.
+     - Rows 8–11: the taper widens back out, but **skips** the
+       narrowest widening step (jumps straight to 6 cells rather than
+       mirroring the top's 4-cell row) — a deliberate asymmetry so the
+       base reads as a piled mound, echoing the reference's sand pile,
+       rather than a mirrored spool.
+     - Rows 12–13: two cap rows (versus the top's one), giving the base
+       slightly more visual weight.
+     - `LIMITS["hourglass"]` raised from 28×28 to 32×32, for the same
+       "content now touches the grid margin on all sides" reason as
+       Hand — not a deliberate size increase, a consequence of the
+       added flange/asymmetry detail.
+   - Every candidate (three Hand iterations, two Hourglass placements)
+     was rendered through the actual `grid_from`/`halo`/`bbox`/`write_png`
+     pipeline and inspected enlarged before being kept — not eyeballed
+     from the ASCII source alone. The first two Hand attempts kept the
+     thumb flush with the palm's edge (no protrusion) and were rejected
+     for the same reason as M20C1R2's: a thumb that reads as a notch, not
+     a digit.
+2. `public/cursors/hand.png` — regenerated, 30×28 → 32×32, hotspot
+   `13 2` → `11 2` (still the index fingertip, still the `top` rule,
+   rederived).
+3. `public/cursors/hourglass.png` — regenerated, 28×28 → 32×32, hotspot
+   `13 13` → `15 15` (still the `centre` rule, rederived). **Arrow, Text,
+   Resize and Move are byte-identical to `a10d758`** (`git diff --quiet`
+   per file).
+4. `app/globals.css` — Hand hotspot `13 2` → `11 2`, Hourglass hotspot
+   `13 13` → `15 15`, and the size list in the block comment updated
+   (Hand 30×28 → 32×32, Hourglass 28×28 → 32×32). No selector, role or
+   fallback keyword touched.
+5. `components/Window/SettingsApp.tsx` — the Hand preview's declared
+   intrinsic size 30×28 → 32×32, so the Settings preview is not stretched.
+6. `docs/DESIGN_CONSTITUTION.md` §8 — Hand and Hourglass sizes and
+   silhouette descriptions updated.
+7. `M20_REPORT.md` — this section.
+
+## Existing Systems Reused
+
+`scripts/gen_cursors.py`'s own `grid_from`/`halo`/`bbox`/`hotspot`/
+`write_png` pipeline. No new tooling, no new dependency, no bitmap
+hand-edited outside the generator.
+
+## Architecture Impact
+
+None. Artwork inside an already-owned system; no new ownership, no state
+or store changes.
+
+## Visual Preservation
+
+Colour palette (navy `#0b3d91` / white / transparent), material (hard
+pixel blocks, no antialiasing, no gradients, no blur), and the four
+untouched cursor roles are all unchanged. The reference image's own
+black-on-white outline style was used as a shape guide only — it was never
+imported, and CATTIPU's solid-silhouette construction (not the reference's
+hollow-outline-plus-detail-dots construction) was kept throughout, per the
+brief's "reference = shape, CATTIPU = colour and material" instruction.
+
+## Exact geometry
+
+| | Canvas = silhouette | Hotspot | Notes |
+|---|---|---|---|
+| Hand (M20C1R3) | 32×32 | `11 2` | 4-finger staircase, protruding thumb |
+| Hand (M20C1R2) | 30×28 | `13 2` | thumb flush with the palm, no protrusion |
+| Hourglass (M20C1R3) | 32×32 | `15 15` | flat cap + flange + linear taper + pile base |
+| Hourglass (M20C1R2) | 28×28 | `13 13` | flat cap, taper began immediately, no flange |
+
+Both hotspots derived by the generator's existing rules (Hand: `top`, the
+topmost navy row's midpoint; Hourglass: `centre`, the navy bounding box's
+midpoint) — not copied constants — and asserted to land on a navy pixel by
+the generator itself.
+
+### Edge-fallback zone, disclosed
+
+Chromium replaces a custom cursor with the native one whenever the whole
+cursor image does not fit inside the visual viewport. A bigger canvas
+widens that zone; this is the direct, disclosed cost of matching the
+reference's extra detail:
+
+| | Left | Right | Top | Bottom |
+|---|---|---|---|---|
+| Hand M20C1R2 (30×28 @ 13,2) | <13px | <17px | <2px | <26px |
+| Hand M20C1R3 (32×32 @ 11,2) | <11px | <21px | <2px | <30px |
+| Hourglass M20C1R2 (28×28 @ 13,13) | <13px | <15px | <13px | <15px |
+| Hourglass M20C1R3 (32×32 @ 15,15) | <15px | <17px | <15px | <17px |
+
+Hand's left zone actually improved (13px → 11px, since the fingertip
+hotspot sits closer to the glyph's left edge now); its right/bottom zones
+grew by 4px each. Hourglass grew by 2px on every side. None of this
+changes which cursor role is shown or how dragging behaves — it only
+affects the last few pixels next to a physical screen edge, where Chromium
+already falls back for every custom cursor at every previous size in this
+project (see M20C1's Known Issues).
+
+## Verification
+
+- Generator: `python scripts/gen_cursors.py` — its own assertions
+  (silhouette within `LIMITS`, hotspot on navy) pass for both glyphs.
+- Independent decode of both PNGs (a standalone `struct`/`zlib` reader,
+  not the generator): Hand 32×32, Hourglass 32×32, **three colours only**
+  (navy, white, transparent) in each, every pixel an exact 2×2 block, no
+  antialiasing.
+- `npm run verify`: exit 0 — typecheck clean, eslint 0 problems, tests
+  9/9, 18/18, 16/16, 24/24, 33/33, 36/36 (136/136).
+- `npm run build`: exit 0, route sizes unchanged (165 kB / 268 kB). Built
+  CSS carries `hand.png 11 2` and `hourglass.png 15 15`.
+- Live (`next dev`, pixel cursors on) at 1366×768, 1440×900, 1600×900 and
+  1920×1080: every `button`/`a`/`[role=button]`/`.cattipu-cursor-hand`
+  element on screen (60 with only the desktop shell open, 107 once
+  Architect's node inspector was also open) resolves to
+  `url(".../cursors/hand.png") 11 2, pointer` — none to any other cursor,
+  at any viewport.
+- **The Architect Generate switch's real busy state was exercised live**
+  (typed a prompt, clicked Generate, polled `data-busy`) rather than only
+  a synthetic element, which M20C1R2 had left for a future sprint: it
+  showed `url(".../cursors/hourglass.png") 15 15, wait` for the full
+  "Thinking…"/"Building…" run and returned to Hand the moment it finished.
+- Settings → Cursor: all four previews (`arrow`/`hand`/`text`/`resize`)
+  render at their true intrinsic size with the correct aspect ratio and
+  exactly three colours each; the toggle was exercised off then on and
+  `body.cattipu-cursors` tracked both transitions correctly.
+- The two demo projects created while exercising the busy state were
+  deleted through Explorer's own UI afterwards; only the three original
+  demo projects remain.
+
+## Regressions Checked
+
+- Arrow, Text, Resize and Move PNGs are byte-identical to `a10d758`.
+- Cursor selectors, roles, fallback keywords, drag ownership
+  (`data-dragging`) and the Settings toggle are untouched and behave
+  correctly.
+- Hand-mapped surfaces enumerated programmatically across all four
+  responsive-baseline viewports, not spot-checked.
+- `PROJECT_CONSTITUTION.md` was reread in full and confirmed unchanged
+  before starting (§97's entry protocol).
+
+## Known Issues
+
+- Carried over, unchanged and out of scope: sidebar labels and
+  window-control glyphs still resolve to Arrow inside Hand buttons (M12
+  blanket `*` rule); the title text keeps `grab` as its fallback keyword
+  mid-drag; DPR 1.25 resamples the pixel art; `.cattipu-resize-handle` has
+  no live element so Resize still has no surface in the app; Explorer's
+  project `data-entry-id` hydration mismatch is pre-existing.
+- Edge-fallback zone widened by a few pixels on most sides for both
+  glyphs — disclosed in full above, an accepted cost of the shape match.
+- An untracked `.claude/launch.json` exists in the working tree (a local
+  Browser-pane dev-server config some earlier session created). It is not
+  part of this sprint's diff and was not committed.
+
+## Data / Migration Impact
+
+None. Static assets and CSS constants only; no persisted schema touched.
+
+## Git
+
+- Branch `main`; one commit on top of `a10d758`:
+  `style(cursor): align hand and hourglass with retro reference shapes`.
+- Author `anirva09 <anirvavjit2023@gmail.com>`; no AI attribution.
+- Working tree clean after commit (except the pre-existing untracked
+  `.claude/launch.json`, left alone).
+
+## Next Milestone
+
+M20.5 and Wallpaper Studio (M21) remain unstarted.

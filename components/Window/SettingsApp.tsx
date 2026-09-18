@@ -199,7 +199,7 @@ function DockSection() {
 /** Intrinsic size of each cropped cursor PNG (scripts/gen_cursors.py). */
 const CURSOR_PREVIEWS = [
   { id: "arrow", width: 18, height: 28 },
-  { id: "hand", width: 30, height: 28 },
+  { id: "hand", width: 32, height: 32 },
   { id: "text", width: 16, height: 28 },
   { id: "resize", width: 28, height: 28 },
 ] as const;

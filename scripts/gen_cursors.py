@@ -23,6 +23,11 @@ M20C1 (Cursor Artwork Fidelity):
 - Uses only the Python standard library (zlib/struct), so the script runs
   from a clean checkout.
 
+M20C1R1/R2/R3 (Hand and Hourglass shape corrections): see the comments
+directly above HAND and HOURGLASS below for what changed and why. R3 was
+driven by a supplied early-retro reference image — its SHAPE only, kept in
+CATTIPU's own navy/white/no-antialiasing construction, not imported as-is.
+
 Run from the repository root:  python scripts/gen_cursors.py
 """
 import struct
@@ -38,11 +43,11 @@ SCALE = 2  # 16x16 grid -> 32x32 CSS px frame, cropped per cursor
 # Maximum visible silhouette (= PNG size), halo included, in CSS px.
 LIMITS = {
     "arrow": (18, 28),
-    "hand": (30, 28),  # M20C1R2: +4px wide for a thumb visibly clear of the fist
+    "hand": (32, 32),  # M20C1R3: a 4-finger staircase + a protruding thumb
     "text": (16, 28),
     "resize": (28, 28),
     "move": (30, 30),
-    "hourglass": (28, 28),  # M20C1R2: +4px wide for the frame cap above the taper
+    "hourglass": (32, 32),  # M20C1R3: a flat cap/flange/taper/neck silhouette
 }
 
 
@@ -158,30 +163,35 @@ ARROW = [
 
 # ---------------------------------------------------------------------
 # Hand: pointing hand for links/buttons; the index fingertip is the hotspot.
-# M20C1R1 fixed a silhouette that read as an obscene gesture: the index
-# rises left of centre, two folded fingers show as knuckle bumps to its
-# right (halo() turns the 1-cell gaps into white creases between them).
-# M20C1R2 (retro-reference correction) redraws the thumb, which M20C1R1
-# left as a barely-visible 2x2 nub indistinguishable from the palm outline.
-# It is now its own 4-cell-wide lobe on the lower-left: a single-row gap at
-# its top separates it from the fist as the "web" crease (the fingertip
-# reference's thumb/fist notch), then it merges solid into the palm for the
-# rest of its height, so it stays visibly attached rather than a floating
-# island the crease would otherwise cut loose entirely.
+# M20C1R1 fixed a silhouette that read as an obscene gesture (a single
+# centred finger on a plain block). M20C1R2 gave the thumb its own lobe.
+# M20C1R3 (shape correction against a supplied Win95/98-style reference)
+# redraws the fingers as a genuine 4-finger staircase — index, middle,
+# ring, pinky, each one row shorter than the last, separated by 1-cell
+# gaps that halo() turns into white creases — which is the reference's
+# single most recognizable cue and removes any remaining "how many
+# fingers is that" ambiguity. The thumb is a plain rectangular block (the
+# reference's is a block, not a rounded lobe): a 1-cell "web" gap at its
+# top row, then it merges in and actually protrudes past the palm's own
+# left edge for two rows (the reference's thumb visibly sticks out, it
+# does not sit flush with the wrist) before retreating to the palm's
+# inset edge and tapering into a cuffed base.
 # ---------------------------------------------------------------------
 HAND = [
-    ".....##",
-    ".....##",
-    ".....##",
-    ".....##",
-    ".....##",
-    ".....##.##.##",
-    ".....##.##.##",
-    "####..#######",
-    ".############",
-    "#############",
-    "#############",
-    ".....########",
+    "....##........",
+    "....##........",
+    "....##.##.....",
+    "....##.##.....",
+    "....##.##.##..",
+    "....##.##.##..",
+    "###.##.##.##.#",
+    "###.##.##.##.#",
+    "###.##########",
+    "##############",
+    "..############",
+    "...###########",
+    "....#########.",
+    ".....#######..",
 ]
 
 # ---------------------------------------------------------------------
@@ -245,28 +255,33 @@ MOVE = [
 ]
 
 # ---------------------------------------------------------------------
-# Hourglass: sand-timer silhouette (busy). M20C1R2 (retro-reference
-# correction) widens only the topmost and bottommost rows by one cell on
-# each side, in place — no rows added, so the height is unchanged. That
-# makes the top/bottom edges a flat cap sitting proud of the diagonal taper
-# below/above it, the frame ledge the reference silhouette shows around the
-# glass, rather than the taper running unbroken to the outline's own tip.
+# Hourglass: sand-timer silhouette (busy). M20C1R2 widened only the top/
+# bottom rows in place. M20C1R3 (shape correction against a supplied
+# reference) rebuilds the taper: a flat cap, then a one-cell-inset
+# "flange" row (the reference's frame ledge sitting proud of the diagonal
+# below it), then a straight linear taper to a 2-cell neck — a crisp
+# diagonal silhouette rather than the previous rounded-diamond curve.
+# The lower half is deliberately NOT a mirror: it skips the taper's
+# narrowest widening step and gets a second cap row, so the base reads as
+# a slightly heavier, piled base (the reference's sand mound) rather than
+# a symmetric spool. Still one solid silhouette — no hollow interior —
+# per "strong silhouette, pixel clarity" at this size.
 # ---------------------------------------------------------------------
 HOURGLASS = [
-    "",
-    "",
-    "..############",
-    "....########",
-    ".....######",
-    "......####",
-    "......####",
-    ".......##",
-    ".......##",
-    "......####",
-    "......####",
-    ".....######",
-    "....########",
-    "..############",
+    "##############",
+    ".############.",
+    "..##########..",
+    "...########...",
+    "....######....",
+    ".....####.....",
+    "......##......",
+    "......##......",
+    "....######....",
+    "...########...",
+    "..##########..",
+    ".############.",
+    "##############",
+    "##############",
 ]
 
 CURSORS = [
@@ -275,7 +290,7 @@ CURSORS = [
     ("text", grid_from(TEXT), "centre"),
     ("resize", grid_from(RESIZE), "centre"),
     ("move", grid_from(MOVE, 1, 1), "centre"),
-    ("hourglass", grid_from(HOURGLASS), "centre"),
+    ("hourglass", grid_from(HOURGLASS, 1, 1), "centre"),
 ]
 
 print("cursor     png (= silhouette)  hotspot (CSS px, in the PNG)")
