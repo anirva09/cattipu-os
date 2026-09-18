@@ -361,14 +361,69 @@ body.cattipu-cursors .cattipu-managed-window[data-dragging="true"],
 body.cattipu-cursors .cattipu-managed-window[data-dragging="true"] * {
   cursor: url("/cursors/move.png") 14 14, grabbing !important;
 }
-/* Hourglass — the one existing real "busy" state in the shell today is
-   the Architect Generate switch, which already carries `data-busy` (see
-   .cattipu-switch:disabled[data-busy] further down, from Milestone 9).
-   This adds only the cursor for that existing selector — no Architect
-   file is touched, and no new busy state is invented; per the Milestone
-   12 brief, Architect's own content is out of this milestone's scope. */
-body.cattipu-cursors .cattipu-switch:disabled[data-busy] {
-  cursor: url("/cursors/hourglass.png") 15 19, wait !important;
+/* Hourglass — M20C2 (Animated Busy Cursor) replaced the old scoped rule
+   here (`.cattipu-switch:disabled[data-busy]`, Milestone 12) with a
+   global one. That rule only changed the cursor while hovering
+   Architect's own Generate button directly, and it had no BUSY_DELAY —
+   hovering that one button during the first 350ms of a genuine busy
+   period would have shown the Hourglass immediately while everywhere
+   else still correctly showed nothing yet, an inconsistency the delay
+   below exists specifically to prevent. `data-busy` itself stays on the
+   button (PromptBar.tsx still sets it, and the component-layer
+   `.cattipu-switch:disabled[data-busy]` rule further down still uses it
+   for the button's own enabled-but-busy visual state) — only its cursor
+   line moved to the global mechanism.
+   Owned entirely by CursorProvider.tsx: it toggles `.cattipu-busy` on
+   <body> (after BUSY_DELAY_MS, held for at least MIN_BUSY_VISIBLE_MS —
+   see lib/os/busyCursor.ts for both constants) and advances
+   `data-cattipu-busy-frame` through 1-4 every FRAME_INTERVAL_MS while
+   visible. Any feature reports busy through store/useBusyStore.ts's
+   begin(id)/end(id) — a Set of reasons, so two overlapping busy sources
+   don't let the first to finish cut the cursor off early — not by
+   setting a class or attribute itself. The four frames are hand-drawn
+   by scripts/gen_cursors.py from the exact approved HOURGLASS
+   silhouette (same outline, hotspot and canvas in every one); nothing
+   here rotates or transforms the artwork.
+   Two tiers, so both settings combinations in the brief are covered by
+   CSS alone with no per-frame JS branching:
+   (1) plain `cursor: wait` whenever busy, regardless of Pixel Cursors —
+   this is the entire "Pixel Cursors disabled" behavior on its own.
+   (2) the four pixel frames layered on top, scoped to
+   `.cattipu-cursors.cattipu-busy` together, so they only apply when
+   Pixel Cursors is ALSO on — naturally handles toggling that setting
+   mid-busy, since removing/adding `.cattipu-cursors` alone flips
+   between the two tiers with no JS involved.
+   `prefers-reduced-motion: reduce` gets its own tier below tier (2):
+   the already-approved static hourglass.png, never cycling — and
+   CursorProvider skips starting the frame interval in that case too, so
+   the animation genuinely does not run, not just go unseen. */
+body.cattipu-busy,
+body.cattipu-busy * {
+  cursor: wait !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.cattipu-cursors.cattipu-busy,
+  body.cattipu-cursors.cattipu-busy * {
+    cursor: url("/cursors/hourglass.png") 15 19, wait !important;
+  }
+}
+@media not (prefers-reduced-motion: reduce) {
+  body.cattipu-cursors.cattipu-busy[data-cattipu-busy-frame="1"],
+  body.cattipu-cursors.cattipu-busy[data-cattipu-busy-frame="1"] * {
+    cursor: url("/cursors/hourglass-1.png") 15 19, wait !important;
+  }
+  body.cattipu-cursors.cattipu-busy[data-cattipu-busy-frame="2"],
+  body.cattipu-cursors.cattipu-busy[data-cattipu-busy-frame="2"] * {
+    cursor: url("/cursors/hourglass-2.png") 15 19, wait !important;
+  }
+  body.cattipu-cursors.cattipu-busy[data-cattipu-busy-frame="3"],
+  body.cattipu-cursors.cattipu-busy[data-cattipu-busy-frame="3"] * {
+    cursor: url("/cursors/hourglass-3.png") 15 19, wait !important;
+  }
+  body.cattipu-cursors.cattipu-busy[data-cattipu-busy-frame="4"],
+  body.cattipu-cursors.cattipu-busy[data-cattipu-busy-frame="4"] * {
+    cursor: url("/cursors/hourglass-4.png") 15 19, wait !important;
+  }
 }
 
 /* ---- React Flow: strip the default modern/glass look, go pixel ---- */

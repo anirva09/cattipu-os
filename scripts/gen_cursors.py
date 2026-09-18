@@ -64,6 +64,29 @@ def grid_from(rows, dx=0, dy=0):
     return g
 
 
+def fill_rows(rows, indices):
+    """M20C2: a copy of `rows` with the given row indices' hollow
+    *chamber* cells turned solid ('#') — used to place "sand" inside
+    HOURGLASS. "Chamber" is derived per row, not hand-listed: the '.'
+    cells strictly between that row's leftmost and rightmost existing
+    '#' (its walls). A blind whole-row '.' -> '#' replace would also
+    fill the background *outside* the taper's walls on a row like
+    "..#........#.." — those two outer '.' pairs are not part of the
+    shape at all at that row, and filling them would puff the taper out
+    into a rectangle. Only ever touching cells within [wall, wall] keeps
+    every '#' cell — and everything outside the walls — exactly as the
+    base has it, so the outline is identical to the base by construction."""
+    out = list(rows)
+    for i in indices:
+        row = out[i]
+        walls = [x for x, ch in enumerate(row) if ch == "#"]
+        if not walls:
+            continue
+        lo, hi = min(walls), max(walls)
+        out[i] = row[:lo] + row[lo : hi + 1].replace(".", "#") + row[hi + 1 :]
+    return out
+
+
 def halo(g):
     """Add a 1px white outline around every navy cell (8-neighbourhood),
     then fill any transparent cell the outline fully encloses, so a glyph
@@ -294,6 +317,41 @@ HOURGLASS = [
     "##############",
 ]
 
+# ---------------------------------------------------------------------
+# M20C2 (Animated Busy Cursor). Four hand-authored frames of the SAME
+# approved HOURGLASS silhouette above — not a redesign, not a rotation.
+# Every wall/cap/neck '#' cell of the base array is untouched in every
+# frame (fill_rows() only ever promotes an already-hollow '.' cell to
+# '#'; it can't touch a '#'), which is what keeps the outline, hotspot
+# and canvas size identical across all four frames and the static
+# hourglass.png. Only which already-hollow chamber rows read as
+# "full of sand" changes. Row 15 (the static pile the approved shape
+# already bakes in at its base) is left as the base has it in every
+# frame — a constant, not the animated element — so only rows 2-14
+# (the taper's own hollow interior, which is genuinely empty in the
+# static shape) are ever touched.
+#   Frame 1 — upper chamber packed (rows 2-7): a freshly-settled top.
+#   Frame 2 — mid-drain: rows 6-7 (the last of the upper chamber, right
+#     above the neck) and row 9 (the first grains landing just below
+#     it) are filled; everything else is empty. The neck itself (row 8)
+#     is always solid frame, so "grains crossing it" is read from what
+#     is filled immediately above and below it, not inside it.
+#   Frame 3 — lower chamber packed (rows 9-14), on top of the base's
+#     own row-15 pile — reads as "settled," matching the static
+#     fallback's own resting state.
+#   Frame 4 — the reference's "flip" completing lands back on exactly
+#     Frame 1's distribution (a real hourglass, flipped, reads the same
+#     as a fresh one) — not a fifth, invented sand pattern. Looping
+#     4 -> 1 holds that settled top for two frames (320ms) before the
+#     next drain begins, a deliberate retro pause, not a bug.
+# ---------------------------------------------------------------------
+HOURGLASS_FRAME_1 = fill_rows(HOURGLASS, [2, 3, 4, 5, 6, 7])
+HOURGLASS_FRAME_2 = fill_rows(HOURGLASS, [6, 7, 9])
+HOURGLASS_FRAME_3 = fill_rows(HOURGLASS, [9, 10, 11, 12, 13, 14])
+HOURGLASS_FRAME_4 = HOURGLASS_FRAME_1
+
+HOURGLASS_FRAMES = [HOURGLASS_FRAME_1, HOURGLASS_FRAME_2, HOURGLASS_FRAME_3, HOURGLASS_FRAME_4]
+
 CURSORS = [
     ("arrow", grid_from(ARROW, 1, 1), "tip"),
     ("hand", grid_from(HAND, 1, 1), "top"),
@@ -304,6 +362,7 @@ CURSORS = [
 ]
 
 print("cursor     png (= silhouette)  hotspot (CSS px, in the PNG)")
+hourglass_ref = None  # (crop, hotspot, base-grid) — for the M20C2 frame check below
 for name, art, kind in CURSORS:
     fx, fy = hotspot(art, kind)  # in the 32x32 frame
     final = halo(art)
@@ -315,3 +374,27 @@ for name, art, kind in CURSORS:
     hx, hy = fx - crop[0] * SCALE, fy - crop[1] * SCALE
     write_png(f"public/cursors/{name}.png", final, crop)
     print(f"{name:<10} {w}x{h:<16} {hx} {hy}")
+    if name == "hourglass":
+        hourglass_ref = (crop, (hx, hy), art)
+
+# M20C2 — the four animation frames. Each is checked, independently, for
+# every guarantee the brief asks for: identical wall/cap/neck cells as
+# the approved static shape (so the outline never moves), and therefore
+# the identical crop and hotspot too — not merely "should match" from
+# how fill_rows() is built, but asserted here against the actual pixels.
+base_crop, base_hotspot, base_art = hourglass_ref
+for i, rows in enumerate(HOURGLASS_FRAMES, start=1):
+    art = grid_from(rows, 1, 1)
+    for y in range(GRID):
+        for x in range(GRID):
+            if base_art[y][x] == NAVY:
+                assert art[y][x] == NAVY, f"hourglass-{i} lost a frame cell at {x},{y}"
+    final = halo(art)
+    crop = bbox(final, (NAVY, WHITE))
+    assert crop == base_crop, f"hourglass-{i} crop {crop} != static {base_crop}"
+    fx, fy = hotspot(art, "centre")
+    hx, hy = fx - crop[0] * SCALE, fy - crop[1] * SCALE
+    assert (hx, hy) == base_hotspot, f"hourglass-{i} hotspot {(hx, hy)} != static {base_hotspot}"
+    w, h = (crop[2] - crop[0] + 1) * SCALE, (crop[3] - crop[1] + 1) * SCALE
+    write_png(f"public/cursors/hourglass-{i}.png", final, crop)
+    print(f"hourglass-{i} {w}x{h:<16} {hx} {hy}")

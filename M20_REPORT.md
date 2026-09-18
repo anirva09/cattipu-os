@@ -1492,3 +1492,394 @@ None. Static assets and CSS constants only; no persisted schema touched.
 ## Next Milestone
 
 M20.5 and Wallpaper Studio (M21) remain unstarted.
+
+---
+
+# M20C2 — Animated Busy Cursor + Hourglass Loading Animation
+
+*Feature sprint against `78bab24` (M20C1R4's approved hollow-frame
+Hourglass — the base commit named in the brief, `ab2d7dd`, was one
+commit behind HEAD on disk; verified per "verify HEAD from disk first"
+and built on the current, more-approved shape instead of reverting to
+the older one). The Hourglass silhouette itself is unchanged — this
+sprint animates it. No M20.5, no Wallpaper Studio, no second loading-
+state system.*
+
+## Objective
+
+Whenever CATTIPU is genuinely busy for more than a moment, animate the
+mouse cursor through four hand-drawn Hourglass frames — not a rotated
+PNG, not a CSS spinner — using one canonical, reusable busy-reporting
+mechanism, with a deliberate delay before it appears, a minimum hold
+once visible, and full respect for the Settings cursor toggle and
+`prefers-reduced-motion`.
+
+## Baseline
+
+- `main` at `78bab24` on disk (see note above on the base-commit
+  discrepancy), clean tree except the pre-existing untracked
+  `.claude/launch.json`, 8 commits ahead of `origin/main`.
+- Git identity `anirva09 <anirvavjit2023@gmail.com>`.
+- `PROJECT_CONSTITUTION.md` unchanged since `d7af050` — reread in full.
+- `npm run verify` passing before any change (136/136).
+
+## Audit Findings
+
+- **CursorProvider.tsx** existed but only toggled the `.cattipu-cursors`
+  class from the Settings preference — no busy concept at all.
+- **No global busy signal existed anywhere.** The only busy-adjacent
+  state was Architect's own local `status` field
+  (`useArchitectStore.ts`), read by one CSS selector
+  (`.cattipu-switch:disabled[data-busy]`) scoped to Architect's own
+  Generate button — nothing else in the shell had anywhere to report to,
+  and hovering that one button showed the Hourglass with no delay at
+  all, which would have been inconsistent with the new BUSY_DELAY the
+  moment a global mechanism existed alongside it.
+  `data-busy` itself (PromptBar.tsx) is one existing local attribute the
+  component-layer `.cattipu-switch:disabled[data-busy]` rule further
+  down (opacity/box-shadow, not cursor) still depends on — that rule was
+  not touched.
+- **`CattipuSpinner`** (`components/System/CattipuSpinner.tsx`) is the
+  shell's one existing loading indicator, and its own doc comment
+  already calls it canonical ("what 'CATTIPU is thinking' should look
+  like everywhere"). It is four bouncing coloured dots, not Hourglass
+  artwork. `grep -rln "hourglass"` across every `.tsx`/`.ts` file
+  confirmed nothing in the app referenced Hourglass artwork before this
+  sprint. The brief's "INLINE HOURGLASS INDICATOR" section is
+  conditional on an *existing* indicator already using that artwork —
+  none does, so nothing was reused there, and per "do not add loading
+  indicators everywhere," none was invented. `CattipuSpinner` itself was
+  not touched.
+- **No real cancel affordance exists in Architect.** The Generate button
+  only starts a run; there is no Stop/Cancel control, and
+  `generate()`'s own `runId`-supersede mechanism keeps `status` at
+  `"generating"` across a second call rather than briefly returning to
+  idle. This matters for how "cancellation" was verified — see
+  Verification.
+- **No DOM/test environment exists** (`npm run test` is plain
+  `node:assert` over `tsx`, no jsdom/testing-library dependency) — this
+  shaped how `lib/os/busyCursor.ts` was split out, see Changes.
+
+## Canonical Ownership
+
+- **Busy reporting**: `store/useBusyStore.ts` (new) — the one place any
+  feature reports "I am busy," a `Set<string>` of reasons rather than a
+  boolean, so two overlapping busy sources can't let the first to finish
+  cut the cursor off early. No second global loading store exists.
+- **Busy-cursor timing and presentation**: `components/System/
+  CursorProvider.tsx` (extended, not replaced) — the sole subscriber to
+  `useIsBusy()`, and the only place that owns the BUSY_DELAY timer, the
+  MIN_BUSY_VISIBLE hold, the frame-advance interval, and the
+  `cattipu-busy`/`data-cattipu-busy-frame` DOM state the CSS keys off.
+  One timer, one interval, in one component — not one per feature.
+- **Cursor artwork**: `scripts/gen_cursors.py`, unchanged in ownership
+  (§8, `docs/DESIGN_CONSTITUTION.md`).
+- **`cattipu-cursors` CSS ownership**: `app/globals.css`, unchanged in
+  ownership; the busy rules were added to the existing block, not a
+  parallel one.
+- Architect (`PromptBar.tsx`) only *reports* through
+  `useBusyStore.getState().begin/end`; it owns none of the timing.
+
+## Changes
+
+1. `lib/os/busyCursor.ts` (new) — the DOM-free timing model:
+   `BUSY_DELAY_MS` (350), `MIN_BUSY_VISIBLE_MS` (320),
+   `FRAME_INTERVAL_MS` (160), `BUSY_FRAME_COUNT` (4), and two pure
+   functions, `nextBusyFrame()` (the 1→2→3→4→1 wrap) and
+   `remainingHoldMs()` (the MIN_BUSY_VISIBLE remaining-time math, never
+   negative). Split out specifically so the actual timing DECISIONS are
+   testable without a DOM environment — see Verification.
+2. `store/useBusyStore.ts` (new) — `begin(id)`/`end(id)` over a
+   `Set<string>`, plus `useIsBusy()`. `begin()` is idempotent on a
+   repeated id; `end()` on an id that was never begun is a no-op that
+   never goes negative.
+3. `components/System/CursorProvider.tsx` — extended. Existing
+   `cursorEnabled` → `.cattipu-cursors` toggle untouched. New: subscribes
+   to `useIsBusy()`; after `BUSY_DELAY_MS` of continuous busy, adds
+   `.cattipu-busy` to `<body>` and starts a `FRAME_INTERVAL_MS` interval
+   advancing `data-cattipu-busy-frame` (1→4, via `nextBusyFrame()`) —
+   unless `matchMedia("(prefers-reduced-motion: reduce)").matches`, in
+   which case the interval is never started at all. When busy ends,
+   holds for `remainingHoldMs()` before removing `.cattipu-busy` and the
+   frame interval. All state lives in refs, not `useState` — this
+   component always renders `null`, so there is nothing for React state
+   to re-render for a 6.25×/second interval to justify. Two safety nets:
+   every effect run clears its own previous timers before scheduling new
+   ones (no leaked/duplicate timers across repeated busy periods), and
+   an unmount effect force-clears everything and removes the class/
+   attribute if still visible. No cursor is ever set directly — removing
+   `.cattipu-busy` is the entire "restore" step; the browser's own
+   cascade re-resolves whatever rule already matches the hovered
+   element.
+4. `app/globals.css` — the old
+   `body.cattipu-cursors .cattipu-switch:disabled[data-busy] { cursor:
+   ... }` rule is replaced by a global block: an unconditional
+   `body.cattipu-busy, body.cattipu-busy * { cursor: wait !important; }`
+   (covers "Pixel Cursors disabled" on its own), a
+   `@media (prefers-reduced-motion: reduce)` block resolving to the
+   existing, unmodified `hourglass.png` regardless of frame, and a
+   `@media not (prefers-reduced-motion: reduce)` block with one rule per
+   `[data-cattipu-busy-frame="1..4"]` resolving to the matching
+   `hourglass-N.png`. All four (plus the reduced-motion rule) share the
+   Hourglass's own hotspot, `15 19`, unchanged. Placed after the
+   existing drag-cursor rules so it wins same-specificity `!important`
+   ties there (see Known Issues).
+5. `scripts/gen_cursors.py`:
+   - `fill_rows(rows, indices)` (new helper) — turns "sand" content into
+     entirely-derived output: for each given row, it fills only the `.`
+     cells strictly *between* that row's own leftmost and rightmost `#`
+     (its walls), never touching a `#` and never touching a genuinely
+     "outside the shape" `.` beyond the walls. (The first version of
+     this helper did a blind whole-row `.` → `#` replace, which also
+     filled the taper's own *outside* corners on rows like
+     `"..#........#.."` and puffed the silhouette into a rectangle at
+     those rows — caught before committing; see Regressions Checked.)
+   - `HOURGLASS_FRAME_1..4` — all four derived from the exact same,
+     completely unedited `HOURGLASS` array via `fill_rows()`:
+     - Frame 1: rows 2-7 (the whole upper chamber) filled — a freshly-
+       settled top.
+     - Frame 2: rows 6-7 (the last of the upper chamber, just above the
+       neck) and row 9 (the first grains just below it) filled,
+       everything else empty — a mid-drain trickle. The neck (row 8) is
+       always solid frame in every frame; "grains crossing it" is read
+       from what is filled immediately above and below, not inside it.
+     - Frame 3: rows 9-14 (the whole lower chamber) filled, on top of
+       the base's own row-15 pile (left untouched in every frame,
+       including 1/2/4 — it is a constant of the approved shape, not the
+       animated element) — matches the static fallback's own resting
+       state.
+     - Frame 4: identical to Frame 1. A real flipped hourglass reads the
+       same as a freshly-flipped one; inventing a fifth, distinct sand
+       pattern to satisfy "distinct frame" would have been decoration,
+       not signal. Looping 4 → 1 holds the settled top for two frames
+       (320ms) before the next drain begins — a deliberate retro pause.
+   - The generation loop now also writes `hourglass-1..4.png`, and
+     — not merely by construction — **asserts** each frame against the
+     static `hourglass.png`'s own computed grid: every cell that is
+     navy in the base is still navy in the frame (no wall/cap/neck cell
+     lost), and the frame's own crop and hotspot are byte-for-byte equal
+     to the static shape's. All four assertions pass.
+   - `GRID` and `LIMITS["hourglass"]` are unchanged from M20C1R4 (this
+     sprint touched neither).
+6. `components/Architect/PromptBar.tsx` — the one Architect touch: a
+   `useEffect` on the existing, unchanged `busy` boolean
+   (`status === "generating" || status === "playing"`) calling
+   `useBusyStore.getState().begin("architect-generate")` and returning a
+   cleanup that calls `.end(...)`. No change to `useArchitectStore.ts`,
+   `generate()`, or any playback timing.
+7. `package.json` — `tests/busyCursor.test.ts` added to the `test`
+   script chain.
+8. `tests/busyCursor.test.ts` (new) — see Verification.
+9. `M20_REPORT.md` — this section.
+
+## Existing Systems Reused
+
+`scripts/gen_cursors.py`'s full pipeline (`grid_from`/`halo`/`bbox`/
+`hotspot`/`write_png`), the existing `cattipu-cursors` CSS ownership and
+`CursorProvider` component, the existing Settings cursor toggle
+(`useSettingsStore.cursorEnabled`, untouched), and Architect's own
+`status`/`busy` derivation (untouched). No second cursor provider, no
+second global loading store, no per-component busy timer.
+
+## Architecture Impact
+
+None beyond the one new, generic store. `useBusyStore` is deliberately
+feature-agnostic (a `Set<string>` of caller-chosen ids) specifically so
+Forge build, tests, Live startup, Launch/deploy, and project import/
+export can each call `begin(id)`/`end(id)` from wherever they live later
+with zero changes to this store or to `CursorProvider`.
+
+## Visual Preservation
+
+The approved Hourglass silhouette (M20C1R4) is unchanged —
+`hourglass.png` is untouched, and every frame's own cap/shoulder/taper/
+neck cells are asserted equal to it. Arrow, Hand, Text, Resize and Move
+are untouched (verified byte-identical). CATTIPU's navy/white/
+transparent/hard-pixel construction is unchanged; nothing rotates or
+transforms the artwork with CSS. No spinning circles, progress rings, or
+GIF-style animation were introduced.
+
+## Exact geometry
+
+| | Canvas | Hotspot | Sand |
+|---|---|---|---|
+| hourglass.png (static/reduced-motion) | 32×40 | `15 19` | unchanged (base pile only) |
+| hourglass-1.png | 32×40 | `15 19` | upper chamber full |
+| hourglass-2.png | 32×40 | `15 19` | draining (rows 6-7 + row 9) |
+| hourglass-3.png | 32×40 | `15 19` | lower chamber full |
+| hourglass-4.png | 32×40 | `15 19` | = frame 1 |
+
+Every dimension and hotspot is identical across all five files —
+asserted by the generator itself, not merely designed to be.
+
+## Timing model
+
+| Constant | Value | Source of truth |
+|---|---|---|
+| `BUSY_DELAY_MS` | 350ms | `lib/os/busyCursor.ts` |
+| `MIN_BUSY_VISIBLE_MS` | 320ms | `lib/os/busyCursor.ts` |
+| `FRAME_INTERVAL_MS` | 160ms | `lib/os/busyCursor.ts` |
+| `BUSY_FRAME_COUNT` | 4 | `lib/os/busyCursor.ts` |
+
+One full animation cycle: 4 × 160ms = 640ms.
+
+## Verification
+
+- `npm run verify`: exit 0 — typecheck clean, eslint 0 problems, tests
+  9/9, 18/18, 16/16, 24/24, 33/33, 36/36, **10/10** (146/146).
+- `npm run build`: exit 0. Route `/` 165 kB → 166 kB First Load JS (the
+  new store/hook/CSS) — everything else unchanged. Built CSS contains
+  `.cattipu-busy` and all four `hourglass-N.png` references.
+- **New tests** (`tests/busyCursor.test.ts`, 10 cases): `nextBusyFrame`
+  cycles 1→2→3→4→1 without ever producing 0; `remainingHoldMs` returns
+  the exact remainder, and 0 — never negative — once the hold has fully
+  elapsed; `useBusyStore.begin/end` verified for same-id idempotency,
+  two-overlapping-reasons (ending one leaves the other busy), and
+  end() on a never-begun id being a harmless no-op. `CursorProvider`
+  itself was not unit tested — this repo's test runner has no DOM
+  environment (see Audit Findings); its behaviour was instead verified
+  live, below.
+- **Independent PNG decode** (a standalone `struct`/`zlib` reader, not
+  the generator): all four frames 32×40, three colours only (navy,
+  white, transparent), every pixel an exact 2×2 block, no antialiasing.
+  Arrow/Hand/Text/Resize/Move/hourglass.png confirmed byte-identical to
+  `78bab24` throughout.
+- **Live, real Architect Generate flow** (`next dev`, sampled every 20ms
+  via `performance.now()`), at 1366×768, 1440×900, 1600×900 and
+  1920×1080 — identical at every viewport:
+  - Cursor stayed the plain Arrow through the 342ms sample and had
+    become `hourglass-1.png` by the 407ms sample — matching the 350ms
+    `BUSY_DELAY` (the ~50-60ms slack is the 20ms sampling grain plus
+    scheduler jitter, not drift in the timer itself).
+  - **All four frames cycled**, repeatedly, at the correct cadence: a
+    full logged run showed transitions at roughly 150-186ms spacing
+    (mean ≈163ms) around the 160ms target, cycling 1→2→3→4→1→2→3→4→1→…
+    continuously for the whole ~7.8s "playing" phase.
+  - The cursor's own computed hotspot (`15 19`) was identical on every
+    single sample across the entire run — **no spatial jump, ever**.
+  - On natural completion, `.cattipu-busy` and `data-cattipu-busy-frame`
+    were both removed, and the cursor resolved correctly per element:
+    Arrow over the desktop, Hand over the sidebar, Move/grab over a
+    window title bar — confirmed by reading each element's own computed
+    `cursor`, not assumed.
+  - **Settings cursor toggle mid-busy**: flipping Pixel Cursors off
+    while genuinely busy switched the body's computed cursor to plain
+    `wait` immediately; flipping it back on resumed the animated frame
+    (whatever frame was current) with `.cattipu-busy` never having been
+    disturbed (`stillBusy: true` throughout) — no restart, no gap.
+  - **Reduced motion**, verified two ways because the built-in browser
+    pane exposes no OS-level `prefers-reduced-motion` toggle:
+    (1) forcing `window.matchMedia` to report `reduce: true` — the exact
+    call `CursorProvider` itself makes — and confirming, via the
+    `setInterval`/`clearInterval` patch below, that the frame interval
+    was never created (interval count stayed at the pre-busy baseline
+    the whole time busy was active);
+    (2) separately, reaching into `document.styleSheets` for the actual
+    parsed `CSSMediaRule`s for `(prefers-reduced-motion: reduce)` and
+    `not (...)`, forcing their `.media.mediaText` so the **real,
+    already-shipped CSS rule** matched instead of a JS shim, and
+    confirming the computed cursor was `hourglass.png` (the static
+    frame, no frame number) and stayed byte-identical across three
+    samples 500ms apart — no cycling. Both mechanisms restored
+    afterward; a full page reload was also done to guarantee a clean
+    `matchMedia` before the viewport sweep, after a first sweep pass
+    was invalidated by a leftover JS override (see Regressions Checked).
+  - **No interval/timer remains after the operation ends, and repeated
+    operations do not create multiple timers**: `window.setInterval`/
+    `clearInterval` were patched to track outstanding ids. Baseline (the
+    pre-existing, unrelated live-clock interval in
+    `CattipuShell.tsx`, `60_000`ms) was 1. During a busy period: exactly
+    2 (clock + the one frame interval). After it ended: back to exactly
+    1. A second, independent generate() cycle repeated this exactly —
+    2 during, 1 after — confirming no accumulation across repeated runs.
+- **Cancellation/error — disclosed limitation.** Architect has no real
+  Cancel/Stop control today (confirmed in Audit Findings), and the
+  seeded generator (`USE_SEEDED_DATA = true`) never rejects, so neither
+  path is reachable through the actual UI. `CursorProvider` makes no
+  distinction between success, error, or cancellation — all three are
+  just `isBusy` becoming `false`, the exact transition the live
+  natural-completion test above already exercises. The `useBusyStore`
+  side of "cancel" (a caller invoking `end()` at any time, including
+  immediately, from any state) is what `tests/busyCursor.test.ts`
+  verifies directly. What was **not** separately exercised live is the
+  MIN_BUSY_VISIBLE "hold, then hide" branch specifically (`remaining >
+  0`) — Architect's real busy period (≈8.25s) is always far longer than
+  the 320ms hold, so natural completion always takes the `remaining <=
+  0 → hide immediately` branch instead. That branch's own math
+  (`remainingHoldMs`) is unit-tested at every boundary (0 elapsed,
+  partially elapsed, exactly elapsed, long overdue), and the code
+  consuming it is a three-line branch using the identical
+  `setTimeout`-then-callback pattern already proven live by the
+  BUSY_DELAY path. This is reported as a gap, not claimed as covered.
+
+## Regressions Checked
+
+- Arrow, Hand, Text, Resize, Move and the static hourglass.png PNGs are
+  byte-identical to `78bab24`.
+- The only pre-existing console error seen during manual testing
+  (Explorer's `data-entry-id` hydration mismatch) is the same one
+  documented in every prior M20 sprint's Known Issues — confirmed
+  unrelated (it fires on Explorer's own project list rendering, nothing
+  touched here) and unchanged by this sprint.
+- **`fill_rows()`'s first implementation was a real bug**, caught before
+  committing: a blind whole-row `.` → `#` replace also filled the
+  taper's own *outside*-the-wall corners (e.g. row `"..#........#.."`'s
+  two outer `.` pairs, which are background at that row, not chamber),
+  puffing each "filled" row into a full-width rectangle instead of
+  following the taper's own diagonal. Caught by rendering the frames
+  enlarged and comparing them to the reference before wiring the CSS —
+  fixed to only fill `.` cells strictly between that row's own leftmost
+  and rightmost `#`.
+- **A test-harness mistake, not a product bug**: the first reduced-
+  motion browser check left `window.matchMedia` overridden afterward,
+  which then made an unrelated later viewport sweep (1440×900) show
+  plain `wait` instead of animated frames — investigated, confirmed to
+  be the leftover JS override (not the shipped code: the interval-count
+  and forced-CSSMediaRule checks both independently confirmed the real
+  mechanism was correct), and cleared by reloading the page before
+  continuing the sweep.
+- Demo projects created while exercising real Architect runs (eight
+  across this sprint's testing) were all deleted through Explorer's own
+  UI afterward; only the three original demo projects remain.
+- `PROJECT_CONSTITUTION.md` reread in full and confirmed unchanged
+  before starting (§97's entry protocol).
+
+## Known Issues
+
+- **The busy cursor is global, not per-window.** Hovering *any* element
+  anywhere in the shell shows the Hourglass while busy, including
+  windows unrelated to the operation that triggered it — matching the
+  brief's own framing ("the mouse cursor should become an animated
+  retro Hourglass," with no exception listed), but a real trade-off:
+  window drag (`grab`/`grabbing`, also `!important`) and the pixel-
+  cursor Hand/Text rules are all overridden by the busy cursor for as
+  long as it is visible, same-specificity ties resolved by the busy
+  block's later position in the stylesheet. Dragging a window during a
+  genuine busy period would show the Hourglass instead of grab/grabbing
+  — an edge case, not separately tested live.
+- **Cancellation and error were not exercised through the real UI** —
+  see Verification for exactly what was and was not covered, and why.
+- Carried over, unchanged and out of scope: sidebar labels and window-
+  control glyphs still resolve to Arrow inside Hand buttons (M12
+  blanket `*` rule); DPR 1.25 resamples the pixel art;
+  `.cattipu-resize-handle` has no live element.
+- The untracked `.claude/launch.json` from an earlier session is still
+  present and still not part of any commit.
+
+## Data / Migration Impact
+
+None. `useBusyStore` is ephemeral, in-memory, unpersisted runtime state
+— no schema, no `persist` middleware, nothing written to disk or
+`localStorage`.
+
+## Git
+
+- Branch `main`; one commit on top of `78bab24`:
+  `feat(cursor): animate retro hourglass busy state`.
+- Author `anirva09 <anirvavjit2023@gmail.com>`; no AI attribution.
+- Working tree clean after commit (except the pre-existing untracked
+  `.claude/launch.json`, left alone).
+
+## Next Milestone
+
+M20.5 and Wallpaper Studio (M21) remain unstarted.

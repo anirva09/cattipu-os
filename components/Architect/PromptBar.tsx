@@ -1,13 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { useArchitectStore } from "@/store/useArchitectStore";
+import { useBusyStore } from "@/store/useBusyStore";
 import { CattipuSpinner } from "../System/CattipuSpinner";
 import { Textarea } from "@/components/UI/Textarea";
 
 const EXAMPLE_PROMPT =
   "Build a banking platform with authentication, payments, and fraud detection.";
+
+// M20C2 (Animated Busy Cursor) — the one id Architect reports under.
+// Any id string works; this repo's other long-running features (Forge
+// build, Live startup, Launch/deploy, ...) would each pick their own
+// when they exist, per the milestone brief's own reuse list.
+const BUSY_ID = "architect-generate";
 
 export function PromptBar() {
   const prompt = useArchitectStore((s) => s.prompt);
@@ -17,6 +24,20 @@ export function PromptBar() {
   const [draft, setDraft] = useState("");
 
   const busy = status === "generating" || status === "playing";
+
+  // Architect only ever REPORTS busy=true/false here — the delay,
+  // minimum-visible hold, frame timer and cursor restoration are all
+  // owned by CursorProvider.tsx via store/useBusyStore.ts, not by this
+  // component. The effect's cleanup is what makes this correct for
+  // every exit path at once: success/error/cancel all end with `busy`
+  // becoming false (a fresh `status`), and unmounting this component
+  // entirely (e.g. closing the Architect window mid-generation) runs
+  // the same cleanup regardless of what `busy` was at the time.
+  useEffect(() => {
+    if (!busy) return;
+    useBusyStore.getState().begin(BUSY_ID);
+    return () => useBusyStore.getState().end(BUSY_ID);
+  }, [busy]);
 
   const submit = () => {
     const value = draft.trim();
