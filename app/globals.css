@@ -266,13 +266,15 @@ body {
 /* ---- Pixel cursor system (Settings > Cursor) ---- */
 /* Crisp, no-anti-aliasing pixel cursors replacing the browser defaults.
    Toggled by the .cattipu-cursors class on <body> (see CursorProvider).
-   M20C1 (Cursor Artwork Fidelity): each asset is the 16x16 art grid at 2x
-   (a 32x32 CSS px frame) cropped to the glyph and its outline — Arrow
-   18x28, Hand 32x32 (M20C1R3), I-Beam 16x28, Resize 28x28, Move 30x30,
-   Hourglass 32x32 (M20C1R3) — drawn by Chromium at that natural CSS size.
-   The 64x64 assets this replaces rendered 2.5-3x the size of an OS
-   pointer. Cropping is not cosmetic: Chromium swaps in the native cursor
-   whenever the whole image does not fit inside the visual viewport, so
+   M20C1 (Cursor Artwork Fidelity): each asset is the logical art grid at
+   2x scale, cropped to the glyph and its outline — Arrow 18x28, Hand
+   32x32 (M20C1R3), I-Beam 16x28, Resize 28x28, Move 30x30, Hourglass
+   32x40 (M20C1R4, a hollow frame traced off a reference image — taller
+   than the rest because that shape genuinely is) — drawn by Chromium at
+   that natural CSS size. The 64x64 assets this replaces rendered 2.5-3x
+   the size of an OS pointer. Cropping is not cosmetic: Chromium swaps in
+   the native cursor whenever the whole image does not fit inside the
+   visual viewport, so
    transparent margin would only widen that fallback zone along the
    right/bottom edges.
    Hotspots are computed from the artwork by scripts/gen_cursors.py
@@ -366,7 +368,7 @@ body.cattipu-cursors .cattipu-managed-window[data-dragging="true"] * {
    file is touched, and no new busy state is invented; per the Milestone
    12 brief, Architect's own content is out of this milestone's scope. */
 body.cattipu-cursors .cattipu-switch:disabled[data-busy] {
-  cursor: url("/cursors/hourglass.png") 15 15, wait !important;
+  cursor: url("/cursors/hourglass.png") 15 19, wait !important;
 }
 
 /* ---- React Flow: strip the default modern/glass look, go pixel ---- */

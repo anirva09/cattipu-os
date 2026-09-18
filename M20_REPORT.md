@@ -1305,3 +1305,190 @@ None. Static assets and CSS constants only; no persisted schema touched.
 ## Next Milestone
 
 M20.5 and Wallpaper Studio (M21) remain unstarted.
+
+---
+
+# M20C1R4 — Hourglass Rebuilt as a Hollow Frame (Reference Image)
+
+*Correction sprint against M20C1R3 (base commit `ab2d7dd`). The product owner
+asked directly for the Hourglass to match the supplied reference image's
+shape, recoloured to CATTIPU navy — a stronger instruction than M20C1R3's
+"shape only, keep it a solid silhouette" interpretation. Hourglass only —
+Hand, Arrow, Text, Resize and Move were not touched.*
+
+## Objective
+
+Rebuild the Hourglass as a genuine hollow frame — cap, straight glass
+shoulder, a gradual diagonal taper, a neck, a sand-pile base — traced
+directly off the reference image's own pixels, in CATTIPU's navy/white,
+transparent, no-antialiasing construction, and rederive the hotspot.
+
+## Baseline
+
+- `main` at `ab2d7dd`, clean tree except the same pre-existing untracked
+  `.claude/launch.json` disclosed in M20C1R3, 7 commits ahead of
+  `origin/main`.
+- Git identity `anirva09 <anirvavjit2023@gmail.com>`.
+- `npm run verify` passing before any change (136/136).
+- Hand, Arrow, Text, Resize, Move were not part of this request and
+  stayed untouched (verified byte-identical afterwards).
+
+## Audit Findings
+
+M20C1R3's Hourglass was a **solid** tapered diamond — a deliberate choice
+at the time ("strong silhouette... not a hollow outline"). Decoding the
+reference image's native pixels (not just eyeballing it) showed it is
+unambiguously **hollow**: a thick flat cap, then the frame's two walls
+stay a fixed distance apart — straight, not tapering — for several rows
+directly under the cap (a "glass shoulder"), before the walls taper
+inward, each as a single thin diagonal line, converging at a narrow neck,
+then mirroring back out to a second shoulder, a solid sand-pile bump, and
+the bottom cap. M20C1R3's solid fill never had a hollow chamber and its
+taper began immediately under the cap with no held shoulder — a
+structurally different shape, not just a stylistic variant.
+
+## Canonical Ownership
+
+The Hourglass remains owned by `scripts/gen_cursors.py` (§8 of
+`docs/DESIGN_CONSTITUTION.md`). No second generator, no hand-edited PNG.
+
+## Changes
+
+1. `scripts/gen_cursors.py`
+   - `GRID` raised from 16 to 20. The hollow shoulder-plus-long-taper
+     structure needs more rows than the 14-row budget a 16-wide grid
+     leaves after the 1-cell halo margin on each side; 20 gives 18. This
+     is additive capacity only — every other cursor's own content still
+     crops to its own bounding box regardless of how much unused grid
+     exists around it, confirmed by regenerating and diffing (see
+     Verification).
+   - `HOURGLASS` rebuilt from scratch as a hollow shape: a 2-row cap, a
+     2-row straight shoulder (walls fixed, chamber open), a taper that
+     moves one wall column inward per row (four steps, single-cell-wide
+     walls — thinner than the shoulder's own 2-cell wall thickness,
+     matching the reference's thin diagonal lines) down to a solid
+     2-cell neck, the same four steps mirrored back out, a 2-row bottom
+     shoulder, a solid sand-pile bump, and a 2-row bottom cap. The
+     hollow chamber under each cap and inside the taper is left as plain
+     transparent cells; `halo()` — unchanged, the same function Move
+     already relies on for its arrowhead notches — fills any transparent
+     cell a navy outline fully encloses, so the chamber renders as a
+     proper white body rather than a punched-through hole.
+   - `LIMITS["hourglass"]` raised from 32×32 to 32×40. The taller,
+     slenderer proportions come directly from matching the reference's
+     own aspect ratio, not from padding.
+   - Three drafts were rendered through the real `grid_from`/`halo`/
+     `bbox`/`write_png` pipeline and inspected enlarged before this one
+     was kept: a first pass with 2-cell-wide taper walls read as a bold
+     "X" rather than a slender hourglass; the kept version's 1-cell-wide,
+     4-step taper is a much closer proportional match.
+2. `public/cursors/hourglass.png` — regenerated, 32×32 → 32×40, hotspot
+   `15 15` → `15 19` (still the `centre` rule — the design's row count was
+   chosen so the geometric centre lands on the solid neck row, not
+   copied). **Arrow, Hand, Text, Resize and Move are byte-identical to
+   `ab2d7dd`** (`git diff --quiet` per file).
+3. `app/globals.css` — Hourglass hotspot `15 15` → `15 19`, size list and
+   construction note in the block comment updated. No selector, role or
+   fallback keyword touched. `components/Window/SettingsApp.tsx` was not
+   touched — Hourglass has no Settings preview (only the four
+   click-target cursors are previewed there; unchanged since M20C1).
+4. `docs/DESIGN_CONSTITUTION.md` §8 — Hourglass size and silhouette
+   description rewritten for the hollow-frame construction; the
+   `GRID` note updated to disclose the 20×20 exception.
+5. `M20_REPORT.md` — this section.
+
+## Existing Systems Reused
+
+`scripts/gen_cursors.py`'s own `grid_from`/`halo`/`bbox`/`hotspot`/
+`write_png` pipeline, including `halo()`'s existing enclosed-transparent-
+fill behaviour (already exercised by Move). No new tooling, no new
+dependency, no bitmap hand-edited outside the generator.
+
+## Architecture Impact
+
+None. Artwork inside an already-owned system; no new ownership, no state
+or store changes. `GRID` going from a hardcoded 16 to 20 is the one
+structural change, and it is additive/backward-compatible by
+construction (see Changes and Verification).
+
+## Visual Preservation
+
+Colour palette (navy `#0b3d91` / white / transparent), material (hard
+pixel blocks, no antialiasing, no gradients, no blur), and the other five
+untouched cursor roles are all unchanged. The reference's own black
+ink was traced for shape only and recoloured to CATTIPU's navy, per the
+request — never imported as an asset.
+
+## Exact geometry
+
+| | Canvas = silhouette | Hotspot | Construction |
+|---|---|---|---|
+| Hourglass (M20C1R4) | 32×40 | `15 19` | hollow frame: cap, shoulder, 1-cell taper, neck, pile |
+| Hourglass (M20C1R3) | 32×32 | `15 15` | solid silhouette, taper begins under the cap |
+
+## Verification
+
+- Generator: `python scripts/gen_cursors.py` — its own assertions
+  (silhouette within `LIMITS`, hotspot on navy) pass.
+- **`GRID` change verified harmless**: after raising it from 16 to 20 and
+  regenerating all six cursors, `arrow.png`, `hand.png`, `text.png`,
+  `resize.png` and `move.png` are byte-for-byte identical to `ab2d7dd`
+  (`git diff --quiet -- public/cursors/<name>.png` for each, all clean).
+- Independent decode of `hourglass.png` (a standalone `struct`/`zlib`
+  reader, not the generator): 32×40, **three colours only** (navy, white,
+  transparent), every pixel an exact 2×2 block, no antialiasing.
+- `npm run verify`: exit 0 — typecheck clean, eslint 0 problems, tests
+  9/9, 18/18, 16/16, 24/24, 33/33, 36/36 (136/136).
+- `npm run build`: exit 0, route sizes unchanged (165 kB / 268 kB). Built
+  CSS carries `hourglass.png 15 19`.
+- Live (`next dev`, pixel cursors on) at 1366×768, 1440×900, 1600×900 and
+  1920×1080: `hourglass.png` reports `32x40` at every viewport.
+- **The Architect Generate switch's real busy state was exercised live**
+  (typed a prompt, clicked Generate, polled `data-busy`): showed
+  `url(".../cursors/hourglass.png") 15 19, wait` for the full run and
+  returned to Hand the instant it finished. The demo project created
+  while exercising it was deleted through Explorer's own UI afterwards;
+  only the three original demo projects remain.
+- Every Hand-mapped element (109, with Architect's node inspector open)
+  still resolved to `hand 11,2` at every viewport — confirming the
+  `GRID` change and Hourglass rebuild had no effect on Hand.
+
+## Regressions Checked
+
+- Arrow, Hand, Text, Resize and Move PNGs are byte-identical to `ab2d7dd`.
+- Cursor selectors, roles, fallback keywords, drag ownership
+  (`data-dragging`) and the Settings toggle are untouched.
+- `PROJECT_CONSTITUTION.md` unchanged since `d7af050`, reread in full
+  before starting (§97's entry protocol).
+
+## Known Issues
+
+- Carried over, unchanged and out of scope: sidebar labels and
+  window-control glyphs still resolve to Arrow inside Hand buttons (M12
+  blanket `*` rule); the title text keeps `grab` as its fallback keyword
+  mid-drag; DPR 1.25 resamples the pixel art; `.cattipu-resize-handle`
+  has no live element; Explorer's `data-entry-id` hydration mismatch is
+  pre-existing.
+- The Hourglass's edge-fallback zone (Chromium's native-cursor swap when
+  a custom cursor doesn't fit inside the viewport) grew along with the
+  canvas: bottom zone is now `<21px` (was `<17px`), right zone `<17px`
+  (unchanged). This only affects the Architect busy state, which is not
+  a draggable or edge-adjacent surface in normal use.
+- The untracked `.claude/launch.json` from an earlier session is still
+  present and still not part of any commit.
+
+## Data / Migration Impact
+
+None. Static assets and CSS constants only; no persisted schema touched.
+
+## Git
+
+- Branch `main`; one commit on top of `ab2d7dd`:
+  `style(cursor): rebuild hourglass as a hollow reference-matched frame`.
+- Author `anirva09 <anirvavjit2023@gmail.com>`; no AI attribution.
+- Working tree clean after commit (except the pre-existing untracked
+  `.claude/launch.json`, left alone).
+
+## Next Milestone
+
+M20.5 and Wallpaper Studio (M21) remain unstarted.

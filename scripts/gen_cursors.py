@@ -37,7 +37,10 @@ NAVY = (11, 61, 145, 255)
 WHITE = (255, 255, 255, 255)
 CLEAR = (0, 0, 0, 0)
 
-GRID = 16
+GRID = 20  # M20C1R4: widened from 16 so Hourglass has room for a longer,
+# more gradual taper (matching a supplied reference image more closely).
+# Safe for every other cursor: they crop to their own content's bounding
+# box regardless of how much unused grid capacity exists around them.
 SCALE = 2  # 16x16 grid -> 32x32 CSS px frame, cropped per cursor
 
 # Maximum visible silhouette (= PNG size), halo included, in CSS px.
@@ -47,7 +50,7 @@ LIMITS = {
     "text": (16, 28),
     "resize": (28, 28),
     "move": (30, 30),
-    "hourglass": (32, 32),  # M20C1R3: a flat cap/flange/taper/neck silhouette
+    "hourglass": (32, 40),  # M20C1R4: taller, slender hollow frame vs. the reference
 }
 
 
@@ -255,31 +258,38 @@ MOVE = [
 ]
 
 # ---------------------------------------------------------------------
-# Hourglass: sand-timer silhouette (busy). M20C1R2 widened only the top/
-# bottom rows in place. M20C1R3 (shape correction against a supplied
-# reference) rebuilds the taper: a flat cap, then a one-cell-inset
-# "flange" row (the reference's frame ledge sitting proud of the diagonal
-# below it), then a straight linear taper to a 2-cell neck — a crisp
-# diagonal silhouette rather than the previous rounded-diamond curve.
-# The lower half is deliberately NOT a mirror: it skips the taper's
-# narrowest widening step and gets a second cap row, so the base reads as
-# a slightly heavier, piled base (the reference's sand mound) rather than
-# a symmetric spool. Still one solid silhouette — no hollow interior —
-# per "strong silhouette, pixel clarity" at this size.
+# Hourglass: sand-timer silhouette (busy). M20C1R3 built a solid tapered
+# diamond. M20C1R4 (traced directly off the supplied reference image's own
+# pixels, not just its overall proportions) rebuilds it as the reference
+# actually is: a HOLLOW frame — two thick flat caps, a straight-sided glass
+# "shoulder" directly under each cap (the reference holds its walls flush
+# for a couple of rows before the taper starts, not immediately), then a
+# single-cell-wide diagonal wall (not the shoulder's full 2-cell
+# thickness) tapering gradually — one column per row, the longest run the
+# GRID budget allows — down to a solid neck, and a solid sand-pile bump
+# sitting on the bottom cap instead of a mirrored top. The interior reads
+# white/transparent through the frame: halo() fills any transparent cell
+# an outline fully encloses, the same trick MOVE already uses, so the
+# hollow chamber gets its own white body rather than turning into stray
+# holes.
 # ---------------------------------------------------------------------
 HOURGLASS = [
     "##############",
-    ".############.",
-    "..##########..",
-    "...########...",
-    "....######....",
-    ".....####.....",
+    "##############",
+    "##..........##",
+    "##..........##",
+    "..#........#..",
+    "...#......#...",
+    "....#....#....",
+    ".....#..#.....",
     "......##......",
-    "......##......",
-    "....######....",
-    "...########...",
-    "..##########..",
-    ".############.",
+    ".....#..#.....",
+    "....#....#....",
+    "...#......#...",
+    "..#........#..",
+    "##..........##",
+    "##..........##",
+    "##...####...##",
     "##############",
     "##############",
 ]
