@@ -38,11 +38,11 @@ SCALE = 2  # 16x16 grid -> 32x32 CSS px frame, cropped per cursor
 # Maximum visible silhouette (= PNG size), halo included, in CSS px.
 LIMITS = {
     "arrow": (18, 28),
-    "hand": (26, 26),  # M20C1R1: +4px wide for a thumb clear of the index
+    "hand": (30, 28),  # M20C1R2: +4px wide for a thumb visibly clear of the fist
     "text": (16, 28),
     "resize": (28, 28),
     "move": (30, 30),
-    "hourglass": (24, 28),
+    "hourglass": (28, 28),  # M20C1R2: +4px wide for the frame cap above the taper
 }
 
 
@@ -158,26 +158,30 @@ ARROW = [
 
 # ---------------------------------------------------------------------
 # Hand: pointing hand for links/buttons; the index fingertip is the hotspot.
-# M20C1R1: the previous silhouette put a lone 2-cell finger in the middle
-# of a plain rectangular palm, which read as an obscene gesture rather than
-# a pointing hand. Now the index rises left of centre, the two folded
-# fingers show as knuckle bumps to its right (halo() turns the 1-cell gaps
-# into the white creases between them), and the thumb protrudes two cells
-# from the left edge, below the index and clear of it — so the fist reads
-# as a fist and the raised finger is unmistakably the index.
+# M20C1R1 fixed a silhouette that read as an obscene gesture: the index
+# rises left of centre, two folded fingers show as knuckle bumps to its
+# right (halo() turns the 1-cell gaps into white creases between them).
+# M20C1R2 (retro-reference correction) redraws the thumb, which M20C1R1
+# left as a barely-visible 2x2 nub indistinguishable from the palm outline.
+# It is now its own 4-cell-wide lobe on the lower-left: a single-row gap at
+# its top separates it from the fist as the "web" crease (the fingertip
+# reference's thumb/fist notch), then it merges solid into the palm for the
+# rest of its height, so it stays visibly attached rather than a floating
+# island the crease would otherwise cut loose entirely.
 # ---------------------------------------------------------------------
 HAND = [
-    "...##",
-    "...##",
-    "...##",
-    "...##",
-    "...##",
-    "...##.##.##",
-    "..###.##.##",
-    "..#########",
-    "###########",
-    "###########",
-    "..#########",
+    ".....##",
+    ".....##",
+    ".....##",
+    ".....##",
+    ".....##",
+    ".....##.##.##",
+    ".....##.##.##",
+    "####..#######",
+    ".############",
+    "#############",
+    "#############",
+    ".....########",
 ]
 
 # ---------------------------------------------------------------------
@@ -241,12 +245,17 @@ MOVE = [
 ]
 
 # ---------------------------------------------------------------------
-# Hourglass: sand-timer silhouette (busy).
+# Hourglass: sand-timer silhouette (busy). M20C1R2 (retro-reference
+# correction) widens only the topmost and bottommost rows by one cell on
+# each side, in place — no rows added, so the height is unchanged. That
+# makes the top/bottom edges a flat cap sitting proud of the diagonal taper
+# below/above it, the frame ledge the reference silhouette shows around the
+# glass, rather than the taper running unbroken to the outline's own tip.
 # ---------------------------------------------------------------------
 HOURGLASS = [
     "",
     "",
-    "...##########",
+    "..############",
     "....########",
     ".....######",
     "......####",
@@ -257,7 +266,7 @@ HOURGLASS = [
     "......####",
     ".....######",
     "....########",
-    "...##########",
+    "..############",
 ]
 
 CURSORS = [
