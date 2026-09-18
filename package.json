@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx tests/project.test.ts && tsx tests/projects.test.ts && tsx tests/desktop.test.ts && tsx tests/filesystem.test.ts && tsx tests/workspace.test.ts && tsx tests/system.test.ts && tsx tests/busyCursor.test.ts",
+    "test": "tsx tests/project.test.ts && tsx tests/projects.test.ts && tsx tests/desktop.test.ts && tsx tests/filesystem.test.ts && tsx tests/workspace.test.ts && tsx tests/system.test.ts && tsx tests/busyCursor.test.ts && tsx tests/diagnostics.test.ts",
     "verify": "npm run typecheck && npm run lint && npm run test"
   },
   "dependencies": {
