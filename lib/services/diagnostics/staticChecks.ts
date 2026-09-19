@@ -3,7 +3,7 @@
  * docs/architecture/BOUNDARY_AUDIT.md.
  *
  * These are facts about the source tree (an unmounted store still
- * imported for its types, a component nothing renders, two icon
+ * imported for its types, two icon
  * families), not anything a Zustand store can report. Nothing here reads
  * live state, so nothing here can go stale relative to a store — it can
  * only go stale relative to the repository itself, which is the audit's
@@ -36,14 +36,6 @@ export function staticDriftChecks(): readonly StaticCheck[] {
           "components/CommandPalette/CommandPalette.tsx",
         ],
       },
-    },
-    {
-      id: "notifications.center-unmounted",
-      label: "Notification renderer",
-      category: "notifications",
-      status: "offline",
-      message:
-        "components/System/NotificationCenter.tsx is implemented but not mounted anywhere in the shell — a push enqueues and plays a sound with nothing rendered",
     },
     {
       id: "system.icon-systems-duplicated",

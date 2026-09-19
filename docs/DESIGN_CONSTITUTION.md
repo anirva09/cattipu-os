@@ -152,13 +152,27 @@ Every icon a person can reach in the live shell now comes from PixelForge
 project cards, every menu, the Toolbox, Settings navigation and its notification samples, and the
 placeholder app window. The tree and cards previously drew their own stroked vector folders.
 They now use the family's native 16 and 32 marks. `components/Icons` (the Milestone 13 grid set)
-is still imported only by the Command Palette and NotificationCenter, both of which the live shell
-does not mount. Construction, palette and manufacturing are recorded in
+is still imported only by the Command Palette, which the live shell does not mount. (M22 moved
+NotificationCenter to PixelForge.) Construction, palette and manufacturing are recorded in
 `design-system/ICON_REGISTRY_v1.0.md` (revision note v1.0.1).
 
-## 7. Native notifications (Milestone 12)
+## 7. Native notifications (Milestone 12, Notification Center M22)
 
-`store/useNotificationStore.ts` + `components/System/NotificationCenter.tsx`, mounted once in
+**M22 supersedes the toast behaviour described in the rest of this section.** The store is now the
+session's notification history. Entries do not expire, each carries `read`, and the store owns
+`markRead`, `markAllRead`, `dismiss` and `clearAll`. History is bounded at 100 entries. Nothing is
+persisted. `components/System/NotificationCenter.tsx` is the one renderer. It is a shell utility
+surface under the top-bar Bell, not a managed window. `CattipuShell` owns whether it is open, and
+`InteractiveDesktop` places it at z 9400, above the rack, bars and rail and below boot and the
+context menu. It is 320px wide and at most 416px tall, with a 32px System navy header plate in the
+display face, an inset well that scrolls, 48px-minimum rows split by the carved groove, 16px
+PixelForge status marks (Info CAT-UTIL-007, Success CAT-UTIL-010, Warning CAT-UTIL-008, Error
+CAT-UTIL-009) and a 32px footer with MARK ALL READ and CLEAR ALL. Unread rows show a 6px Welcome
+gold lamp. While the center is open the Bell draws the inset pressed key. When anything is unread
+it turns Welcome gold and carries a 6px lamp. Opening the center marks nothing read and plays no
+sound. The chime still belongs to `push`.
+
+Milestone 12 original text: `store/useNotificationStore.ts` + `components/System/NotificationCenter.tsx`, mounted once in
 `components/Desktop/Desktop.tsx`. Four types — info, success, warning, error — each a hard-
 bordered, cream/ivory molded body (`.cattipu-raised` + `.cattipu-chamfer`, the same primitives
 every window and the Command Palette already use), a small bordered icon well tinted per type,
@@ -190,8 +204,8 @@ right-click, every drill-down submenu. It is portalled to `<body>`, so it re-pub
   Both menu builders spread it; neither restates a label. Verbs with no object (Rename, Delete,
   Paste, Refresh, window arrangement) are text-only.
 
-The Command Palette and NotificationCenter are mounted only by the retired legacy desktop, so the
-live shell has no reachable left-click popup menu today.
+The Command Palette is mounted only by the retired legacy desktop, so the live shell has no
+reachable left-click popup menu today. The Notification Center (M22) is a panel, not a menu.
 
 ## 8. Frozen cursor language
 

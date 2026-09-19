@@ -71,9 +71,9 @@ test("future services in the real snapshot carry both not-implemented status and
 
 test("a degraded service's status text reads DEGRADED, not READY", async () => {
   const snapshot = await diagnosticsService.getSnapshot();
-  const notifications = snapshot.services.find((s) => s.id === "notifications");
-  assert.equal(notifications?.status, "degraded");
-  assert.equal(STATUS_PRESENTATION[notifications!.status].label, "DEGRADED");
+  const degraded = snapshot.services.find((s) => s.status === "degraded");
+  assert.ok(degraded, "the real snapshot has at least one degraded service to present");
+  assert.equal(STATUS_PRESENTATION[degraded!.status].label, "DEGRADED");
 });
 
 // ── 4. summary counts are derived from the snapshot, never hardcoded ───

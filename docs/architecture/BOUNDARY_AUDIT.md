@@ -42,8 +42,8 @@ The debt is at the edges:
    `MEMORY INDEXED: OK`, `BUILD: IDLE`, `SOUND: ON` and so on, and the bottom status bar says
    `PROJECT SAVED`. No state produces these values. Developer Diagnostics is their natural
    future owner, and M20.5 must not copy them.
-3. **Some notifications are pushed but never displayed.** `useNotificationStore` is live, but
-   `NotificationCenter` is not mounted anywhere, so a push plays a sound and never renders.
+3. **Resolved in M22.** Notifications used to be pushed and never displayed. The Notification
+   Center is now mounted behind the top-bar Bell, so every push is stored and shown.
 4. **There are two icon systems.** `components/PixelIcon` (the PixelForge SVG assets) drives
    the live shell. `components/Icons` (the M13 grid glyphs) is still used by Settings and
    PlaceholderApp. Both export a symbol named `PixelIcon`.
@@ -168,17 +168,20 @@ Findings:
 - **DEFERRED — dead settings.** `dockMode` and `dockIconSize` are written by Settings. No
   consumer reads them in the live v0.9 shell.
 
-### 2.5 Notifications — CANONICAL store, unmounted renderer
+### 2.5 Notifications — CANONICAL store, mounted renderer (M22)
 
 | | |
 |---|---|
-| Owner | `store/useNotificationStore.ts` (queue, cap of 3, timers, sound mapping); `components/System/NotificationCenter.tsx` (renderer) |
+| Owner | `store/useNotificationStore.ts` (session history, read state, bounded at 100, sound mapping); `components/System/NotificationCenter.tsx` (renderer) |
 | Producers | `SettingsApp` → Notifications test buttons (the only producer) |
-| Consumers | `NotificationCenter`, which **is not mounted anywhere** |
+| Consumers | `NotificationCenter`, mounted by `CattipuShell` through `InteractiveDesktop` behind the top-bar Bell; `diagnosticsService` |
 
 Findings:
 
 - **CANONICAL.** This is the one notification engine. No second one exists.
+- **RESOLVED (M22).** The two findings below are historical. The renderer is mounted, the
+  toast timers and three-entry cap are gone, and `DESIGN_CONSTITUTION.md` §7 records the
+  current behaviour.
 - **BOUNDARY VIOLATION (user-visible).** A push from Settings plays the success or error sound
   and enqueues an entry, and nothing draws it. `docs/DESIGN_CONSTITUTION.md` §7 still says the
   renderer is "mounted once in `components/Desktop/Desktop.tsx`". That file was removed with the
@@ -202,8 +205,8 @@ Findings:
   the call a future `ArchitectService` should own: UI → ArchitectService → Project.
 - **ACCEPTABLE DEPENDENCY.** `PromptBar` reports busy state through `useBusyStore`
   (`architect-generate`), the canonical busy signal. It is the only producer today.
-- **DEFERRED (known drift).** Twelve Architect files plus `CommandPalette`, `NotificationCenter`
-  and `SettingsApp` import `lucide-react`. This drift was recorded in Constitution §26 and
+- **DEFERRED (known drift).** Twelve Architect files plus `CommandPalette` and `SettingsApp`
+  import `lucide-react` (`NotificationCenter` stopped in M22). This drift was recorded in Constitution §26 and
   DESIGN_CONSTITUTION §15.
 
 ### 2.7 AI stubs (`lib/ai/`) — CANONICAL generation seam, misleadingly named

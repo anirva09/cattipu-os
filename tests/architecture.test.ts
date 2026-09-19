@@ -376,9 +376,11 @@ test("SettingsApp still renders the diagnostics section", () => {
 
 test("staticDriftChecks() still reports every known drift finding by id", () => {
   const ids = staticDriftChecks().map((c) => c.id);
+  // "notifications.center-unmounted" was resolved, not hidden: M22 mounts
+  // the Notification Center, and tests/notifications.test.ts proves it.
+  assert.ok(!ids.includes("notifications.center-unmounted"), "the Notification Center is mounted; the drift check must not claim otherwise");
   const required = [
     "windows.legacy-store-consumers",
-    "notifications.center-unmounted",
     "system.icon-systems-duplicated",
     "project.import-direction",
     "ai.type-import-cycle",

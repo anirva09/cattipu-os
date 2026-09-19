@@ -3,6 +3,7 @@
 import type {
   CSSProperties,
   ReactNode,
+  RefObject,
 } from 'react';
 import {
   useEffect,
@@ -207,6 +208,24 @@ export interface InteractiveDesktopProps {
    * shortcut has to be able to raise Projects, and reaching for a second
    * window manager instance to do it is how two of them get out of step.
    */
+  /**
+   * Integration hook, added in M22 (Notification Center). The top-bar
+   * Bell and the utility surface it opens.
+   *
+   * The shell owns the notification store and whether the center is open;
+   * this component only forwards the Bell's state to the TopBar and places
+   * `panel` in the desktop's own stacking order, beside the bars and the
+   * rack. The panel is not a managed window and the window manager never
+   * sees it. Omitted, the Bell is the inert glyph it was signed off as.
+   */
+  notificationCenter?: {
+    open: boolean;
+    unreadCount: number;
+    panelId: string;
+    bellRef: RefObject<HTMLButtonElement | null>;
+    onToggle: () => void;
+    panel: ReactNode;
+  };
   desktopLayer?: (controls: {
     openWindow: (id: CattipuWindowId) => void;
     /**
@@ -269,6 +288,7 @@ export function InteractiveDesktop({
   style,
   windowContent,
   renderProjectsWindow,
+  notificationCenter,
   desktopLayer,
 }: InteractiveDesktopProps) {
   const {
@@ -422,6 +442,12 @@ export function InteractiveDesktop({
         workspaceTitle={workspaceTitle}
         activeWorkspace={Boolean(state.activeWindowId)}
         dateTimeText={dateTimeText}
+        hasNotification={Boolean(notificationCenter && notificationCenter.unreadCount > 0)}
+        unreadCount={notificationCenter?.unreadCount}
+        notificationsOpen={notificationCenter?.open}
+        notificationsPanelId={notificationCenter?.panelId}
+        notificationButtonRef={notificationCenter?.bellRef}
+        onNotifications={notificationCenter?.onToggle}
       />
 
       <div
@@ -526,6 +552,8 @@ export function InteractiveDesktop({
         {...statusBar}
         className="cattipu-interactive-desktop__bottom-status"
       />
+
+      {notificationCenter?.panel}
     </main>
   );
 }

@@ -1,0 +1,215 @@
+/* M22 — Notification Center. Built from the right rack's widget grammar:
+ * 2px outer frame, a flat tone header plate over a 2px frame line, and an
+ * inset well for the content. Every size is a whole pixel. */
+
+.cattipu-notification-center,
+.cattipu-notification-center *,
+.cattipu-notification-center *::before,
+.cattipu-notification-center *::after {
+  box-sizing: border-box;
+}
+
+/* The shell utility layer. It sits in the desktop's own stacking order:
+ * above managed windows (window layer 100), the right rack (8600), the
+ * top and status bars (8800) and the rail (9000); below the boot overlay
+ * (10000, app/page.tsx) and the portalled context menu (12000).
+ *
+ * Anchored under the Bell's end of the top bar: 4px below the bar, on the
+ * rack's own 8px right gutter. The height is capped at 416px and never
+ * reaches the status bar; past that the history well scrolls, not the
+ * page. */
+.cattipu-notification-center {
+  position: absolute;
+  top: calc(var(--cattipu-desktop-topbar-height) + 4px);
+  right: var(--cattipu-desktop-right-widget-gap);
+  z-index: 9400;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  max-height: min(
+    416px,
+    calc(100% - var(--cattipu-desktop-topbar-height) - var(--cattipu-desktop-bottom-height) - 8px)
+  );
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-body-line);
+}
+
+/* Focus is parked on the panel itself after an action removes the
+ * control that ran it; the panel is not a control and draws no ring. */
+.cattipu-notification-center:focus {
+  outline: none;
+}
+
+.cattipu-notification-center__header {
+  display: flex;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  overflow: hidden;
+  background: var(--cattipu-navy);
+  color: var(--cattipu-bevel-top);
+  border-bottom: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+}
+
+.cattipu-notification-center__title {
+  font-family: var(--cattipu-font-family);
+  font-size: var(--cattipu-type-widget-header-size);
+  line-height: var(--cattipu-type-widget-header-line);
+  white-space: nowrap;
+}
+
+.cattipu-notification-center__count {
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  white-space: nowrap;
+}
+
+.cattipu-notification-center__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-notification-center__empty {
+  margin: 0;
+  padding: 16px 8px;
+  color: var(--cattipu-bevel-right);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  text-align: center;
+}
+
+.cattipu-notification-center__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cattipu-notification-center__row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) 20px;
+  column-gap: 8px;
+  align-items: start;
+  min-height: 48px;
+  padding: 8px;
+}
+
+/* The shell's carved groove between rows: 1px shade over 1px highlight,
+ * the same object as a menu separator. */
+.cattipu-notification-center__row:not(:last-child) {
+  border-bottom: 1px solid var(--cattipu-bevel-bottom);
+}
+
+.cattipu-notification-center__row + .cattipu-notification-center__row {
+  border-top: 1px solid var(--cattipu-bevel-top);
+}
+
+.cattipu-notification-center__icon {
+  width: 16px;
+  height: 16px;
+}
+
+.cattipu-notification-center__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.cattipu-notification-center__row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cattipu-notification-center__title-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Unread: a 6px indicator lamp in Welcome gold, the same attention colour
+ * the top bar already gives the Bell. */
+.cattipu-notification-center__lamp {
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  background: var(--cattipu-notification-lamp);
+  border: 1px solid var(--cattipu-outer-frame);
+}
+
+.cattipu-notification-center__message {
+  overflow-wrap: anywhere;
+}
+
+.cattipu-notification-center__meta {
+  margin-top: 4px;
+  color: var(--cattipu-bevel-right);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+/* Read rows step back to the recessed ink; unread rows keep full ink. */
+.cattipu-notification-center__row[data-read='true'] .cattipu-notification-center__main {
+  color: var(--cattipu-bevel-right);
+}
+
+.cattipu-notification-center__dismiss {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+}
+
+.cattipu-notification-center__footer {
+  display: flex;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  height: 32px;
+  padding: 0 4px;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-notification-center__action {
+  height: 24px;
+  margin: 0;
+  padding: 0 8px;
+  appearance: none;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font: inherit;
+  white-space: nowrap;
+}
+
+/* Disabled stays visible as an engraved label, like a disabled menu row. */
+.cattipu-notification-center__action:disabled {
+  color: var(--cattipu-bevel-bottom);
+}

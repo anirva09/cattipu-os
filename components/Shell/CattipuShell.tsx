@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { InteractiveDesktop } from "@/components/InteractiveDesktop";
 import { ArchitectApp } from "@/components/Architect/ArchitectApp";
@@ -16,6 +16,7 @@ import { ShellIcon } from "@/components/PixelIcon";
 import type { ShellIconName } from "@/components/PixelIcon";
 import { PixelLogo } from "@/components/Boot/PixelLogo";
 import { ProjectsWindow } from "@/components/ProjectsWindow/ProjectsWindow";
+import { NotificationCenter } from "@/components/System/NotificationCenter";
 import {
   bottomStatusLines,
   systemStatusRows,
@@ -23,6 +24,7 @@ import {
 import type { DiagnosticsSnapshot } from "@/lib/contracts/diagnostics/types";
 import { diagnosticsService } from "@/lib/services/diagnostics/diagnosticsService";
 import { useBootStore } from "@/store/useBootStore";
+import { unreadCount, useNotificationStore } from "@/store/useNotificationStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import {
@@ -245,6 +247,41 @@ function LiveProjectsWindow({ onMinimize, onMaximize, onClose }: {
   );
 }
 
+const NOTIFICATION_CENTER_ID = "cattipu-notification-center";
+
+/**
+ * M22 — the Bell and the Notification Center it opens.
+ *
+ * Whether the center is open is shell UI state, like which menu is up, so
+ * it lives here and nowhere else. Everything the center shows — the
+ * history, the unread count the Bell reports — is read from the one
+ * notification store. Opening it marks nothing read and makes no sound:
+ * the chime belongs to `push`, and a subscription is not a push.
+ */
+function useNotificationCenter() {
+  const [open, setOpen] = useState(false);
+  const bellRef = useRef<HTMLButtonElement | null>(null);
+  const unread = useNotificationStore((s) => unreadCount(s.notifications));
+  const onToggle = useCallback(() => setOpen((value) => !value), []);
+  const onClose = useCallback(() => setOpen(false), []);
+
+  return {
+    open,
+    unreadCount: unread,
+    panelId: NOTIFICATION_CENTER_ID,
+    bellRef,
+    onToggle,
+    panel: (
+      <NotificationCenter
+        id={NOTIFICATION_CENTER_ID}
+        open={open}
+        onClose={onClose}
+        bellRef={bellRef}
+      />
+    ),
+  };
+}
+
 export function CattipuShell() {
   const dateTimeText = useDateTimeText();
 
@@ -302,6 +339,7 @@ export function CattipuShell() {
   // desktop slot paints it and tells the object layer its tone; nothing
   // else in the shell reads it, so a dark wallpaper never recolours chrome.
   const wallpaper = useAppliedWallpaper();
+  const notificationCenter = useNotificationCenter();
 
   const sidebarIcons = useMemo<CattipuSidebarIcons>(() => {
     const entries = CATTIPU_SIDEBAR_ITEMS.map(({ id, label }) => [
@@ -330,6 +368,7 @@ export function CattipuShell() {
       creatorName="Creator"
       windowContent={WINDOW_CONTENT}
       renderProjectsWindow={(controls) => <LiveProjectsWindow {...controls} />}
+      notificationCenter={notificationCenter}
       // Milestone 16. The layer owns desktop objects; the desktop owns the
       // window manager, so opening a shortcut's project comes back through
       // this callback rather than through a second copy of window state.

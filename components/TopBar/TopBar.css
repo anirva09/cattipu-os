@@ -124,6 +124,35 @@
   color: var(--cattipu-top-bar-notification);
 }
 
+/* M22. The Bell is the one top-bar key that holds a state: while its
+ * Notification Center is open it sits pressed, the same inset bevel every
+ * pressed key uses (shade top-left, light bottom-right). Drawn as inset
+ * box-shadow rather than border so the 32px slot and the mark inside it
+ * do not move by a pixel. */
+.cattipu-top-bar__notification-button {
+  position: relative;
+}
+
+.cattipu-top-bar__notification-button[aria-expanded='true'] {
+  box-shadow:
+    inset var(--cattipu-border-size) var(--cattipu-border-size) 0 0 var(--cattipu-bevel-right),
+    inset calc(var(--cattipu-border-size) * -1) calc(var(--cattipu-border-size) * -1) 0 0 var(--cattipu-bevel-top);
+}
+
+/* M22. Unread: a 6px indicator lamp at the key's top-right corner, in the
+ * same Welcome gold the Bell itself turns. A shape as well as a colour,
+ * so the state does not rest on hue alone. */
+.cattipu-top-bar__unread-marker {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  background: var(--cattipu-top-bar-notification);
+  border: 1px solid var(--cattipu-outer-frame);
+  pointer-events: none;
+}
+
 .cattipu-top-bar__time-cluster {
   gap: var(--cattipu-top-bar-inline-gap);
   height: 100%;

@@ -2,6 +2,7 @@ import type {
   ButtonHTMLAttributes,
   CSSProperties,
   HTMLAttributes,
+  Ref,
 } from 'react';
 
 import {
@@ -48,6 +49,22 @@ export interface TopBarProps
   dateTimeText: string;
   activeWorkspace?: boolean;
   hasNotification?: boolean;
+  /**
+   * M22. How many notifications are unread, for the Bell's accessible
+   * name. The visible indicator follows `hasNotification`.
+   */
+  unreadCount?: number;
+  /**
+   * M22. Whether the Notification Center the Bell controls is open. The
+   * Bell then draws the shell's pressed (inset) key. Left undefined, the
+   * Bell controls nothing and claims no expanded state.
+   */
+  notificationsOpen?: boolean;
+  /** M22. The id of the surface the Bell opens, for `aria-controls`. */
+  notificationsPanelId?: string;
+  /** M22. The Bell button, so the center can exclude it from outside
+   *  presses and return focus to it. */
+  notificationButtonRef?: Ref<HTMLButtonElement>;
   onSearch?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
   onNotifications?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
 }
@@ -91,6 +108,10 @@ export function TopBar({
   dateTimeText,
   activeWorkspace = false,
   hasNotification = false,
+  unreadCount = 0,
+  notificationsOpen,
+  notificationsPanelId,
+  notificationButtonRef,
   onSearch,
   onNotifications,
   className,
@@ -158,12 +179,25 @@ export function TopBar({
         </button>
 
         <button
+          ref={notificationButtonRef}
           type="button"
           className="cattipu-top-bar__icon-button cattipu-top-bar__notification-button cattipu-focus--mechanical"
           onClick={onNotifications}
-          aria-label={hasNotification ? 'Notifications available' : 'Notifications'}
+          aria-label={
+            unreadCount > 0
+              ? `Notifications, ${unreadCount} unread`
+              : hasNotification
+                ? 'Notifications available'
+                : 'Notifications'
+          }
+          aria-haspopup={notificationsOpen === undefined ? undefined : 'dialog'}
+          aria-expanded={notificationsOpen}
+          aria-controls={notificationsOpen ? notificationsPanelId : undefined}
         >
           <BellIcon />
+          {hasNotification ? (
+            <span className="cattipu-top-bar__unread-marker" aria-hidden="true" />
+          ) : null}
         </button>
 
         <span className="cattipu-top-bar__time-cluster">

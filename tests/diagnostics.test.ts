@@ -123,7 +123,6 @@ test("known architecture drift produces the expected diagnostic checks", async (
   const ids = snapshot.checks.map((c) => c.id);
   for (const expected of [
     "windows.legacy-store-consumers",
-    "notifications.center-unmounted",
     "system.icon-systems-duplicated",
     "project.import-direction",
     "ai.type-import-cycle",
@@ -133,10 +132,11 @@ test("known architecture drift produces the expected diagnostic checks", async (
   }
 });
 
-test("notifications: the queue works even though the renderer is unmounted", async () => {
+test("notifications: the history is stored and, since M22, rendered", async () => {
   const snapshot = await diagnosticsService.getSnapshot();
   const notifications = snapshot.services.find((s) => s.id === "notifications")!;
-  assert.equal(notifications.status, "degraded");
+  assert.equal(notifications.status, "ready");
+  assert.ok(!snapshot.checks.some((c) => c.id === "notifications.center-unmounted"));
   const queueCheck = notifications.checks?.find((c) => c.id === "notifications.queue-length");
   assert.equal(queueCheck?.status, "ready");
 });

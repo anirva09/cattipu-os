@@ -38,7 +38,7 @@ import { staticDriftChecks } from "./staticChecks";
 import { useProjectStore } from "@/store/useProjectStore";
 import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { useNotificationStore } from "@/store/useNotificationStore";
+import { unreadCount, useNotificationStore } from "@/store/useNotificationStore";
 import { useBootStore } from "@/store/useBootStore";
 import { useBusyStore } from "@/store/useBusyStore";
 import { useArchitectStore } from "@/store/useArchitectStore";
@@ -339,24 +339,24 @@ function buildSettingsHealth(observedAt: string): ServiceHealth {
 
 function buildNotificationsHealth(observedAt: string): ServiceHealth {
   const { notifications } = useNotificationStore.getState();
+  const unread = unreadCount(notifications);
 
   return {
     id: "notifications",
     name: registryEntry("notifications").name,
     category: "notifications",
-    // The queue itself works (see the check below); what CATTIPU cannot
-    // honestly call "ready" is the user-visible integration — nothing
-    // renders a push. See the "notifications.center-unmounted" entry on
-    // DiagnosticsSnapshot.checks for why.
-    status: "degraded",
+    // M22 mounted the Notification Center behind the top-bar Bell, so a
+    // push is now both stored and shown. The check id predates M22's
+    // switch from a queue to a session history and is kept stable.
+    status: "ready",
     checks: [
       {
         id: "notifications.queue-length",
-        label: "Notification queue",
+        label: "Notification history",
         category: "notifications",
         status: "ready",
-        message: `${notifications.length} notification${notifications.length === 1 ? "" : "s"} queued`,
-        detail: { count: notifications.length },
+        message: `${notifications.length} notification${notifications.length === 1 ? "" : "s"} in history, ${unread} unread`,
+        detail: { count: notifications.length, unread },
         checkedAt: observedAt,
       },
     ],

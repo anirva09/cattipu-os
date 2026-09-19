@@ -223,11 +223,11 @@ export interface CursorTheme {
 // ---------------------------------------------------------------------
 
 /**
- * `useNotificationStore` is live and `components/System/NotificationCenter.tsx`
- * is implemented; what is missing is a mount point in the v0.9 shell, not
- * a design.
+ * `useNotificationStore` is live and, since M22,
+ * `components/System/NotificationCenter.tsx` is mounted behind the top-bar
+ * Bell. Nothing produces a `NotificationSource` yet.
  *
- * The rule for whoever mounts it: a notification REFERS to work, it does
+ * The rule for the first producer that does: a notification REFERS to work, it does
  * not describe it. Carry an `ArtifactRef` or a project id and let the
  * panel resolve the name at render time. A notification that stores
  * "Banking Platform" is a copy of a name, and renaming the project leaves
