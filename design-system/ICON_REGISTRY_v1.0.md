@@ -23,13 +23,13 @@ Recorded here so the registry matches what ships. It adds to v1.0; it does not r
   surrounds the silhouette. The result is a 2px apparent contour with stepped convex corners,
   1px internal divisions, a 1px top-left highlight and a 1–2px bottom-right shade. Nothing is
   drawn in row or column 0 or 31. 16px masters are drawn separately with a 1px contour.
-- **Palette.** The Sheet 01 ramps, plus one rear-plane orange `#d98a3a` in the gold ramp
-  (`#f4d78d` / `#e0b34c` / `#d98a3a` / `#a97f26`). It is the shadow plane of the filesystem
-  family, from the reference folder's construction.
+- **Palette.** The Sheet 01 ramps only. The filesystem family's rear (shadow) plane uses the
+  design system's Welcome Gold `#C6971F` (`cattipuTokens.colors.welcome`), between the gold
+  body `#e0b34c` and the gold shade `#a97f26`. No colour outside the locked palette is used.
 - **Filesystem family.** Folder, Open Folder (CAT-EXP-003), Projects (the project folder),
   Template Folder (CAT-PROJ-002), Archive (CAT-EXP-009), File (CAT-EXP-004), Explorer,
-  Shortcut, New Project and Recent share one construction: an orange rear plane with a gold
-  rim, white paper over grey, and a gold front plane with a pale lip.
+  Shortcut, New Project and Recent share one construction: a Welcome Gold rear plane with a
+  pale-gold rim, white paper over grey, and a gold front plane with a pale lip.
 - **Architect** is a triangle of three purple structural nodes joined by stepped metal buses to
   a gold core carrying a cream node. **Canvas** is a cream-framed navy work surface with an
   engineering grid, one placed component and four gold selection handles.
