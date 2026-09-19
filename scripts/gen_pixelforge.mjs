@@ -54,6 +54,27 @@ export const PIXELFORGE_MARKS = {
   memory: { label: 'Memory', id: 'CAT-SHELL-006', shell: true },
   launch: { label: 'Launch', id: 'CAT-FAMILY-launch', shell: true },
   settings: { label: 'Settings', id: 'CAT-SHELL-008', shell: true },
+  // Settings navigation
+  wallpaper: { label: 'Wallpaper', id: 'CAT-UTIL-022', shell: true },
+  dock: { label: 'Dock', id: 'CAT-UTIL-023', shell: true },
+  cursor: { label: 'Cursor', id: 'CAT-CANVAS-002', shell: true },
+  sound: { label: 'Sound', id: 'CAT-UTIL-018', shell: true },
+  diagnostics: { label: 'Diagnostics', id: 'CAT-UTIL-024', shell: true },
+  about: { label: 'About', id: 'CAT-UTIL-025', shell: true },
+  // status
+  info: { label: 'Info', id: 'CAT-UTIL-007', shell: true },
+  ready: { label: 'Success', id: 'CAT-UTIL-010', shell: true },
+  warning: { label: 'Warning', id: 'CAT-UTIL-008', shell: true },
+  error: { label: 'Error', id: 'CAT-UTIL-009', shell: true },
+  // Toolbox (32 only)
+  entity: { label: 'Entity', id: 'CAT-ARCH-002', toolbox: true },
+  service: { label: 'Service', id: 'CAT-ARCH-003', toolbox: true },
+  flow: { label: 'Flow', id: 'CAT-ARCH-004', toolbox: true },
+  screen: { label: 'Screen', id: 'CAT-ARCH-006', toolbox: true },
+  api: { label: 'API', id: 'CAT-ARCH-005', toolbox: true },
+  job: { label: 'Job', id: 'CAT-ARCH-014', toolbox: true },
+  script: { label: 'Script', id: 'CAT-EXP-008', toolbox: true },
+  config: { label: 'Config', id: 'CAT-FORGE-017', toolbox: true },
 };
 
 function readGrid(size, name) {

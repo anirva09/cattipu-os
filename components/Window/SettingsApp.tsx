@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { LayoutGrid, MousePointer2, Volume2, Info, Bell } from "lucide-react";
-import { UtilityIcon, type UtilityIconId } from "@/components/Icons";
-import { ShellIcon } from "@/components/PixelIcon";
+import { ShellIcon, type ShellIconName } from "@/components/PixelIcon";
 import {
   useSettingsStore,
   DOCK_ICON_SIZE_PX,
@@ -34,41 +32,21 @@ type Section =
   | "diagnostics"
   | "about";
 
-// M20.5D — the SECTIONS nav icon type is the same lucide-shaped signature
-// every other section already uses. Reaching for a NEW lucide-react icon
-// here would spread the flagged dependency (Constitution §26) further, so
-// this wraps the canonical PixelForge terminal mark (CAT-SYS-001, "open
-// NODE/terminal" — the same engineering-console meaning this panel wants)
-// in that exact shape instead of drawing a new icon or importing lucide.
-function DiagnosticsNavIcon({ className }: { className?: string; strokeWidth?: number }) {
-  return <ShellIcon name="terminal" size={16} className={className} />;
-}
-
-// M21 — Wallpaper Studio follows the same rule: the canonical PixelForge
-// Canvas mark (CAT-CANVAS-001, a framed drafting sheet — the desktop
-// context menu's "Change Wallpaper" entry already uses it) replaces the
-// old Appearance section's lucide Palette glyph.
-function WallpaperNavIcon({ className }: { className?: string; strokeWidth?: number }) {
-  return <ShellIcon name="canvas" size={16} className={className} />;
-}
-
-const SECTIONS: {
-  id: Section;
-  label: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-}[] = [
-  { id: "wallpaper", label: "Wallpaper", icon: WallpaperNavIcon },
-  { id: "dock", label: "Dock", icon: LayoutGrid },
-  { id: "cursor", label: "Cursor", icon: MousePointer2 },
-  { id: "sound", label: "Sound", icon: Volume2 },
+// Every section is marked with its own hand-drawn 16×16 PixelForge mark
+// (components/PixelIcon/shellIcons.ts), rendered at native size in the
+// 24px icon column. No lucide glyphs, and no mark borrowed from an
+// unrelated app: Wallpaper is a framed picture, not Canvas; Diagnostics is
+// an instrument, not the terminal. Notifications reuses the top bar's bell.
+const SECTIONS: { id: Section; label: string; icon: ShellIconName }[] = [
+  { id: "wallpaper", label: "Wallpaper", icon: "wallpaper" },
+  { id: "dock", label: "Dock", icon: "dock" },
+  { id: "cursor", label: "Cursor", icon: "cursor" },
+  { id: "sound", label: "Sound", icon: "sound" },
   // Milestone 12 (Constitutional Foundation Retrofit) — "provide one safe
   // verification path so the [notification] primitive can be tested."
-  // Settings is the natural, low-risk home for a test surface: it's
-  // already a grid of self-contained preference sections, so a fifth one
-  // doesn't touch any other app's layout.
-  { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "diagnostics", label: "Diagnostics", icon: DiagnosticsNavIcon },
-  { id: "about", label: "About", icon: Info },
+  { id: "notifications", label: "Notifications", icon: "bell" },
+  { id: "diagnostics", label: "Diagnostics", icon: "diagnostics" },
+  { id: "about", label: "About", icon: "about" },
 ];
 
 export function SettingsApp() {
@@ -78,7 +56,6 @@ export function SettingsApp() {
     <div className="cattipu-settings">
       <nav className="cattipu-settings__nav" aria-label="Settings sections">
         {SECTIONS.map((s) => {
-          const Icon = s.icon;
           const active = s.id === section;
           return (
             <button
@@ -89,7 +66,7 @@ export function SettingsApp() {
               className="cattipu-settings__nav-item"
             >
               <span className="cattipu-settings__nav-icon" aria-hidden="true">
-                <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
+                <ShellIcon name={s.icon} size={16} />
               </span>
               <span className="cattipu-settings__nav-label">{s.label}</span>
             </button>
@@ -256,7 +233,7 @@ function SoundSection() {
 const SAMPLE_NOTIFICATIONS: {
   type: "info" | "success" | "warning" | "error";
   label: string;
-  iconId: UtilityIconId;
+  iconId: ShellIconName;
   title: string;
   message: string;
 }[] = [
@@ -301,7 +278,7 @@ function NotificationsSection() {
             onClick={() => push(n.type, n.title, { message: n.message })}
             className={`cattipu-cursor-hand cattipu-settings__button ${KEY}`}
           >
-            <UtilityIcon id={n.iconId} size={16} className="shrink-0" />
+            <ShellIcon name={n.iconId} size={16} />
             <span>Send {n.label}</span>
           </button>
         ))}

@@ -39,7 +39,7 @@ export const MENU_COMMANDS = {
   cascade: { label: "Cascade" },
   tile: { label: "Tile" },
   restoreAll: { label: "Restore All", hint: "SIZE + PLACE + ORDER" },
-  changeWallpaper: { label: "Change Wallpaper", icon: "canvas" },
+  changeWallpaper: { label: "Change Wallpaper", icon: "wallpaper" },
 } as const satisfies Record<string, MenuCommandPresentation>;
 
 export type MenuCommandId = keyof typeof MENU_COMMANDS;

@@ -140,6 +140,17 @@ the native set's ink/outline construction assumes a light surface, so a safe swa
 follow-up, not "trivial," per Milestone 13's own gate on top-bar changes) — see
 `MILESTONE13_REPORT.md` for the full remaining-Lucide inventory.
 
+### 6a. PixelForge is the only live icon source (final visual lock)
+
+Every icon a person can reach in the live shell now comes from PixelForge
+(`components/PixelIcon`): sidebar, top bar, desktop objects, Explorer, the Projects tree and
+project cards, every menu, the Toolbox, Settings navigation and its notification samples, and the
+placeholder app window. The tree and cards previously drew their own stroked vector folders.
+They now use the family's native 16 and 32 marks. `components/Icons` (the Milestone 13 grid set)
+is still imported only by the Command Palette and NotificationCenter, both of which the live shell
+does not mount. Construction, palette and manufacturing are recorded in
+`design-system/ICON_REGISTRY_v1.0.md` (revision note v1.0.1).
+
 ## 7. Native notifications (Milestone 12)
 
 `store/useNotificationStore.ts` + `components/System/NotificationCenter.tsx`, mounted once in

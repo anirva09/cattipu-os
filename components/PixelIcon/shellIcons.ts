@@ -56,6 +56,16 @@ import FolderOpen32 from '../../public/pixelforge/shell/32/folderopen.svg';
 import Template32 from '../../public/pixelforge/shell/32/template.svg';
 import Archive32 from '../../public/pixelforge/shell/32/archive.svg';
 import File32 from '../../public/pixelforge/shell/32/file.svg';
+import Wallpaper32 from '../../public/pixelforge/shell/32/wallpaper.svg';
+import Dock32 from '../../public/pixelforge/shell/32/dock.svg';
+import Cursor32 from '../../public/pixelforge/shell/32/cursor.svg';
+import Sound32 from '../../public/pixelforge/shell/32/sound.svg';
+import Diagnostics32 from '../../public/pixelforge/shell/32/diagnostics.svg';
+import About32 from '../../public/pixelforge/shell/32/about.svg';
+import Info32 from '../../public/pixelforge/shell/32/info.svg';
+import Ready32 from '../../public/pixelforge/shell/32/ready.svg';
+import Warning32 from '../../public/pixelforge/shell/32/warning.svg';
+import Error32 from '../../public/pixelforge/shell/32/error.svg';
 
 import Home16 from '../../public/pixelforge/shell/16/home.svg';
 import Projects16 from '../../public/pixelforge/shell/16/projects.svg';
@@ -83,6 +93,16 @@ import FolderOpen16 from '../../public/pixelforge/shell/16/folderopen.svg';
 import Template16 from '../../public/pixelforge/shell/16/template.svg';
 import Archive16 from '../../public/pixelforge/shell/16/archive.svg';
 import File16 from '../../public/pixelforge/shell/16/file.svg';
+import Wallpaper16 from '../../public/pixelforge/shell/16/wallpaper.svg';
+import Dock16 from '../../public/pixelforge/shell/16/dock.svg';
+import Cursor16 from '../../public/pixelforge/shell/16/cursor.svg';
+import Sound16 from '../../public/pixelforge/shell/16/sound.svg';
+import Diagnostics16 from '../../public/pixelforge/shell/16/diagnostics.svg';
+import About16 from '../../public/pixelforge/shell/16/about.svg';
+import Info16 from '../../public/pixelforge/shell/16/info.svg';
+import Ready16 from '../../public/pixelforge/shell/16/ready.svg';
+import Warning16 from '../../public/pixelforge/shell/16/warning.svg';
+import Error16 from '../../public/pixelforge/shell/16/error.svg';
 
 export type ShellIconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -115,6 +135,16 @@ export const SHELL_ICON_IDS = {
   template: 'CAT-PROJ-002',
   archive: 'CAT-EXP-009',
   file: 'CAT-EXP-004',
+  wallpaper: 'CAT-UTIL-022',
+  dock: 'CAT-UTIL-023',
+  cursor: 'CAT-CANVAS-002',
+  sound: 'CAT-UTIL-018',
+  diagnostics: 'CAT-UTIL-024',
+  about: 'CAT-UTIL-025',
+  info: 'CAT-UTIL-007',
+  ready: 'CAT-UTIL-010',
+  warning: 'CAT-UTIL-008',
+  error: 'CAT-UTIL-009',
 } as const;
 
 export const SHELL_ICONS_32 = {
@@ -144,6 +174,16 @@ export const SHELL_ICONS_32 = {
   template: Template32,
   archive: Archive32,
   file: File32,
+  wallpaper: Wallpaper32,
+  dock: Dock32,
+  cursor: Cursor32,
+  sound: Sound32,
+  diagnostics: Diagnostics32,
+  about: About32,
+  info: Info32,
+  ready: Ready32,
+  warning: Warning32,
+  error: Error32,
 } as const satisfies Readonly<Record<string, ShellIconComponent>>;
 
 export const SHELL_ICONS_16 = {
@@ -173,6 +213,16 @@ export const SHELL_ICONS_16 = {
   template: Template16,
   archive: Archive16,
   file: File16,
+  wallpaper: Wallpaper16,
+  dock: Dock16,
+  cursor: Cursor16,
+  sound: Sound16,
+  diagnostics: Diagnostics16,
+  about: About16,
+  info: Info16,
+  ready: Ready16,
+  warning: Warning16,
+  error: Error16,
 } as const satisfies Readonly<Record<string, ShellIconComponent>>;
 
 export type ShellIconName = keyof typeof SHELL_ICONS_32;

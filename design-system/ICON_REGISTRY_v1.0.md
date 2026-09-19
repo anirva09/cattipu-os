@@ -7,6 +7,39 @@
 **Revision:** v1.0  
 **Rule:** Existing approved icons are precedent. This document standardizes their manufacturing language; it does not redesign them.
 
+## Revision note — final visual lock (v1.0.1)
+
+Recorded here so the registry matches what ships. It adds to v1.0; it does not renumber anything.
+
+- **Manufacturing pipeline.** `scripts/gen_pixelforge.mjs` turns the character grids in
+  `scripts/pixelforge/grids/{32,16}/` into the production SVGs under `public/pixelforge/`. The
+  grids are the artwork: one character per pixel, `.` transparent, every other character a key
+  in `scripts/pixelforge/palette.json`. Run `--check` to confirm every committed SVG matches
+  its grid.
+- **Outline tone.** The shipped Sheet 01 family, and every mark manufactured since, uses
+  near-black `#241f12` as the structural outline, not the `#4A4538` listed in I.3. `#241f12` is
+  canonical for PixelForge art.
+- **Construction at 32.** Each part carries a 1px frame, and one 1px exterior ring (4-connected)
+  surrounds the silhouette. The result is a 2px apparent contour with stepped convex corners,
+  1px internal divisions, a 1px top-left highlight and a 1–2px bottom-right shade. Nothing is
+  drawn in row or column 0 or 31. 16px masters are drawn separately with a 1px contour.
+- **Palette.** The Sheet 01 ramps, plus one rear-plane orange `#d98a3a` in the gold ramp
+  (`#f4d78d` / `#e0b34c` / `#d98a3a` / `#a97f26`). It is the shadow plane of the filesystem
+  family, from the reference folder's construction.
+- **Filesystem family.** Folder, Open Folder (CAT-EXP-003), Projects (the project folder),
+  Template Folder (CAT-PROJ-002), Archive (CAT-EXP-009), File (CAT-EXP-004), Explorer,
+  Shortcut, New Project and Recent share one construction: an orange rear plane with a gold
+  rim, white paper over grey, and a gold front plane with a pale lip.
+- **Architect** is a triangle of three purple structural nodes joined by stepped metal buses to
+  a gold core carrying a cream node. **Canvas** is a cream-framed navy work surface with an
+  engineering grid, one placed component and four gold selection handles.
+- **New ids:** Wallpaper CAT-UTIL-022, Dock CAT-UTIL-023, Diagnostics CAT-UTIL-024, About
+  CAT-UTIL-025, Config CAT-FORGE-017, Template Folder CAT-PROJ-002. Settings-navigation and
+  status marks (Info CAT-UTIL-007, Warning -008, Error -009, Success -010, Sound -018,
+  Cursor CAT-CANVAS-002) are 16-first. Their 32 masters are exact 2× pixel doublings of the
+  hand-drawn 16, so they fill the canvas. They are the one exception to the breathing rule
+  and are never rendered at 32 today.
+
 > **Normative language:** **MUST**, **MUST NOT**, **SHOULD**, and **MAY** are requirements terms. An icon that violates a MUST/MUST NOT rule is not PixelForge-compliant.
 
 ## Registry Principles
