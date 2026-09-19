@@ -24,7 +24,7 @@ export interface MenuCommandPresentation {
 }
 
 export const MENU_COMMANDS = {
-  open: { label: "Open", icon: "openfile" },
+  open: { label: "Open", icon: "folderopen" },
   newFolder: { label: "New Folder", icon: "folder" },
   newProject: { label: "New Project", icon: "newproject" },
   newProjectShortcut: { label: "New Project Shortcut", icon: "projects" },

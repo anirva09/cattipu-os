@@ -6,6 +6,7 @@ import {
 } from '../../design-system/tokens';
 
 import { ProgressBar } from '../ProgressBar/ProgressBar';
+import { ShellIcon } from '../PixelIcon';
 
 import '../../design-system/bevel.css';
 import './ProjectCard.css';
@@ -32,19 +33,6 @@ export interface ProjectCardProps
   updated: string;
   owner: string;
   progress: number;
-}
-
-function FolderCardGlyph() {
-  return (
-    <svg
-      className="cattipu-project-card__folder"
-      viewBox="0 0 52 48"
-      aria-hidden="true"
-    >
-      <path d="M2 12h18l4-6h12l4 6h10v32H2Z" />
-      <path className="cattipu-project-card__folder-highlight" d="M4 14h44M4 14v27" />
-    </svg>
-  );
 }
 
 export function ProjectCard({
@@ -83,7 +71,8 @@ export function ProjectCard({
       style={cardStyle}
     >
       <span className="cattipu-project-card__icon">
-        <FolderCardGlyph />
+        {/* The Projects mark at its native 32px, centred in the card's slot. */}
+        <ShellIcon name="projects" size={32} />
       </span>
 
       <span className="cattipu-project-card__copy">

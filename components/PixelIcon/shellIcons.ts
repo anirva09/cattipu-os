@@ -49,6 +49,13 @@ import Favorite32 from '../../public/pixelforge/shell/32/favorite.svg';
 // same manufacturing passes; it is simply not one of Sheet 01's twenty,
 // like `launch`. Copied from the family, not drawn.
 import Folder32 from '../../public/pixelforge/shell/32/folder.svg';
+// Final visual lock — the rest of the filesystem family, the Settings
+// navigation marks and the four status marks. Manufactured from grids by
+// scripts/gen_pixelforge.mjs, like every mark this pipeline now owns.
+import FolderOpen32 from '../../public/pixelforge/shell/32/folderopen.svg';
+import Template32 from '../../public/pixelforge/shell/32/template.svg';
+import Archive32 from '../../public/pixelforge/shell/32/archive.svg';
+import File32 from '../../public/pixelforge/shell/32/file.svg';
 
 import Home16 from '../../public/pixelforge/shell/16/home.svg';
 import Projects16 from '../../public/pixelforge/shell/16/projects.svg';
@@ -72,6 +79,10 @@ import Save16 from '../../public/pixelforge/shell/16/save.svg';
 import OpenFile16 from '../../public/pixelforge/shell/16/openfile.svg';
 import Favorite16 from '../../public/pixelforge/shell/16/favorite.svg';
 import Folder16 from '../../public/pixelforge/shell/16/folder.svg';
+import FolderOpen16 from '../../public/pixelforge/shell/16/folderopen.svg';
+import Template16 from '../../public/pixelforge/shell/16/template.svg';
+import Archive16 from '../../public/pixelforge/shell/16/archive.svg';
+import File16 from '../../public/pixelforge/shell/16/file.svg';
 
 export type ShellIconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -100,6 +111,10 @@ export const SHELL_ICON_IDS = {
   favorite: 'CAT-UTIL-005',
   launch: 'CAT-FAMILY-launch',
   folder: 'CAT-FAMILY-folder',
+  folderopen: 'CAT-EXP-003',
+  template: 'CAT-PROJ-002',
+  archive: 'CAT-EXP-009',
+  file: 'CAT-EXP-004',
 } as const;
 
 export const SHELL_ICONS_32 = {
@@ -125,6 +140,10 @@ export const SHELL_ICONS_32 = {
   openfile: OpenFile32,
   favorite: Favorite32,
   folder: Folder32,
+  folderopen: FolderOpen32,
+  template: Template32,
+  archive: Archive32,
+  file: File32,
 } as const satisfies Readonly<Record<string, ShellIconComponent>>;
 
 export const SHELL_ICONS_16 = {
@@ -150,6 +169,10 @@ export const SHELL_ICONS_16 = {
   openfile: OpenFile16,
   favorite: Favorite16,
   folder: Folder16,
+  folderopen: FolderOpen16,
+  template: Template16,
+  archive: Archive16,
+  file: File16,
 } as const satisfies Readonly<Record<string, ShellIconComponent>>;
 
 export type ShellIconName = keyof typeof SHELL_ICONS_32;

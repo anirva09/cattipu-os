@@ -65,35 +65,6 @@
   margin-right: var(--cattipu-tree-icon-gap);
 }
 
-.cattipu-folder-tree-item__folder-glyph,
-.cattipu-folder-tree-item__project-glyph {
-  display: block;
-  width: 24px;
-  height: 24px;
-  stroke: var(--cattipu-outer-frame);
-  stroke-width: 1.5px;
-  stroke-linejoin: miter;
-}
-
-.cattipu-folder-tree-item__folder-glyph {
-  fill: var(--cattipu-tree-folder);
-}
-
-.cattipu-folder-tree-item__glyph-highlight {
-  fill: none;
-  stroke: var(--cattipu-bevel-top);
-  stroke-width: 1px;
-}
-
-.cattipu-folder-tree-item__project-glyph {
-  fill: var(--cattipu-cream);
-}
-
-.cattipu-folder-tree-item__glyph-detail {
-  fill: none;
-  stroke-width: 1px;
-}
-
 .cattipu-folder-tree-item__label {
   min-width: 0;
   overflow: hidden;

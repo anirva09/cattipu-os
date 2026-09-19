@@ -5,6 +5,8 @@ import {
   cattipuTokens,
 } from '../../design-system/tokens';
 
+import { ShellIcon, type ShellIconName } from '../PixelIcon';
+
 import './FolderTreeItem.css';
 
 export type FolderTreeItemKind = 'folder' | 'project';
@@ -36,31 +38,17 @@ export interface FolderTreeItemProps {
   onSelect?: (id: string) => void;
 }
 
-function FolderGlyph() {
-  return (
-    <svg
-      className="cattipu-folder-tree-item__folder-glyph"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M2 7h7l2-3h5l2 3h4v13H2Z" />
-      <path className="cattipu-folder-tree-item__glyph-highlight" d="M3 8h18M3 8v10" />
-    </svg>
-  );
-}
-
-function ProjectGlyph() {
-  return (
-    <svg
-      className="cattipu-folder-tree-item__project-glyph"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M5 2h10l4 4v16H5Z" />
-      <path d="M15 2v5h4" />
-      <path className="cattipu-folder-tree-item__glyph-detail" d="M8 11h8M8 15h8" />
-    </svg>
-  );
+/**
+ * The row's mark: the PixelForge filesystem family at its handcrafted 16px
+ * size, centred in the 24px icon slot (never a scaled 32). The workspace's
+ * two semantic folders get their own family members, so "Archived" reads as
+ * stored boxes and "Templates" as blueprints before the label is read.
+ */
+function iconFor(node: FolderTreeNode): ShellIconName {
+  if (node.kind === 'project') return 'projects';
+  if (node.id === 'archived') return 'archive';
+  if (node.id === 'templates') return 'template';
+  return 'folder';
 }
 
 export function FolderTreeItem({
@@ -104,7 +92,7 @@ export function FolderTreeItem({
         onClick={() => onSelect?.(node.id)}
       >
         <span className="cattipu-folder-tree-item__icon" aria-hidden="true">
-          {node.kind === 'folder' ? <FolderGlyph /> : <ProjectGlyph />}
+          <ShellIcon name={iconFor(node)} size={16} />
         </span>
         <span className="cattipu-folder-tree-item__label">{node.label}</span>
       </button>

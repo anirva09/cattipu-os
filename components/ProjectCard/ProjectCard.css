@@ -34,22 +34,6 @@
   height: var(--cattipu-project-card-folder-height);
 }
 
-.cattipu-project-card__folder {
-  display: block;
-  width: var(--cattipu-project-card-folder-width);
-  height: var(--cattipu-project-card-folder-height);
-  fill: var(--cattipu-project-card-folder);
-  stroke: var(--cattipu-outer-frame);
-  stroke-width: 1.5px;
-  stroke-linejoin: miter;
-}
-
-.cattipu-project-card__folder-highlight {
-  fill: none;
-  stroke: var(--cattipu-bevel-top);
-  stroke-width: 1px;
-}
-
 .cattipu-project-card__copy {
   display: grid;
   align-content: center;
