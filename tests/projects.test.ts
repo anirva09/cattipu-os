@@ -17,6 +17,7 @@ import {
   orderProjects,
   projectProgress,
   projectStatus,
+  projectStatusLine,
   projectVersionLabel,
   relativeTime,
   toProjectDetails,
@@ -149,6 +150,24 @@ test("the display version is not the schema version", () => {
 });
 
 // ── time ────────────────────────────────────────────────────────────────
+
+test("the status bar's project segment is the active project's derived status", () => {
+  const older = { ...blank(), id: "p-older", lastOpenedAt: "2026-09-01T10:00:00.000Z" };
+  const newer = { ...blank(), id: "p-newer", lastOpenedAt: "2026-09-02T10:00:00.000Z" };
+
+  // Nothing opened yet: there is no project to report on, and no SAVED claim.
+  assert.equal(projectStatusLine([blank(), blank()]), "PROJECT: NONE");
+  assert.equal(projectStatusLine([older, newer]), "PROJECT: NEW");
+
+  // It follows the MOST RECENTLY opened project, and moves with its artifacts.
+  const designing = {
+    ...newer,
+    architect: { data: { prompt: "x" } },
+  } as unknown as CattipuProject;
+  assert.equal(projectStatusLine([older, designing]), "PROJECT: DESIGNING");
+  assert.equal(projectStatusLine([{ ...older, archived: true }, newer]), "PROJECT: NEW");
+  assert.equal(projectStatusLine([older, { ...newer, archived: true }]), "PROJECT: ARCHIVED");
+});
 
 test("relativeTime says 'never' for a project never opened", () => {
   assert.equal(relativeTime(null), "never");

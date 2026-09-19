@@ -258,6 +258,22 @@ export function activeProject(
   return best;
 }
 
+/**
+ * The bottom status bar's project segment: the active project's derived
+ * status, or NONE when nothing has been opened.
+ *
+ * This replaced a fixed "PROJECT SAVED". Nothing observes whether a save
+ * happened, so SAVED was a claim, not a reading. The status is derived
+ * from the project's own artifacts (`projectStatus`), and the active
+ * project is the same one the top bar and the tab title name.
+ */
+export function projectStatusLine(
+  projects: readonly CattipuProject[],
+): string {
+  const active = activeProject(projects);
+  return active ? `PROJECT: ${projectStatus(active).toUpperCase()}` : "PROJECT: NONE";
+}
+
 /** What the top bar shows beside the brand: the active project's name,
  *  or nothing. The TopBar renders "CATTIPU OS" alone when this is
  *  undefined, which is exactly the "no project active" case. */

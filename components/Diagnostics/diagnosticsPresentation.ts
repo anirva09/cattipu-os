@@ -6,7 +6,8 @@
  * shape a `DiagnosticsSnapshot` (or a piece of one) into what the panel
  * displays, so the mapping can be verified without rendering anything.
  * `DeveloperDiagnostics.tsx` and `ServiceHealthRow.tsx` consume the panel
- * helpers; the shell consumes `systemStatusRows` for the desktop widget.
+ * helpers; the shell consumes `systemStatusRows` for the desktop widget
+ * and `memoryStatusLine` for the bottom status bar.
  */
 
 import {
@@ -63,6 +64,19 @@ export function describeSnapshotError(error: unknown): string {
 export function formatObservedAt(iso: string): string {
   const parsed = new Date(iso);
   return Number.isNaN(parsed.getTime()) ? iso : parsed.toLocaleString();
+}
+
+// ── bottom status bar ───────────────────────────────────────────────────
+
+/**
+ * The bottom status bar's memory segment: the memory service's status in
+ * the diagnostics vocabulary. It replaced a fixed "MEMORY INDEXED" with a
+ * 64% meter, shown while no Project Memory system exists. UNKNOWN until
+ * the service answers.
+ */
+export function memoryStatusLine(snapshot: DiagnosticsSnapshot | null): string {
+  const memory = snapshot?.services.find((s) => s.id === "memory");
+  return `MEMORY: ${STATUS_PRESENTATION[memory?.status ?? "unknown"].label}`;
 }
 
 // ── SYSTEM STATUS widget ────────────────────────────────────────────────

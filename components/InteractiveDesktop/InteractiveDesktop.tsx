@@ -17,7 +17,10 @@ import {
   type CattipuWindowTone,
 } from '../../design-system/tokens';
 
-import { BottomStatusBar } from '../BottomStatusBar/BottomStatusBar';
+import {
+  BottomStatusBar,
+  type BottomStatusBarProps,
+} from '../BottomStatusBar/BottomStatusBar';
 import { ProjectsWindow } from '../ProjectsWindow/ProjectsWindow';
 import {
   RightWidgetStack,
@@ -133,6 +136,15 @@ export interface InteractiveDesktopProps {
    * DiagnosticsService.
    */
   statuses?: readonly SystemStatusRow[];
+  /**
+   * Forwarded to the bottom status bar. Undefined leaves the bar on its
+   * package defaults; the live shell passes the project's derived status
+   * and the memory service's status.
+   */
+  statusBar?: Pick<
+    BottomStatusBarProps,
+    'projectState' | 'memoryLabel' | 'memoryPercent'
+  >;
   className?: string;
   style?: CSSProperties;
   /**
@@ -246,6 +258,7 @@ export function InteractiveDesktop({
   creatorName = 'Creator',
   recentProjects,
   statuses,
+  statusBar,
   className,
   style,
   windowContent,
@@ -503,7 +516,10 @@ export function InteractiveDesktop({
         onViewAll={() => launchWindow('projects')}
       />
 
-      <BottomStatusBar className="cattipu-interactive-desktop__bottom-status" />
+      <BottomStatusBar
+        {...statusBar}
+        className="cattipu-interactive-desktop__bottom-status"
+      />
     </main>
   );
 }

@@ -16,7 +16,10 @@ import { ShellIcon } from "@/components/PixelIcon";
 import type { ShellIconName } from "@/components/PixelIcon";
 import { PixelLogo } from "@/components/Boot/PixelLogo";
 import { ProjectsWindow } from "@/components/ProjectsWindow/ProjectsWindow";
-import { systemStatusRows } from "@/components/Diagnostics/diagnosticsPresentation";
+import {
+  memoryStatusLine,
+  systemStatusRows,
+} from "@/components/Diagnostics/diagnosticsPresentation";
 import type { DiagnosticsSnapshot } from "@/lib/contracts/diagnostics/types";
 import { diagnosticsService } from "@/lib/services/diagnostics/diagnosticsService";
 import { useBootStore } from "@/store/useBootStore";
@@ -25,6 +28,7 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 import {
   documentTitle,
   orderProjects,
+  projectStatusLine,
   recentProjectNames,
   toProjectDetails,
   toProjectTree,
@@ -48,14 +52,17 @@ import {
  *  comes from the same family. The rail draws nothing of its own. */
 
 /**
- * SYSTEM STATUS, read from DiagnosticsService.
+ * SYSTEM STATUS and the bottom bar's memory segment, read from
+ * DiagnosticsService.
  *
  * The widget's own defaults are seven fixed claims, and the shell used to
  * pass nothing, so the desktop showed SOUND: ON with sound muted and
- * BUILD: IDLE with no build engine. This asks the diagnostics service for
- * a snapshot and hands the widget the rows `systemStatusRows` reads off
- * it. The shell adds no diagnostics logic and keeps no status store: the
- * snapshot lives in local state and is replaced on every observation.
+ * BUILD: IDLE with no build engine; the bottom bar said MEMORY INDEXED
+ * with no index. This asks the diagnostics service for a snapshot and the
+ * caller reads the widget rows (`systemStatusRows`) and the memory segment
+ * (`memoryStatusLine`) off it. The shell adds no diagnostics logic and
+ * keeps no status store: the snapshot lives in local state and is
+ * replaced on every observation.
  *
  * The service is a pull API, so the shell asks again whenever an owner
  * the rows depend on changes: boot phase (DESKTOP), Settings (SOUND,
@@ -64,7 +71,7 @@ import {
  * latest request may land, so a slow early answer cannot overwrite a
  * newer one.
  */
-function useSystemStatusRows() {
+function useDiagnosticsSnapshot() {
   const [snapshot, setSnapshot] = useState<DiagnosticsSnapshot | null>(null);
 
   useEffect(() => {
@@ -91,7 +98,7 @@ function useSystemStatusRows() {
     };
   }, []);
 
-  return useMemo(() => systemStatusRows(snapshot), [snapshot]);
+  return snapshot;
 }
 
 function useDateTimeText(): string {
@@ -282,7 +289,17 @@ export function CattipuShell() {
   // silently reinstated them and no project created after boot ever
   // appeared. Exactly the trap `workspaceTitle` had, in a second place.
   const recents = useMemo(() => recentProjectNames(projects), [projects]);
-  const statuses = useSystemStatusRows();
+  const snapshot = useDiagnosticsSnapshot();
+  const statuses = useMemo(() => systemStatusRows(snapshot), [snapshot]);
+  // No meter: there is no memory index to measure.
+  const statusBar = useMemo(
+    () => ({
+      projectState: projectStatusLine(projects),
+      memoryLabel: memoryStatusLine(snapshot),
+      memoryPercent: null,
+    }),
+    [projects, snapshot],
+  );
 
   // M21. The applied wallpaper, from Settings through the registry. The
   // desktop slot paints it and tells the object layer its tone; nothing
@@ -312,6 +329,7 @@ export function CattipuShell() {
       workspaceTitle={title ?? ""}
       recentProjects={recents}
       statuses={statuses}
+      statusBar={statusBar}
       creatorName="Creator"
       windowContent={WINDOW_CONTENT}
       renderProjectsWindow={(controls) => <LiveProjectsWindow {...controls} />}

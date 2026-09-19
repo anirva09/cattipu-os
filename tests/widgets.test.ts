@@ -15,6 +15,7 @@ import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import {
+  memoryStatusLine,
   systemStatusRows,
   type SystemStatusReadout,
 } from "@/components/Diagnostics/diagnosticsPresentation";
@@ -37,6 +38,9 @@ loaders[".svg"] = (m) => {
 type WidgetModule = typeof import("@/components/RightWidgetStack/RightWidgetStack");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { RightWidgetStack } = require("@/components/RightWidgetStack/RightWidgetStack") as WidgetModule;
+type StatusBarModule = typeof import("@/components/BottomStatusBar/BottomStatusBar");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { BottomStatusBar } = require("@/components/BottomStatusBar/BottomStatusBar") as StatusBarModule;
 
 const tests: Array<[string, () => Promise<void> | void]> = [];
 const test = (name: string, fn: () => Promise<void> | void) => tests.push([name, fn]);
@@ -160,6 +164,37 @@ test("the widget draws exactly the rows it is given", async () => {
   const html = render({ statuses: rows });
   const drawn = [...html.matchAll(/<dt>([^<]*)<\/dt><dd>([^<]*)<\/dd>/g)].map(([, label, value]) => ({ label, value }));
   assert.deepEqual(drawn, rows);
+});
+
+// ── bottom status bar ──────────────────────────────────────────────────
+
+test("the memory segment reports the memory service, never INDEXED", async () => {
+  assert.equal(memoryStatusLine(null), "MEMORY: UNKNOWN");
+  const line = memoryStatusLine(await diagnosticsService.getSnapshot());
+  assert.equal(line, "MEMORY: NOT IMPLEMENTED");
+  assert.doesNotMatch(line, /INDEXED/);
+});
+
+test("with nothing to measure the bar draws no meter; with a reading it does", () => {
+  const segments = (html: string) =>
+    [...html.matchAll(/<div class="cattipu-bottom-status-bar__segment[^"]*"[^>]*>([\s\S]*?)<\/div>/g)].map((m) => m[1]);
+  const html = renderToStaticMarkup(
+    React.createElement(BottomStatusBar, {
+      projectState: "PROJECT: NONE",
+      memoryLabel: "MEMORY: NOT IMPLEMENTED",
+      memoryPercent: null,
+    }),
+  );
+  const memory = segments(html).find((seg) => seg.includes("MEMORY:"));
+  assert.ok(memory, "memory segment missing");
+  assert.doesNotMatch(memory, /role="progressbar"/, "a meter for a system that does not exist");
+  assert.match(html, /PROJECT: NONE/);
+  assert.doesNotMatch(html, /PROJECT SAVED|MEMORY INDEXED/);
+
+  const measured = renderToStaticMarkup(
+    React.createElement(BottomStatusBar, { memoryLabel: "MEMORY: READY", memoryPercent: 40 }),
+  );
+  assert.match(measured, /aria-label="MEMORY: READY 40 percent"/);
 });
 
 // ── runner ─────────────────────────────────────────────────────────────

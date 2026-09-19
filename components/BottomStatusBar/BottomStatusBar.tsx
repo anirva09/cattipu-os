@@ -31,7 +31,10 @@ export interface BottomStatusBarProps
   extends Omit<HTMLAttributes<HTMLElement>, 'children'> {
   projectState?: string;
   memoryLabel?: string;
-  memoryPercent?: number;
+  /** `null` when there is nothing to measure — no meter is drawn and the
+   *  label takes the whole segment. An empty gauge beside a system that
+   *  does not exist would still claim there is something to fill. */
+  memoryPercent?: number | null;
   buildQueue?: number;
   logCount?: number;
   diskLabel?: string;
@@ -116,13 +119,19 @@ export function BottomStatusBar({
               <strong>{projectState}</strong>
             </div>
 
-            <div className="cattipu-bottom-status-bar__segment cattipu-bottom-status-bar__segment--meter cattipu-bevel--raised">
-              <strong>{memoryLabel}</strong>
-              <StatusMeter
-                value={memoryPercent}
-                label={`${memoryLabel} ${clampPercent(memoryPercent)} percent`}
-              />
-            </div>
+            {memoryPercent === null ? (
+              <div className="cattipu-bottom-status-bar__segment cattipu-bevel--raised">
+                <strong>{memoryLabel}</strong>
+              </div>
+            ) : (
+              <div className="cattipu-bottom-status-bar__segment cattipu-bottom-status-bar__segment--meter cattipu-bevel--raised">
+                <strong>{memoryLabel}</strong>
+                <StatusMeter
+                  value={memoryPercent}
+                  label={`${memoryLabel} ${clampPercent(memoryPercent)} percent`}
+                />
+              </div>
+            )}
 
             <div className="cattipu-bottom-status-bar__segment cattipu-bevel--raised">
               <strong>BUILD QUEUE: {buildQueue}</strong>
