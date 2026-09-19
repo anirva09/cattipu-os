@@ -55,11 +55,6 @@ export const CASCADE_RUN_OFFSET = CASCADE_STEP * 3;
  *  windows. */
 export const TILE_GAP = 8;
 
-/** Below this a window is not worth arranging — two tiles of 100px would
- *  be two unusable windows rather than one usable one. */
-export const MIN_WINDOW_WIDTH = 240;
-export const MIN_WINDOW_HEIGHT = 160;
-
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -183,56 +178,130 @@ export function cascadeLayout(
   return rects;
 }
 
+/** A window's floor, in the shape the layouts need. The values come from
+ *  the window manager's `CATTIPU_WINDOW_MIN_SIZE`; nothing here names one. */
+export interface MinSize {
+  width: number;
+  height: number;
+}
+
 /**
- * Tile: fill the workspace with `count` windows, row by row.
+ * Split `total` into `needs.length` integer shares separated by nothing
+ * (callers subtract their own gaps), or null when the needs cannot all be
+ * met.
  *
- * Columns are `ceil(sqrt(count))`, which keeps tiles closer to the shape
- * of a window than a single row or column would. The last row is short
- * when the count is not a rectangle, and its tiles share the full width
- * rather than leaving a hole — a gap where a window should be reads as a
- * bug, not as a layout.
+ * Equal shares are the Tile look, with the remainder handed out one pixel
+ * per share from the front, so when an equal split satisfies every need
+ * it is returned unchanged. Only when it does not does each share start
+ * from its own need and the room left over get split evenly on top.
+ */
+function distribute(total: number, needs: readonly number[]): number[] | null {
+  const n = needs.length;
+  const base = Math.floor(total / n);
+  const extra = total - base * n;
+  const equal = needs.map((_, i) => base + (i < extra ? 1 : 0));
+  if (equal.every((share, i) => share >= needs[i])) return equal;
+
+  const required = needs.reduce((sum, need) => sum + need, 0);
+  if (required > total) return null;
+  const spare = total - required;
+  const each = Math.floor(spare / n);
+  const rest = spare - each * n;
+  return needs.map((need, i) => need + each + (i < rest ? 1 : 0));
+}
+
+/** The grid shapes Tile tries, in order: `ceil(sqrt(count))` columns
+ *  first because that is the established Tile look, then fewer columns
+ *  down to one, then more up to `count`. Deterministic, so the same
+ *  windows in the same workspace always tile the same way. */
+function columnCandidates(count: number): number[] {
+  const preferred = Math.ceil(Math.sqrt(count));
+  const out = [preferred];
+  for (let c = preferred - 1; c >= 1; c -= 1) out.push(c);
+  for (let c = preferred + 1; c <= count; c += 1) out.push(c);
+  return out;
+}
+
+/** One grid shape, or null when it cannot honour every minimum. */
+function tileGrid(
+  mins: readonly MinSize[],
+  cols: number,
+  box: WorkspaceBox,
+): WindowRect[] | null {
+  const count = mins.length;
+  const rows = Math.ceil(count / cols);
+
+  // Windows fill the grid row by row in the order given; the last row is
+  // short when the count is not a rectangle.
+  const rowMembers: MinSize[][] = [];
+  for (let row = 0; row < rows; row += 1) {
+    rowMembers.push(mins.slice(row * cols, Math.min(count, (row + 1) * cols)));
+  }
+
+  const heights = distribute(
+    box.height - TILE_GAP * (rows - 1),
+    rowMembers.map((members) => Math.max(...members.map((m) => m.height))),
+  );
+  if (!heights) return null;
+
+  const rects: WindowRect[] = [];
+  let y = 0;
+  for (let row = 0; row < rows; row += 1) {
+    const members = rowMembers[row];
+    // The short last row spreads across the full width instead of leaving
+    // a hole on the right.
+    const widths = distribute(
+      box.width - TILE_GAP * (members.length - 1),
+      members.map((m) => m.width),
+    );
+    if (!widths) return null;
+    let x = 0;
+    for (const width of widths) {
+      rects.push({ x, y, width, height: heights[row] });
+      x += width + TILE_GAP;
+    }
+    y += heights[row] + TILE_GAP;
+  }
+  return rects;
+}
+
+/**
+ * Tile: fill the workspace with one tile per window, in the order given,
+ * without putting any window below its own minimum. Or null, when no grid
+ * can.
  *
- * Every edge is an integer and the leftover pixels from the division are
- * handed out one per tile, so the tiles exactly fill the box with no
- * seam and no overlap.
+ * Every candidate grid is checked BEFORE any geometry is used. Clamping an
+ * invalid grid would only move the problem: widening one tile past its
+ * share pushes it into its neighbour. A null tells the caller to use an
+ * arrangement that can hold these windows (the window manager falls back
+ * to Cascade).
+ *
+ * Every edge is an integer, tiles never overlap, and together with the
+ * gaps they fill the box exactly.
+ */
+export function tileLayoutWithin(
+  mins: readonly MinSize[],
+  box: WorkspaceBox,
+): WindowRect[] | null {
+  if (mins.length === 0) return [];
+  for (const cols of columnCandidates(mins.length)) {
+    const rects = tileGrid(mins, cols, box);
+    if (rects) return rects;
+  }
+  return null;
+}
+
+/**
+ * Tile with no minimums: the plain geometry. Columns are
+ * `ceil(sqrt(count))`, rows fill in order, the short last row spreads
+ * across the full width, and the tiles and gaps exactly fill the box.
  */
 export function tileLayout(count: number, box: WorkspaceBox): WindowRect[] {
   if (count <= 0) return [];
-  if (count === 1) {
-    return [{ x: 0, y: 0, width: box.width, height: box.height }];
-  }
-
-  const cols = Math.ceil(Math.sqrt(count));
-  const rows = Math.ceil(count / cols);
-
-  const usableH = box.height - TILE_GAP * (rows - 1);
-  const baseH = Math.floor(usableH / rows);
-  const extraH = usableH - baseH * rows;
-
-  const rects: WindowRect[] = [];
-  let placed = 0;
-  let y = 0;
-
-  for (let row = 0; row < rows; row += 1) {
-    const height = baseH + (row < extraH ? 1 : 0);
-    // The last row takes whatever is left over, so a short row spreads
-    // across the full width instead of leaving a hole on the right.
-    const inRow = Math.min(cols, count - placed);
-    const usableW = box.width - TILE_GAP * (inRow - 1);
-    const baseW = Math.floor(usableW / inRow);
-    const extraW = usableW - baseW * inRow;
-
-    let x = 0;
-    for (let col = 0; col < inRow; col += 1) {
-      const width = baseW + (col < extraW ? 1 : 0);
-      rects.push({ x, y, width, height });
-      x += width + TILE_GAP;
-      placed += 1;
-    }
-    y += height + TILE_GAP;
-  }
-
-  return rects;
+  return tileLayoutWithin(
+    Array.from({ length: count }, () => ({ width: 0, height: 0 })),
+    box,
+  ) as WindowRect[];
 }
 
 // ── boundary safety ─────────────────────────────────────────────────────
@@ -298,15 +367,6 @@ export function unsnapPosition(
     ...restoredSize,
   };
   return keepOnScreen(rect, box);
-}
-
-/** Sizes below this are not windows any more. Used by tile so a crowded
- *  workspace refuses rather than producing unusable slivers. */
-export function isUsableSize(size: {
-  width: number;
-  height: number;
-}): boolean {
-  return size.width >= MIN_WINDOW_WIDTH && size.height >= MIN_WINDOW_HEIGHT;
 }
 
 // ── resizing ────────────────────────────────────────────────────────────

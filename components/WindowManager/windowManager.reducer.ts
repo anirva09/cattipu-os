@@ -1,9 +1,11 @@
 import { cattipuTokens } from '../../design-system/tokens';
 import {
+  CASCADE_ORIGIN,
+  CASCADE_STEP,
   cascadeLayout,
   keepOnScreen,
   snapRect,
-  tileLayout,
+  tileLayoutWithin,
   type SnapRegion,
   type WindowRect,
   type WorkspaceBox,
@@ -254,6 +256,34 @@ function restorePointFor(
   };
 }
 
+/**
+ * Where Tile puts windows when no tile grid can hold them all at their
+ * minimums: a cascade, using the same pure `cascadeLayout` the Cascade
+ * command uses, called directly rather than dispatched.
+ *
+ * The windows get one shared size, fitted so the whole run fits in the
+ * workspace. With reference-size windows, five in a 1366×768 workspace
+ * leave 100×32px of room, and the cascade clamps the last three onto the
+ * same spot, hiding two title bars completely. Shrinking the shared size
+ * by the length of the run keeps every title bar visible. It never goes
+ * below the largest minimum, so no window lands under its own floor.
+ */
+function tileFallbackLayout(
+  mins: readonly WindowSize[],
+  box: WorkspaceBox,
+): WindowRect[] {
+  const run = CASCADE_ORIGIN + CASCADE_STEP * (mins.length - 1);
+  const floor = {
+    width: Math.max(...mins.map((m) => m.width)),
+    height: Math.max(...mins.map((m) => m.height)),
+  };
+  const size = {
+    width: Math.max(floor.width, Math.min(CATTIPU_DEFAULT_WINDOW_SIZE.width, box.width - run)),
+    height: Math.max(floor.height, Math.min(CATTIPU_DEFAULT_WINDOW_SIZE.height, box.height - run)),
+  };
+  return cascadeLayout(mins.length, box, size);
+}
+
 /** Visible windows, back to front. Both arrangements walk the stack in
  *  this order so the frontmost window ends up last — deepest in a
  *  cascade, and still frontmost after it. */
@@ -481,14 +511,28 @@ export function windowManagerReducer(
         return state;
       }
 
-      const rects =
-        action.layout === 'tile'
-          ? tileLayout(ordered.length, action.bounds)
-          : cascadeLayout(
-              ordered.length,
-              action.bounds,
-              CATTIPU_DEFAULT_WINDOW_SIZE,
-            );
+      // Every arrangement honours the same per-window floor manual resizing
+      // does (CATTIPU_WINDOW_MIN_SIZE). Tile is attempted first.
+      const mins = ordered.map((target) => CATTIPU_WINDOW_MIN_SIZE[target.id]);
+      const tiled =
+        action.layout === 'tile' ? tileLayoutWithin(mins, action.bounds) : null;
+
+      let rects: WindowRect[];
+      if (tiled) {
+        rects = tiled;
+      } else if (action.layout === 'tile') {
+        rects = tileFallbackLayout(mins, action.bounds);
+      } else {
+        rects = cascadeLayout(
+          ordered.length,
+          action.bounds,
+          CATTIPU_DEFAULT_WINDOW_SIZE,
+        ).map((rect, index) => ({
+          ...rect,
+          width: Math.max(rect.width, mins[index].width),
+          height: Math.max(rect.height, mins[index].height),
+        }));
+      }
 
       const windows = { ...state.windows };
       ordered.forEach((target, index) => {

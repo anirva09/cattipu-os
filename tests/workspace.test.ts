@@ -32,6 +32,7 @@ import {
   snapRect,
   snapRegionForPointer,
   tileLayout,
+  tileLayoutWithin,
   titleBarReachable,
   unsnapPosition,
   type WindowRect,
@@ -46,8 +47,10 @@ import {
   serializeWindowManagerState,
   windowManagerReducer,
   windowRect,
+  type CattipuWindowId,
   type WindowManagerState,
 } from "@/components/WindowManager/windowManager.reducer";
+import * as workspace from "@/lib/os/workspace";
 
 const tests: Array<[string, () => void]> = [];
 const test = (name: string, fn: () => void) => tests.push([name, fn]);
@@ -669,6 +672,220 @@ test("a resized window survives the session round-trip; older sessions still loa
   const old = parseWindowManagerState(JSON.stringify(legacy));
   assert.ok(old);
   for (const id of CATTIPU_WINDOW_IDS) assert.equal(old.windows[id].size, null, id);
+});
+
+// ── tiling against each window's own minimum ────────────────────────────
+
+/** The real workspace at each supported viewport: minus the 98px rail and
+ *  248px widget reserve across, the 74px top bar and 50px status bar down. */
+const WORKSPACES: Record<string, WorkspaceBox> = {
+  "1366x768": { width: 1020, height: 644 },
+  "1440x900": { width: 1094, height: 776 },
+  "1600x900": { width: 1254, height: 776 },
+  "1920x1080": { width: 1574, height: 956 },
+};
+
+/** Every combination of two or more windows. */
+const COMBINATIONS: CattipuWindowId[][] = [];
+for (let mask = 1; mask < 1 << CATTIPU_WINDOW_IDS.length; mask += 1) {
+  const set = CATTIPU_WINDOW_IDS.filter((_, i) => mask & (1 << i));
+  if (set.length >= 2) COMBINATIONS.push(set);
+}
+
+/** Exactly `ids` open, launched in order (so the last is frontmost). */
+function openOnly(ids: readonly CattipuWindowId[]): WindowManagerState {
+  let state = reduce(createInitialWindowManagerState(), { type: "close", id: "projects" });
+  for (const id of ids) state = reduce(state, { type: "launch", id });
+  return state;
+}
+
+const rectOf = (state: WindowManagerState, id: CattipuWindowId): WindowRect => {
+  const w = state.windows[id];
+  return { ...w.position, ...(w.size ?? CATTIPU_DEFAULT_WINDOW_SIZE) };
+};
+
+/** Did Tile find a grid for these windows, in their back-to-front order? */
+function tileFits(state: WindowManagerState, ids: readonly CattipuWindowId[], box: WorkspaceBox) {
+  const ordered = [...ids].sort((a, b) => state.windows[a].zIndex - state.windows[b].zIndex);
+  return tileLayoutWithin(ordered.map((id) => CATTIPU_WINDOW_MIN_SIZE[id]), box) !== null;
+}
+
+test("the window minimums have one owner: the old generic floor is gone from workspace.ts", () => {
+  const exported = Object.keys(workspace);
+  for (const stale of ["MIN_WINDOW_WIDTH", "MIN_WINDOW_HEIGHT", "isUsableSize"]) {
+    assert.ok(!exported.includes(stale), `${stale} is a second minimum definition`);
+  }
+  // Manual resize and Tile both floor at the same table.
+  for (const id of CATTIPU_WINDOW_IDS) {
+    const resized = reduce(openOnly([id]), { type: "resize", id, size: { width: 1, height: 1 } });
+    assert.deepEqual(resized.windows[id].size, CATTIPU_WINDOW_MIN_SIZE[id], id);
+  }
+});
+
+test("Tile never puts any window below its own minimum, at every viewport and combination", () => {
+  for (const [viewport, box] of Object.entries(WORKSPACES)) {
+    for (const ids of COMBINATIONS) {
+      const state = reduce(openOnly(ids), { type: "arrange", layout: "tile", bounds: box });
+      for (const id of ids) {
+        const { width, height } = rectOf(state, id);
+        const min = CATTIPU_WINDOW_MIN_SIZE[id];
+        assert.ok(
+          width >= min.width && height >= min.height,
+          `${viewport} [${ids}] ${id} tiled to ${width}x${height}, minimum ${min.width}x${min.height}`,
+        );
+      }
+    }
+  }
+});
+
+test("a tile that fits is a real tile: inside the workspace, whole pixels, no overlap", () => {
+  let tiled = 0;
+  for (const box of Object.values(WORKSPACES)) {
+    for (const ids of COMBINATIONS) {
+      const before = openOnly(ids);
+      if (!tileFits(before, ids, box)) continue;
+      tiled += 1;
+      const state = reduce(before, { type: "arrange", layout: "tile", bounds: box });
+      const rects = ids.map((id) => rectOf(state, id));
+      for (const r of rects) {
+        assert.ok(r.x >= 0 && r.y >= 0 && r.x + r.width <= box.width && r.y + r.height <= box.height);
+        for (const v of [r.x, r.y, r.width, r.height]) assert.equal(v, Math.round(v));
+      }
+      for (let a = 0; a < rects.length; a += 1) {
+        for (let b = a + 1; b < rects.length; b += 1) {
+          assert.ok(!overlaps(rects[a], rects[b]), `[${ids}] ${ids[a]} overlaps ${ids[b]}`);
+        }
+      }
+    }
+  }
+  // Tile has not quietly become Cascade: all but one of the 104 cases tile.
+  assert.equal(tiled, COMBINATIONS.length * Object.keys(WORKSPACES).length - 1);
+});
+
+test("where the equal split already fits, Tile looks exactly as it always did", () => {
+  const box = WORKSPACES["1366x768"];
+  for (const ids of [
+    ["projects", "explorer"],
+    ["explorer", "settings", "architect"],
+    ["projects", "architect", "memory", "explorer"],
+  ] as CattipuWindowId[][]) {
+    const state = reduce(openOnly(ids), { type: "arrange", layout: "tile", bounds: box });
+    const order = [...ids].sort((a, b) => state.windows[a].zIndex - state.windows[b].zIndex);
+    assert.deepEqual(order.map((id) => rectOf(state, id)), tileLayout(ids.length, box), `[${ids}]`);
+  }
+});
+
+test("when the equal split is too narrow, shares follow the minimums and still fill the row", () => {
+  // Five windows at 1600: equal thirds are 412px, under Projects' 480.
+  const box = WORKSPACES["1600x900"];
+  const mins = [
+    CATTIPU_WINDOW_MIN_SIZE.projects,
+    CATTIPU_WINDOW_MIN_SIZE.architect,
+    CATTIPU_WINDOW_MIN_SIZE.memory,
+    CATTIPU_WINDOW_MIN_SIZE.explorer,
+    CATTIPU_WINDOW_MIN_SIZE.settings,
+  ];
+  const rects = tileLayoutWithin(mins, box);
+  assert.ok(rects);
+  rects.forEach((r, i) => assert.ok(r.width >= mins[i].width && r.height >= mins[i].height, `${i}`));
+  const firstRow = rects.slice(0, 3);
+  const last = firstRow[firstRow.length - 1];
+  assert.equal(last.x + last.width, box.width, "the row still reaches the right edge");
+});
+
+test("1366x768 regression: five windows no longer squeeze Explorer to 334px", () => {
+  const box = WORKSPACES["1366x768"];
+  // What the old Tile produced for this set: three columns of 334px.
+  assert.equal(tileLayout(5, box)[2].width, 334);
+
+  const ids = [...CATTIPU_WINDOW_IDS];
+  const before = openOnly(ids);
+  assert.equal(tileFits(before, ids, box), false, "five minimums cannot tile in 1020x644");
+  const state = reduce(before, { type: "arrange", layout: "tile", bounds: box });
+  assert.ok(rectOf(state, "explorer").width >= CATTIPU_WINDOW_MIN_SIZE.explorer.width);
+});
+
+test("an impossible tile falls back to a deterministic cascade that hides no title bar", () => {
+  const box = WORKSPACES["1366x768"];
+  const ids = [...CATTIPU_WINDOW_IDS];
+  const once = reduce(openOnly(ids), { type: "arrange", layout: "tile", bounds: box });
+  const twice = reduce(openOnly(ids), { type: "arrange", layout: "tile", bounds: box });
+  assert.deepEqual(once.windows, twice.windows, "same input, same geometry");
+
+  const back = [...ids].sort((a, b) => once.windows[a].zIndex - once.windows[b].zIndex);
+  const rects = back.map((id) => rectOf(once, id));
+  rects.forEach((r, i) => {
+    // Inside the workspace (so above the status bar and clear of the page).
+    assert.ok(r.x >= 0 && r.y >= 0 && r.x + r.width <= box.width && r.y + r.height <= box.height, `${back[i]}`);
+    if (i === 0) return;
+    // Each window steps down and right of the one behind it, so every
+    // title bar keeps a visible strip. No two share a spot.
+    assert.equal(r.x - rects[i - 1].x, CASCADE_STEP);
+    assert.equal(r.y - rects[i - 1].y, CASCADE_STEP);
+  });
+});
+
+test("no workspace can make Tile violate a minimum: a hopeless box still gets a cascade at the floors", () => {
+  const box = { width: 600, height: 300 };
+  assert.equal(
+    tileLayoutWithin([CATTIPU_WINDOW_MIN_SIZE.projects, CATTIPU_WINDOW_MIN_SIZE.settings], box),
+    null,
+  );
+  const ids: CattipuWindowId[] = ["projects", "settings"];
+  const state = reduce(openOnly(ids), { type: "arrange", layout: "tile", bounds: box });
+  for (const id of ids) {
+    const r = rectOf(state, id);
+    assert.ok(r.width >= CATTIPU_WINDOW_MIN_SIZE[id].width && r.height >= CATTIPU_WINDOW_MIN_SIZE[id].height, id);
+  }
+});
+
+test("arranging never changes z-order, tiled or fallen back", () => {
+  for (const box of [WORKSPACES["1920x1080"], WORKSPACES["1366x768"]]) {
+    const before = openOnly([...CATTIPU_WINDOW_IDS]);
+    const after = reduce(before, { type: "arrange", layout: "tile", bounds: box });
+    for (const id of CATTIPU_WINDOW_IDS) assert.equal(after.windows[id].zIndex, before.windows[id].zIndex, id);
+    assert.equal(after.activeWindowId, before.activeWindowId);
+  }
+});
+
+test("resize, then Tile or its fallback, then Restore All: back to the exact resized geometry", () => {
+  for (const box of [WORKSPACES["1600x900"], WORKSPACES["1366x768"]]) {
+    let state = openOnly([...CATTIPU_WINDOW_IDS]);
+    state = reduce(state, { type: "resize", id: "explorer", size: { width: 612, height: 333 } });
+    const before = { ...state.windows };
+    state = reduce(state, { type: "arrange", layout: "tile", bounds: box }, { type: "restoreAll" });
+    for (const id of CATTIPU_WINDOW_IDS) {
+      assert.deepEqual(state.windows[id].position, before[id].position, id);
+      assert.deepEqual(state.windows[id].size ?? CATTIPU_DEFAULT_WINDOW_SIZE, before[id].size ?? CATTIPU_DEFAULT_WINDOW_SIZE, id);
+      assert.equal(state.windows[id].zIndex, before[id].zIndex, id);
+      assert.equal(state.windows[id].restore, null, id);
+    }
+    assert.deepEqual(state.windows.explorer.size, { width: 612, height: 333 });
+  }
+});
+
+test("snapped or maximized, then Tile, then Restore All goes home, not to the snap or the tile", () => {
+  const box = WORKSPACES["1920x1080"];
+  let state = openOnly(["projects", "explorer", "settings"]);
+  const home = { explorer: { ...state.windows.explorer }, settings: { ...state.windows.settings } };
+  state = reduce(
+    state,
+    { type: "snap", id: "explorer", region: "left" },
+    { type: "maximize", id: "settings" },
+    { type: "arrange", layout: "tile", bounds: box },
+  );
+  // Tile kept the first restore point rather than recording the snap.
+  assert.equal(state.windows.explorer.snap, null);
+  assert.deepEqual(state.windows.explorer.restore?.position, home.explorer.position);
+  assert.deepEqual(state.windows.settings.restore?.position, home.settings.position);
+
+  state = reduce(state, { type: "restoreAll" });
+  for (const id of ["explorer", "settings"] as const) {
+    assert.equal(state.windows[id].mode, "normal");
+    assert.equal(state.windows[id].snap, null);
+    assert.deepEqual(state.windows[id].position, home[id].position, id);
+    assert.equal(state.windows[id].zIndex, home[id].zIndex, id);
+  }
 });
 
 // ── run ─────────────────────────────────────────────────────────────────
