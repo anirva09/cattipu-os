@@ -31,6 +31,9 @@ export const CATTIPU_TOP_BAR_REFERENCE = {
   height: 74,
   horizontalPadding: cattipuTokens.spacing[24],
   clusterGap: cattipuTokens.spacing[16],
+  // Search → Bell → Clock. Tighter than clusterGap, which still spaces the
+  // brand/title separator, so the three utility marks read as one group.
+  utilityGap: cattipuTokens.spacing[12],
   inlineGap: cattipuTokens.spacing[8],
   controlSize: 32,
   iconSize: 32,
@@ -123,6 +126,7 @@ export function TopBar({
     '--cattipu-top-bar-height': `${CATTIPU_TOP_BAR_REFERENCE.height}px`,
     '--cattipu-top-bar-padding-x': `${CATTIPU_TOP_BAR_REFERENCE.horizontalPadding}px`,
     '--cattipu-top-bar-cluster-gap': `${CATTIPU_TOP_BAR_REFERENCE.clusterGap}px`,
+    '--cattipu-top-bar-utility-gap': `${CATTIPU_TOP_BAR_REFERENCE.utilityGap}px`,
     '--cattipu-top-bar-inline-gap': `${CATTIPU_TOP_BAR_REFERENCE.inlineGap}px`,
     '--cattipu-top-bar-control-size': `${CATTIPU_TOP_BAR_REFERENCE.controlSize}px`,
     '--cattipu-top-bar-icon-size': `${CATTIPU_TOP_BAR_REFERENCE.iconSize}px`,

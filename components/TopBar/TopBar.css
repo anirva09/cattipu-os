@@ -72,7 +72,7 @@
 
 .cattipu-top-bar__right-cluster {
   flex: 0 0 auto;
-  gap: var(--cattipu-top-bar-cluster-gap);
+  gap: var(--cattipu-top-bar-utility-gap);
   height: 100%;
   margin-left: var(--cattipu-top-bar-padding-x);
 }
