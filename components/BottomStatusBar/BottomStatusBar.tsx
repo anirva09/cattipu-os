@@ -27,6 +27,13 @@ export const CATTIPU_BOTTOM_STATUS_BAR_REFERENCE = {
 type BottomStatusBarStyle = CSSProperties &
   Record<`--cattipu-${string}`, string>;
 
+/**
+ * Every segment is a label its caller has already made truthful, and every
+ * meter is optional. The bar used to default to invented telemetry (PROJECT
+ * SAVED, MEMORY INDEXED at 64%, BUILD QUEUE: 0, LOG: 0, C: 412MB FREE at
+ * 66%). Its defaults are now states that claim nothing: UNKNOWN where a
+ * source exists but has not reported, and N/A or — where no source exists.
+ */
 export interface BottomStatusBarProps
   extends Omit<HTMLAttributes<HTMLElement>, 'children'> {
   projectState?: string;
@@ -35,14 +42,41 @@ export interface BottomStatusBarProps
    *  label takes the whole segment. An empty gauge beside a system that
    *  does not exist would still claim there is something to fill. */
   memoryPercent?: number | null;
-  buildQueue?: number;
-  logCount?: number;
-  diskLabel?: string;
-  diskPercent?: number;
+  buildLabel?: string;
+  logLabel?: string;
+  storageLabel?: string;
+  /** Same contract as `memoryPercent`. */
+  storagePercent?: number | null;
 }
 
 function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, value));
+}
+
+/** A segment whose meter is drawn only when there is a reading. */
+function MeteredSegment({
+  label,
+  percent,
+}: {
+  label: string;
+  percent: number | null;
+}) {
+  if (percent === null) {
+    return (
+      <div className="cattipu-bottom-status-bar__segment cattipu-bevel--raised">
+        <strong>{label}</strong>
+      </div>
+    );
+  }
+  return (
+    <div className="cattipu-bottom-status-bar__segment cattipu-bottom-status-bar__segment--meter cattipu-bevel--raised">
+      <strong>{label}</strong>
+      <StatusMeter
+        value={percent}
+        label={`${label} ${clampPercent(percent)} percent`}
+      />
+    </div>
+  );
 }
 
 function StatusMeter({
@@ -74,13 +108,13 @@ function StatusMeter({
 }
 
 export function BottomStatusBar({
-  projectState = 'PROJECT SAVED',
-  memoryLabel = 'MEMORY INDEXED',
-  memoryPercent = 64,
-  buildQueue = 0,
-  logCount = 0,
-  diskLabel = 'C: 412MB FREE',
-  diskPercent = 66,
+  projectState = 'PROJECT: UNKNOWN',
+  memoryLabel = 'MEMORY: UNKNOWN',
+  memoryPercent = null,
+  buildLabel = 'BUILD: UNKNOWN',
+  logLabel = 'LOG: —',
+  storageLabel = 'STORAGE: N/A',
+  storagePercent = null,
   className,
   style,
   ...footerProps
@@ -119,35 +153,17 @@ export function BottomStatusBar({
               <strong>{projectState}</strong>
             </div>
 
-            {memoryPercent === null ? (
-              <div className="cattipu-bottom-status-bar__segment cattipu-bevel--raised">
-                <strong>{memoryLabel}</strong>
-              </div>
-            ) : (
-              <div className="cattipu-bottom-status-bar__segment cattipu-bottom-status-bar__segment--meter cattipu-bevel--raised">
-                <strong>{memoryLabel}</strong>
-                <StatusMeter
-                  value={memoryPercent}
-                  label={`${memoryLabel} ${clampPercent(memoryPercent)} percent`}
-                />
-              </div>
-            )}
+            <MeteredSegment label={memoryLabel} percent={memoryPercent} />
 
             <div className="cattipu-bottom-status-bar__segment cattipu-bevel--raised">
-              <strong>BUILD QUEUE: {buildQueue}</strong>
+              <strong>{buildLabel}</strong>
             </div>
 
             <div className="cattipu-bottom-status-bar__segment cattipu-bevel--raised">
-              <strong>LOG: {logCount}</strong>
+              <strong>{logLabel}</strong>
             </div>
 
-            <div className="cattipu-bottom-status-bar__segment cattipu-bottom-status-bar__segment--meter cattipu-bevel--raised">
-              <strong>{diskLabel}</strong>
-              <StatusMeter
-                value={diskPercent}
-                label={`${diskLabel} ${clampPercent(diskPercent)} percent`}
-              />
-            </div>
+            <MeteredSegment label={storageLabel} percent={storagePercent} />
           </div>
         </div>
       </div>

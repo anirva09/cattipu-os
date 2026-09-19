@@ -15,7 +15,7 @@ import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import {
-  memoryStatusLine,
+  bottomStatusLines,
   systemStatusRows,
   type SystemStatusReadout,
 } from "@/components/Diagnostics/diagnosticsPresentation";
@@ -168,33 +168,79 @@ test("the widget draws exactly the rows it is given", async () => {
 
 // ── bottom status bar ──────────────────────────────────────────────────
 
-test("the memory segment reports the memory service, never INDEXED", async () => {
-  assert.equal(memoryStatusLine(null), "MEMORY: UNKNOWN");
-  const line = memoryStatusLine(await diagnosticsService.getSnapshot());
-  assert.equal(line, "MEMORY: NOT IMPLEMENTED");
-  assert.doesNotMatch(line, /INDEXED/);
-});
-
-test("with nothing to measure the bar draws no meter; with a reading it does", () => {
-  const segments = (html: string) =>
-    [...html.matchAll(/<div class="cattipu-bottom-status-bar__segment[^"]*"[^>]*>([\s\S]*?)<\/div>/g)].map((m) => m[1]);
-  const html = renderToStaticMarkup(
-    React.createElement(BottomStatusBar, {
-      projectState: "PROJECT: NONE",
-      memoryLabel: "MEMORY: NOT IMPLEMENTED",
-      memoryPercent: null,
+/** The text of each bar segment, and whether it carries a meter. */
+function barSegments(html: string) {
+  return [...html.matchAll(/<div class="cattipu-bottom-status-bar__segment[^"]*"[^>]*>([\s\S]*?)<\/div>/g)].map(
+    ([, inner]) => ({
+      text: inner.match(/<strong>([^<]*)<\/strong>/)?.[1] ?? "",
+      meter: inner.includes('role="progressbar"'),
     }),
   );
-  const memory = segments(html).find((seg) => seg.includes("MEMORY:"));
-  assert.ok(memory, "memory segment missing");
-  assert.doesNotMatch(memory, /role="progressbar"/, "a meter for a system that does not exist");
-  assert.match(html, /PROJECT: NONE/);
-  assert.doesNotMatch(html, /PROJECT SAVED|MEMORY INDEXED/);
+}
 
-  const measured = renderToStaticMarkup(
-    React.createElement(BottomStatusBar, { memoryLabel: "MEMORY: READY", memoryPercent: 40 }),
+/** What the live shell renders: its project line plus bottomStatusLines. */
+const liveBar = (snapshot: Awaited<ReturnType<typeof diagnosticsService.getSnapshot>> | null) =>
+  barSegments(
+    renderToStaticMarkup(
+      React.createElement(BottomStatusBar, {
+        projectState: "PROJECT: DESIGNING",
+        ...bottomStatusLines(snapshot),
+      }),
+    ),
   );
-  assert.match(measured, /aria-label="MEMORY: READY 40 percent"/);
+
+/** Anything that reads like telemetry nobody measured. */
+const FABRICATED = /BUILD QUEUE|QUEUE: \d|LOG: \d|\bC:|\d+\s?[KMGT]B|FREE|INDEXED|SAVED/;
+
+test("the live bar reads PROJECT, MEMORY, BUILD, LOG and STORAGE truthfully", async () => {
+  const segments = liveBar(await diagnosticsService.getSnapshot());
+  assert.deepEqual(
+    segments.map((s) => s.text),
+    ["PROJECT: DESIGNING", "MEMORY: NOT IMPLEMENTED", "BUILD: NOT IMPLEMENTED", "LOG: —", "STORAGE: N/A"],
+  );
+  for (const s of segments) assert.doesNotMatch(s.text, FABRICATED, s.text);
+});
+
+test("before diagnostics answers, services read UNKNOWN; LOG and STORAGE still claim nothing", () => {
+  const texts = liveBar(null).map((s) => s.text);
+  assert.deepEqual(texts.slice(1), ["MEMORY: UNKNOWN", "BUILD: UNKNOWN", "LOG: —", "STORAGE: N/A"]);
+});
+
+test("BUILD follows the forge service, never a queue count", async () => {
+  const snapshot = await diagnosticsService.getSnapshot();
+  assert.equal(bottomStatusLines(snapshot).buildLabel, "BUILD: NOT IMPLEMENTED");
+  const forgeReady = {
+    ...snapshot,
+    services: snapshot.services.map((s) => (s.id === "forge" ? { ...s, status: "ready" as const } : s)),
+  };
+  // The segment speaks the service's state, so a real Forge changes it.
+  assert.equal(bottomStatusLines(forgeReady).buildLabel, "BUILD: READY");
+});
+
+test("no meter renders without a real measurement; a real reading still draws one", async () => {
+  for (const s of liveBar(await diagnosticsService.getSnapshot())) {
+    assert.equal(s.meter, false, `${s.text} draws a meter with nothing measured`);
+  }
+  const measured = barSegments(
+    renderToStaticMarkup(
+      React.createElement(BottomStatusBar, {
+        memoryLabel: "MEMORY: READY",
+        memoryPercent: 40,
+        storageLabel: "STORAGE: 2 OF 5",
+        storagePercent: 40,
+      }),
+    ),
+  );
+  assert.equal(measured.filter((s) => s.meter).length, 2);
+});
+
+test("the bar's own defaults invent nothing either", () => {
+  const segments = barSegments(renderToStaticMarkup(React.createElement(BottomStatusBar, {})));
+  assert.equal(segments.length, 5);
+  for (const s of segments) {
+    assert.doesNotMatch(s.text, FABRICATED, s.text);
+    assert.equal(s.meter, false, s.text);
+  }
 });
 
 // ── runner ─────────────────────────────────────────────────────────────

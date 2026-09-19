@@ -138,12 +138,18 @@ export interface InteractiveDesktopProps {
   statuses?: readonly SystemStatusRow[];
   /**
    * Forwarded to the bottom status bar. Undefined leaves the bar on its
-   * package defaults; the live shell passes the project's derived status
-   * and the memory service's status.
+   * defaults, which claim nothing; the live shell passes the project's
+   * derived status and what DiagnosticsService reports.
    */
   statusBar?: Pick<
     BottomStatusBarProps,
-    'projectState' | 'memoryLabel' | 'memoryPercent'
+    | 'projectState'
+    | 'memoryLabel'
+    | 'memoryPercent'
+    | 'buildLabel'
+    | 'logLabel'
+    | 'storageLabel'
+    | 'storagePercent'
   >;
   className?: string;
   style?: CSSProperties;

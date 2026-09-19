@@ -7,7 +7,7 @@
  * displays, so the mapping can be verified without rendering anything.
  * `DeveloperDiagnostics.tsx` and `ServiceHealthRow.tsx` consume the panel
  * helpers; the shell consumes `systemStatusRows` for the desktop widget
- * and `memoryStatusLine` for the bottom status bar.
+ * and `bottomStatusLines` for the bottom status bar.
  */
 
 import {
@@ -68,15 +68,47 @@ export function formatObservedAt(iso: string): string {
 
 // ── bottom status bar ───────────────────────────────────────────────────
 
+/** The bottom status bar's segments that diagnostics speaks for. */
+export interface BottomStatusLines {
+  memoryLabel: string;
+  memoryPercent: number | null;
+  buildLabel: string;
+  logLabel: string;
+  storageLabel: string;
+  storagePercent: number | null;
+}
+
 /**
- * The bottom status bar's memory segment: the memory service's status in
- * the diagnostics vocabulary. It replaced a fixed "MEMORY INDEXED" with a
- * 64% meter, shown while no Project Memory system exists. UNKNOWN until
- * the service answers.
+ * The bottom status bar's MEMORY, BUILD, LOG and STORAGE segments.
+ *
+ * These replaced invented telemetry: MEMORY INDEXED at 64% with no memory
+ * system, BUILD QUEUE: 0 with no build engine, LOG: 0 with no log, and
+ * C: 412MB FREE at 66% with no disk reading at all.
+ *
+ * - MEMORY, BUILD: the memory and forge services' status, in the words
+ *   SYSTEM STATUS uses. UNKNOWN until the service answers.
+ * - LOG: no log or event source exists, so there is no count to show.
+ *   "—" says nothing is being counted; a 0 would say something was.
+ * - STORAGE: a browser has no truthful free-space reading, so N/A.
+ *
+ * No meter without a measurement (`null`), and nothing measures memory or
+ * storage today.
  */
-export function memoryStatusLine(snapshot: DiagnosticsSnapshot | null): string {
-  const memory = snapshot?.services.find((s) => s.id === "memory");
-  return `MEMORY: ${STATUS_PRESENTATION[memory?.status ?? "unknown"].label}`;
+export function bottomStatusLines(
+  snapshot: DiagnosticsSnapshot | null,
+): BottomStatusLines {
+  const statusOf = (id: string) =>
+    STATUS_PRESENTATION[
+      snapshot?.services.find((s) => s.id === id)?.status ?? "unknown"
+    ].label;
+  return {
+    memoryLabel: `MEMORY: ${statusOf("memory")}`,
+    memoryPercent: null,
+    buildLabel: `BUILD: ${statusOf("forge")}`,
+    logLabel: "LOG: —",
+    storageLabel: "STORAGE: N/A",
+    storagePercent: null,
+  };
 }
 
 // ── SYSTEM STATUS widget ────────────────────────────────────────────────
