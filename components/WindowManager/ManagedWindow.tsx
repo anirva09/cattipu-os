@@ -14,17 +14,21 @@ import {
 import { cattipuCssVariables } from '../../design-system/tokens';
 import {
   keepOnScreen,
+  resizeSize,
   snapRegionForPointer,
   unsnapPosition,
   type SnapRegion,
+  type WindowRect,
 } from '../../lib/os/workspace';
 
 import {
   CATTIPU_DEFAULT_WINDOW_SIZE,
+  CATTIPU_WINDOW_MIN_SIZE,
   windowRect,
   type CattipuWindowId,
   type ManagedWindowState,
   type WindowPosition,
+  type WindowSize,
 } from './windowManager.reducer';
 
 import './WindowManager.css';
@@ -52,6 +56,8 @@ export interface ManagedWindowProps {
   onSnap?: (region: SnapRegion) => void;
   /** Dragging a snapped window pulls it back out to its stored size. */
   onUnsnap?: (position: WindowPosition) => void;
+  /** Release of the resize grip. Without it the window has no grip. */
+  onResize?: (size: WindowSize) => void;
   children: ReactNode;
 }
 
@@ -67,6 +73,13 @@ interface DragSession {
    *  past the threshold pulls it out of the snap. */
   releasedFromSnap: boolean;
   region: SnapRegion | null;
+}
+
+interface ResizeSession {
+  pointerId: number;
+  startClientX: number;
+  startClientY: number;
+  startRect: WindowRect;
 }
 
 /** How far a snapped window must be dragged before it un-snaps. Without
@@ -105,9 +118,13 @@ export function ManagedWindow({
   onSnapPreview,
   onSnap,
   onUnsnap,
+  onResize,
   children,
 }: ManagedWindowProps) {
   const [dragPosition, setDragPosition] = useState<WindowPosition | null>(null);
+  const [resizePreview, setResizePreview] = useState<WindowSize | null>(null);
+  const resizeRef = useRef<ResizeSession | null>(null);
+  const pendingResizeRef = useRef<WindowSize | null>(null);
   const dragRef = useRef<DragSession | null>(null);
   const pendingPositionRef = useRef<WindowPosition>(windowState.position);
   const animationFrameRef = useRef<number | null>(null);
@@ -160,10 +177,20 @@ export function ManagedWindow({
   // far as the eye is concerned: it wears its restored size and follows
   // the pointer.
   const dragging = dragRef.current;
-  const previewRect =
-    dragging?.releasedFromSnap && dragPosition
+  const previewRect = resizePreview
+    ? { x: rect.x, y: rect.y, ...resizePreview }
+    : dragging?.releasedFromSnap && dragPosition
       ? { ...dragPosition, ...ownSize }
       : rect;
+
+  // Only a free window has a size of its own to change. Maximized and
+  // snapped windows take theirs from the workspace, and their restore
+  // point already knows what to go back to.
+  const resizable =
+    Boolean(onResize) &&
+    visible &&
+    windowState.mode === 'normal' &&
+    !windowState.snap;
 
   const managedStyle: ManagedWindowStyle = {
     ...cattipuCssVariables,
@@ -325,6 +352,99 @@ export function ManagedWindow({
     onMove(finalPosition);
   };
 
+  // ── resize grip ─────────────────────────────────────────────────────
+  // Bottom-right only, so the top-left corner — and with it the title bar
+  // and its controls — never moves while a window is made smaller. The
+  // grip raises the window itself and stops the pointerdown there, so the
+  // container never starts a drag; with the pointer captured, the moves
+  // that bubble up find no drag session and are ignored.
+
+  const endResize = () => {
+    if (animationFrameRef.current !== null) {
+      window.cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    const committed = pendingResizeRef.current;
+    resizeRef.current = null;
+    pendingResizeRef.current = null;
+    setResizePreview(null);
+    return committed;
+  };
+
+  const handleResizeDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (!resizable || event.button !== 0) return;
+    // No text selection, and no drag starting on the container beneath.
+    event.preventDefault();
+    event.stopPropagation();
+    onFocus();
+    // A window wider than the room left to its right is DRAWN further left
+    // than it is stored (`keepOnScreen`). Resizing only changes size, so
+    // without this the stored x would take over the moment the window got
+    // narrow enough to fit and it would jump. Recording where it already
+    // is, through the ordinary move, means the corner the title bar hangs
+    // from stays exactly where the person sees it.
+    if (rect.x !== windowState.position.x || rect.y !== windowState.position.y) {
+      onMove({ x: rect.x, y: rect.y });
+    }
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeRef.current = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startRect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+    };
+    const startSize = { width: rect.width, height: rect.height };
+    pendingResizeRef.current = startSize;
+    setResizePreview(startSize);
+  };
+
+  const handleResizeMove = (event: PointerEvent<HTMLDivElement>) => {
+    const session = resizeRef.current;
+    if (!session || session.pointerId !== event.pointerId) return;
+    pendingResizeRef.current = resizeSize(
+      session.startRect,
+      event.clientX - session.startClientX,
+      event.clientY - session.startClientY,
+      bounds,
+      CATTIPU_WINDOW_MIN_SIZE[id],
+    );
+    if (animationFrameRef.current !== null) return;
+    animationFrameRef.current = window.requestAnimationFrame(() => {
+      animationFrameRef.current = null;
+      setResizePreview(pendingResizeRef.current);
+    });
+  };
+
+  /** Release commits the size the pointer reached. */
+  const finishResize = (event: PointerEvent<HTMLDivElement>) => {
+    const session = resizeRef.current;
+    if (!session || session.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    const size = endResize();
+    if (size) onResize?.(size);
+  };
+
+  /** A cancelled or lost pointer commits nothing: the window goes back to
+   *  the size it had. After a normal release the session is already gone,
+   *  so the `lostpointercapture` that follows it does nothing. */
+  const cancelResize = (event: PointerEvent<HTMLDivElement>) => {
+    const session = resizeRef.current;
+    if (!session || session.pointerId !== event.pointerId) return;
+    endResize();
+  };
+
+  // If the window stops being resizable mid-gesture (maximized, snapped,
+  // minimized or closed from elsewhere), the grip unmounts. Drop the
+  // session so no preview size outlives it.
+  useEffect(() => {
+    if (resizable || !resizeRef.current) return;
+    resizeRef.current = null;
+    pendingResizeRef.current = null;
+    setResizePreview(null);
+  }, [resizable]);
+
   // Focus anywhere inside the window raises it, whatever was focused —
   // which is why this is a capture handler and why it ignores the event.
   // It took the event only to satisfy the handler signature; React accepts
@@ -343,6 +463,7 @@ export function ManagedWindow({
       data-mode={windowState.mode}
       data-snap={windowState.snap ?? undefined}
       data-dragging={dragPosition ? 'true' : 'false'}
+      data-resizing={resizePreview ? 'true' : undefined}
       data-visible={visible ? 'true' : 'false'}
       aria-hidden={visible ? undefined : true}
       tabIndex={-1}
@@ -354,6 +475,18 @@ export function ManagedWindow({
       onFocusCapture={handleFocusCapture}
     >
       {children}
+      {resizable && (
+        <div
+          className="cattipu-managed-window__resize cattipu-resize-handle"
+          data-testid="window-resize-grip"
+          aria-hidden="true"
+          onPointerDown={handleResizeDown}
+          onPointerMove={handleResizeMove}
+          onPointerUp={finishResize}
+          onPointerCancel={cancelResize}
+          onLostPointerCapture={cancelResize}
+        />
+      )}
     </div>
   );
 }

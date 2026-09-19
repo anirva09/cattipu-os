@@ -10,6 +10,7 @@ import {
   type CattipuWindowId,
   type WindowArrangement,
   type WindowPosition,
+  type WindowSize,
 } from './windowManager.reducer';
 import type { SnapRegion, WorkspaceBox } from '../../lib/os/workspace';
 import { useUiSound } from '../../hooks/useUiSound';
@@ -104,6 +105,13 @@ export function useWindowManager() {
     [],
   );
 
+  const resizeWindow = useCallback(
+    (id: CattipuWindowId, size: WindowSize) => {
+      dispatch({ type: 'resize', id, size });
+    },
+    [],
+  );
+
   const minimizeWindow = useCallback((id: CattipuWindowId) => {
     dispatch({ type: 'minimize', id });
   }, []);
@@ -160,6 +168,7 @@ export function useWindowManager() {
     launchWindow,
     focusWindow,
     moveWindow,
+    resizeWindow,
     minimizeWindow,
     maximizeWindow,
     closeWindow,

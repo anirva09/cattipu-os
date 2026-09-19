@@ -28,6 +28,7 @@ import {
   TILE_GAP,
   cascadeLayout,
   keepOnScreen,
+  resizeSize,
   snapRect,
   snapRegionForPointer,
   tileLayout,
@@ -38,6 +39,8 @@ import {
 } from "@/lib/os/workspace";
 import {
   CATTIPU_DEFAULT_WINDOW_SIZE,
+  CATTIPU_WINDOW_IDS,
+  CATTIPU_WINDOW_MIN_SIZE,
   createInitialWindowManagerState,
   parseWindowManagerState,
   serializeWindowManagerState,
@@ -560,6 +563,112 @@ test("a snapped, tiled session survives a round trip", () => {
   const restored = parseWindowManagerState(serializeWindowManagerState(state));
   assert.ok(restored);
   assert.deepEqual(restored.windows, state.windows);
+});
+
+// ── manual resizing ─────────────────────────────────────────────────────
+
+test("resize changes width and height only — x, y and z-order are untouched", () => {
+  let state = allOpen();
+  state = reduce(state, { type: "focus", id: "settings" });
+  const before = state.windows.projects;
+  const others = { ...state.windows, projects: undefined };
+  state = reduce(state, { type: "resize", id: "projects", size: { width: 640, height: 360 } });
+  const after = state.windows.projects;
+  assert.deepEqual(after.size, { width: 640, height: 360 });
+  assert.deepEqual(after.position, before.position);
+  assert.equal(after.zIndex, before.zIndex);
+  assert.equal(after.mode, "normal");
+  assert.equal(after.snap, null);
+  assert.equal(after.restore, before.restore);
+  assert.equal(state.activeWindowId, "settings", "resizing does not change who is active");
+  for (const id of CATTIPU_WINDOW_IDS) {
+    if (id !== "projects") assert.equal(state.windows[id], others[id], `${id} was touched`);
+  }
+});
+
+test("resize floors every window at its own minimum, in both dimensions", () => {
+  for (const id of CATTIPU_WINDOW_IDS) {
+    const state = reduce(allOpen(), { type: "resize", id, size: { width: 10, height: 10 } });
+    assert.deepEqual(state.windows[id].size, CATTIPU_WINDOW_MIN_SIZE[id], id);
+  }
+  // The minimums are per window, not one global floor.
+  const widths = new Set(CATTIPU_WINDOW_IDS.map((id) => CATTIPU_WINDOW_MIN_SIZE[id].width));
+  assert.ok(widths.size > 1);
+  // Every floor keeps the whole title bar.
+  for (const id of CATTIPU_WINDOW_IDS) assert.ok(CATTIPU_WINDOW_MIN_SIZE[id].height > TITLE_BAR * 4, id);
+});
+
+test("resize stores whole pixels", () => {
+  const state = reduce(allOpen(), {
+    type: "resize",
+    id: "explorer",
+    size: { width: 612.6, height: 401.4 },
+  });
+  assert.deepEqual(state.windows.explorer.size, { width: 613, height: 401 });
+});
+
+test("the grip clamps to the minimum and to the workspace, in whole pixels", () => {
+  const start: WindowRect = { x: 300, y: 100, width: 700, height: 500 };
+  const min = CATTIPU_WINDOW_MIN_SIZE.architect;
+  assert.deepEqual(resizeSize(start, -2000, -2000, BOX, min), min);
+  assert.deepEqual(resizeSize(start, 5000, 5000, BOX, min), {
+    width: BOX.width - start.x,
+    height: BOX.height - start.y,
+  });
+  const mid = resizeSize(start, -120.4, -80.6, BOX, min);
+  assert.deepEqual(mid, { width: 580, height: 419 });
+  // A window starting too near the edge for its minimum still gets it.
+  assert.deepEqual(
+    resizeSize({ x: BOX.width - 100, y: BOX.height - 50, width: 400, height: 300 }, 0, 0, BOX, min),
+    min,
+  );
+});
+
+test("a maximized or snapped window is not resized; its restore point survives", () => {
+  let state = allOpen();
+  state = reduce(state, { type: "maximize", id: "architect" });
+  const maximized = state.windows.architect;
+  assert.equal(reduce(state, { type: "resize", id: "architect", size: { width: 500, height: 300 } }).windows.architect, maximized);
+
+  state = reduce(allOpen(), { type: "snap", id: "explorer", region: "left" });
+  const snapped = state.windows.explorer;
+  assert.equal(reduce(state, { type: "resize", id: "explorer", size: { width: 500, height: 300 } }).windows.explorer, snapped);
+
+  const hidden = reduce(allOpen(), { type: "minimize", id: "memory" });
+  assert.equal(reduce(hidden, { type: "resize", id: "memory", size: { width: 500, height: 300 } }).windows.memory, hidden.windows.memory);
+});
+
+test("a resized window maximizes and snaps back to its resized geometry exactly", () => {
+  let state = reduce(allOpen(), { type: "resize", id: "projects", size: { width: 520, height: 300 } });
+  const resized = state.windows.projects;
+
+  state = reduce(state, { type: "maximize", id: "projects" }, { type: "maximize", id: "projects" });
+  assert.deepEqual(state.windows.projects.size, resized.size);
+  assert.deepEqual(state.windows.projects.position, resized.position);
+  assert.equal(state.windows.projects.zIndex, resized.zIndex);
+
+  state = reduce(state, { type: "snap", id: "projects", region: "left" }, { type: "restore", id: "projects" });
+  assert.deepEqual(state.windows.projects.size, resized.size);
+  assert.deepEqual(state.windows.projects.position, resized.position);
+  assert.equal(state.windows.projects.snap, null);
+});
+
+test("a resized window survives the session round-trip; older sessions still load", () => {
+  const state = reduce(allOpen(), { type: "resize", id: "settings", size: { width: 460, height: 250 } });
+  const restored = parseWindowManagerState(serializeWindowManagerState(state));
+  assert.ok(restored);
+  assert.deepEqual(restored.windows.settings.size, { width: 460, height: 250 });
+
+  // A session saved before sizes existed (M17) still loads at reference size.
+  const legacy = JSON.parse(serializeWindowManagerState(createInitialWindowManagerState()));
+  for (const id of CATTIPU_WINDOW_IDS) {
+    delete legacy.windows[id].size;
+    delete legacy.windows[id].snap;
+    delete legacy.windows[id].restore;
+  }
+  const old = parseWindowManagerState(JSON.stringify(legacy));
+  assert.ok(old);
+  for (const id of CATTIPU_WINDOW_IDS) assert.equal(old.windows[id].size, null, id);
 });
 
 // ── run ─────────────────────────────────────────────────────────────────

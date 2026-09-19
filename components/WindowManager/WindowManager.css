@@ -39,8 +39,46 @@
     visibility 0s linear var(--cattipu-window-interaction-ms);
 }
 
-.cattipu-managed-window[data-dragging='true'] {
+.cattipu-managed-window[data-dragging='true'],
+.cattipu-managed-window[data-resizing='true'] {
   transition: none;
+}
+
+.cattipu-managed-window[data-resizing='true'] {
+  user-select: none;
+}
+
+/* The resize grip: the bottom-right corner of a free window, drawn by
+ * nothing. The chrome is unchanged; the Resize cursor (globals.css,
+ * `.cattipu-resize-handle`) is what says the corner can be pulled. */
+.cattipu-managed-window__resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  touch-action: none;
+  cursor: nwse-resize;
+}
+
+/* A window made smaller than its content scrolls instead of cutting the
+ * content off. At a window's own size nothing overflows, so no scrollbar
+ * appears and the chrome renders exactly as before. */
+.cattipu-managed-window .cattipu-window__body {
+  overflow: auto;
+}
+
+/* Architect's layout is flex, and its panels give way before the frame
+ * does: at a compact size the graph canvas and a side column shrank to
+ * 0px high and the architecture simply vanished. Its fixed side panels
+ * and header rows take about 392×281, so below a 640×420 body the canvas
+ * (248×139 here) starts to collapse. Its content keeps that floor and
+ * the window body scrolls instead, the same way Projects keeps its
+ * natural composition. Larger windows are unaffected. */
+.cattipu-managed-window[data-window-id='architect'] .cattipu-window__body > * {
+  min-width: 640px;
+  min-height: 420px;
 }
 
 .cattipu-managed-window > .cattipu-window {

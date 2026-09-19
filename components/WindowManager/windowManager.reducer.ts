@@ -59,6 +59,30 @@ export const CATTIPU_DEFAULT_WINDOW_SIZE: WindowSize = {
   height: cattipuTokens.geometry.windowReferenceHeight,
 };
 
+/**
+ * The smallest each window can be dragged to, measured from its content
+ * (1366×768, 100%). Below these, content is lost rather than scrolled, or
+ * the window stops being usable:
+ *
+ * - projects  480×280: the fixed 904×558 composition scrolls inside the
+ *   window body; the folder tree plus a strip of the list stay in view.
+ * - architect 400×240: reflows across; its panels scroll top to bottom.
+ * - memory    320×200: the placeholder fits whole.
+ * - explorer  420×240: the narrowest width at which one 112px file tile
+ *   still fits beside the 248px folder tree. Narrower, the files vanish.
+ * - settings  440×240: Wallpaper Studio names keep ≥100px before their
+ *   ellipsis; the section content scrolls.
+ *
+ * Every height leaves the whole title bar and its three controls in view.
+ */
+export const CATTIPU_WINDOW_MIN_SIZE: Record<CattipuWindowId, WindowSize> = {
+  projects: { width: 480, height: 280 },
+  architect: { width: 400, height: 240 },
+  memory: { width: 320, height: 200 },
+  explorer: { width: 420, height: 240 },
+  settings: { width: 440, height: 240 },
+};
+
 export interface ManagedWindowState {
   id: CattipuWindowId;
   open: boolean;
@@ -105,6 +129,9 @@ export type WindowManagerAction =
    *  would be wrong. `restore` is the exact-inverse action. */
   | { type: 'unsnap'; id: CattipuWindowId; position: WindowPosition }
   | { type: 'restore'; id: CattipuWindowId }
+  /** A person dragged the bottom-right resize grip. Size only: position
+   *  and z-order are not the grip's to change. */
+  | { type: 'resize'; id: CattipuWindowId; size: WindowSize }
   | { type: 'restoreAll' }
   | { type: 'arrange'; layout: WindowArrangement; bounds: WorkspaceBox }
   | { type: 'hydrate'; state: WindowManagerState };
@@ -404,6 +431,32 @@ export function windowManagerReducer(
           ...state.windows,
           [action.id]: { ...target, mode: 'normal', zIndex },
         }),
+      };
+    }
+
+    case 'resize': {
+      const target = state.windows[action.id];
+      // A maximized or snapped window's size belongs to the workspace, and
+      // its restore point is what it goes back to. Only a free window has a
+      // size of its own to change; the others are restored first.
+      if (!target.open || target.mode !== 'normal' || target.snap) {
+        return state;
+      }
+      // The floor is enforced here as well as at the grip, so no caller
+      // can shrink a window into something that is not one.
+      const min = CATTIPU_WINDOW_MIN_SIZE[action.id];
+      return {
+        ...state,
+        windows: {
+          ...state.windows,
+          [action.id]: {
+            ...target,
+            size: {
+              width: Math.max(min.width, Math.round(action.size.width)),
+              height: Math.max(min.height, Math.round(action.size.height)),
+            },
+          },
+        },
       };
     }
 

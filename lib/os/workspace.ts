@@ -308,3 +308,31 @@ export function isUsableSize(size: {
 }): boolean {
   return size.width >= MIN_WINDOW_WIDTH && size.height >= MIN_WINDOW_HEIGHT;
 }
+
+// ── resizing ────────────────────────────────────────────────────────────
+
+/**
+ * The size a bottom-right resize grip produces after the pointer has moved
+ * (dx, dy) from where the grip was taken.
+ *
+ * Only the size is returned. The top-left corner is not the grip's to move,
+ * which is what keeps the title bar and its controls exactly where they
+ * were: a window made shorter cannot push its own title bar away. The far
+ * edges stop at the workspace so the grip stays on screen, and never go
+ * below the window's own minimum however far the pointer travels. Whole
+ * pixels only, like every other rectangle in this module.
+ */
+export function resizeSize(
+  start: WindowRect,
+  dx: number,
+  dy: number,
+  box: WorkspaceBox,
+  min: { width: number; height: number },
+): { width: number; height: number } {
+  const maxWidth = Math.max(min.width, Math.floor(box.width - start.x));
+  const maxHeight = Math.max(min.height, Math.floor(box.height - start.y));
+  return {
+    width: clamp(Math.round(start.width + dx), min.width, maxWidth),
+    height: clamp(Math.round(start.height + dy), min.height, maxHeight),
+  };
+}

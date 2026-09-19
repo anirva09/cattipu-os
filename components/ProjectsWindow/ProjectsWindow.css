@@ -13,8 +13,20 @@
     var(--cattipu-projects-right-width);
   width: 100%;
   height: 100%;
-  min-width: 0;
-  min-height: 0;
+  /* The columns and rows are fixed pixels, so this is the smallest the
+   * composition can be drawn. Letting it shrink past that (it was
+   * `min-width: 0; min-height: 0`) cut the details panel and the tree off
+   * inside a snapped, tiled or resized window. At that floor it overflows
+   * the window body, which scrolls. At the reference size the floor is
+   * exactly the body, so nothing moves. */
+  min-width: calc(
+    var(--cattipu-projects-tree-width) + var(--cattipu-projects-divider-size) +
+      var(--cattipu-projects-right-width)
+  );
+  min-height: calc(
+    var(--cattipu-projects-list-height) + var(--cattipu-projects-divider-size) +
+      var(--cattipu-projects-details-height)
+  );
   margin: 0;
   padding: 0;
   overflow: hidden;

@@ -257,6 +257,7 @@ export function InteractiveDesktop({
     launchWindow,
     focusWindow,
     moveWindow,
+    resizeWindow,
     minimizeWindow,
     maximizeWindow,
     closeWindow,
@@ -445,6 +446,7 @@ export function InteractiveDesktop({
           onSnapPreview={setSnapPreview}
           onSnap={(region) => snapWindow('projects', region)}
           onUnsnap={(position) => unsnapWindow('projects', position)}
+          onResize={(size) => resizeWindow('projects', size)}
         >
           {renderProjectsWindow?.({
             onMinimize: () => minimizeWindow('projects'),
@@ -474,6 +476,7 @@ export function InteractiveDesktop({
               onSnapPreview={setSnapPreview}
               onSnap={(region) => snapWindow(definition.id, region)}
               onUnsnap={(position) => unsnapWindow(definition.id, position)}
+              onResize={(size) => resizeWindow(definition.id, size)}
             >
               <Window
                 title={definition.title}
