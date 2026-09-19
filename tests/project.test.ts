@@ -195,6 +195,91 @@ test("Architect sub-object ids (nodes/edges/apis/etc.) are preserved verbatim th
   assert.equal(data.roadmap[0].id, architecture.roadmap[0].id);
 });
 
+// ── seed identity is deterministic across server and client ──────────
+//
+// The page is rendered twice from two separate evaluations of the store
+// module: once on the server, once in the browser. zustand hydrates from
+// the store's initial state, so any id minted from the clock or from
+// Math.random at module load puts a different `data-entry-id` into each
+// render — the Explorer hydration mismatch. Each evaluation below gets a
+// fresh module instance and its own clock and random source, which is
+// what two machines are.
+
+type ProjectStoreModule = typeof import("@/store/useProjectStore");
+
+function evaluateProjectStore(clock: number, random: number): ProjectStoreModule {
+  for (const key of Object.keys(require.cache)) {
+    if (/[\\/]store[\\/]useProjectStore\.ts$/.test(key)) delete require.cache[key];
+  }
+  const realNow = Date.now;
+  const realRandom = Math.random;
+  Date.now = () => clock;
+  Math.random = () => random;
+  try {
+    // A fresh module instance needs the CommonJS cache that tsx runs this
+    // file under; a static or dynamic import would hand back the cached one.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("@/store/useProjectStore") as ProjectStoreModule;
+  } finally {
+    Date.now = realNow;
+    Math.random = realRandom;
+  }
+}
+
+test("seed projects are identical in two independent evaluations (server vs client)", () => {
+  const server = evaluateProjectStore(1_756_000_000_000, 0.11).useProjectStore;
+  const client = evaluateProjectStore(1_756_000_987_654, 0.83).useProjectStore;
+  assert.notEqual(server, client, "each evaluation must be its own module instance");
+  const serverSeed = server.getInitialState().projects;
+  const clientSeed = client.getInitialState().projects;
+  assert.equal(serverSeed.length, 3);
+  assert.deepEqual(
+    clientSeed.map((p) => p.id),
+    serverSeed.map((p) => p.id),
+  );
+  assert.deepEqual(clientSeed, serverSeed);
+  assert.equal(new Set(serverSeed.map((p) => p.id)).size, serverSeed.length);
+});
+
+test("persisted project ids replace the seed verbatim — hydration never re-mints them", () => {
+  const saved = [createProject({ name: "Saved One" }), createProject({ name: "Saved Two" })];
+  const data = new Map<string, string>([
+    ["cattipu-projects", JSON.stringify({ state: { projects: saved }, version: PROJECT_SCHEMA_VERSION })],
+  ]);
+  const storage: Storage = {
+    get length() {
+      return data.size;
+    },
+    clear: () => data.clear(),
+    getItem: (k: string) => data.get(k) ?? null,
+    key: (i: number) => [...data.keys()][i] ?? null,
+    removeItem: (k: string) => void data.delete(k),
+    setItem: (k: string, v: string) => void data.set(k, String(v)),
+  };
+  const g = globalThis as Record<string, unknown>;
+  const had = { localStorage: Object.getOwnPropertyDescriptor(g, "localStorage"), window: Object.getOwnPropertyDescriptor(g, "window") };
+  Object.defineProperty(g, "localStorage", { value: storage, configurable: true, writable: true });
+  Object.defineProperty(g, "window", { value: globalThis, configurable: true, writable: true });
+  try {
+    const store = evaluateProjectStore(1_756_000_000_000, 0.5).useProjectStore;
+    // The first (hydration) render still sees the deterministic seed…
+    assert.deepEqual(
+      store.getInitialState().projects.map((p) => p.id),
+      evaluateProjectStore(1, 0.9).useProjectStore.getInitialState().projects.map((p) => p.id),
+    );
+    // …and the persisted record then replaces it, ids untouched.
+    assert.deepEqual(
+      store.getState().projects.map((p) => p.id),
+      saved.map((p) => p.id),
+    );
+  } finally {
+    for (const [name, desc] of Object.entries(had)) {
+      if (desc) Object.defineProperty(g, name, desc);
+      else delete g[name];
+    }
+  }
+});
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }

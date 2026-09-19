@@ -107,12 +107,28 @@ const SEED_STAMPS = [
   "2026-08-27T04:52:00.000Z",
 ] as const;
 
+/**
+ * Fixed for the same reason. `nextProjectId()` is clock + random, so the
+ * server and the browser each minted their own seed ids and Explorer's
+ * `data-entry-id` disagreed on hydration. zustand hydrates from this
+ * initial state before applying anything persisted, so the seed has to be
+ * identical in both bundles. Persisted projects keep whatever id they were
+ * saved with — this only names the demo content a fresh install starts
+ * with. The `seed-` segment cannot collide with a minted id, which always
+ * starts with a base-36 timestamp.
+ */
+const SEED_IDS = [
+  "project-seed-banking-platform",
+  "project-seed-ai-saas-starter",
+  "project-seed-cattipu-website",
+] as const;
+
 function seed(
   index: number,
   opts: Parameters<typeof createProject>[0],
 ): CattipuProject {
   const at = SEED_STAMPS[index];
-  return { ...createProject(opts), createdAt: at, updatedAt: at };
+  return { ...createProject(opts), id: SEED_IDS[index], createdAt: at, updatedAt: at };
 }
 
 const SEED_PROJECTS: CattipuProject[] = [
