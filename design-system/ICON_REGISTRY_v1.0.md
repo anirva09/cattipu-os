@@ -40,6 +40,34 @@ Recorded here so the registry matches what ships. It adds to v1.0; it does not r
   hand-drawn 16, so they fill the canvas. They are the one exception to the breathing rule
   and are never rendered at 32 today.
 
+## Revision note — family unification (v1.0.2)
+
+The top-bar Search, Bell and Clock are the canonical construction reference. Every rail and
+Toolbox mark was rebuilt to match them. It adds to v1.0.1 and renumbers nothing.
+
+- **Construction.** One bold object fills the canvas (roughly 45–80% occupancy, like the
+  reference trio at 57–82%). Each part is one pigment ramp: a 1px highlight top-left, the body,
+  and a 1px shade bottom-right. Parts are divided by a single 1px near-black line. There are
+  no frames nested inside frames, no 1px connectors, and at most two bold 2px details.
+- **Rail.** Projects is the family folder carrying a red project plate. Architect is a
+  purple root node with a gold core, joined by one metal bus to two child nodes. Canvas is a
+  navy design plane with a placed cream component in four gold selection handles. Forge is a
+  metal anvil with a gold workpiece on its face. Memory is a green index store with filed
+  cream cards, one gold card raised, and a label plate. Launch is a cream hull with a red nose
+  and fins, a glass port and a gold ignition. Explorer is the family folder under the Search
+  lens (same metal ring and glass). Settings is a coarse eight-tooth metal gear with a navy hub.
+  These supersede the v1.0.1 Architect and Canvas descriptions above.
+- **Toolbox.** Entity is a cream record with a purple header and key/field rows. Service is a
+  footed metal unit with two navy bays and run lamps. Flow is a green start node branching
+  through one metal bus to navy and gold nodes. Screen is a cream-bezel monitor with a navy
+  display. API is a navy endpoint mated to a cream plug by gold contacts. Job is a navy
+  recurring loop arrow around a gold job. Script is a folded sheet with a navy prompt, a gold
+  cursor and code lines. Config is a cream control plate with three navy tracks and gold knobs.
+- **Unchanged.** Search, Bell, Clock and Home, the filesystem family, the Settings-navigation
+  marks and the status marks already follow this construction.
+- Where these silhouettes differ from the Volume III tables (Forge's crossed tools, Memory's
+  microchip, Service's bust, Entity's crosshair, Config's tools), v1.0.2 governs.
+
 > **Normative language:** **MUST**, **MUST NOT**, **SHOULD**, and **MAY** are requirements terms. An icon that violates a MUST/MUST NOT rule is not PixelForge-compliant.
 
 ## Registry Principles
