@@ -19,7 +19,10 @@ import {
 
 import { BottomStatusBar } from '../BottomStatusBar/BottomStatusBar';
 import { ProjectsWindow } from '../ProjectsWindow/ProjectsWindow';
-import { RightWidgetStack } from '../RightWidgetStack/RightWidgetStack';
+import {
+  RightWidgetStack,
+  type SystemStatusRow,
+} from '../RightWidgetStack/RightWidgetStack';
 import {
   Sidebar,
   type CattipuSidebarIcons,
@@ -124,6 +127,12 @@ export interface InteractiveDesktopProps {
    * ones; the default stays for the package's standalone story.
    */
   recentProjects?: readonly string[];
+  /**
+   * Forwarded to the SYSTEM STATUS widget. Undefined leaves the widget on
+   * its package defaults; the live shell passes rows read from
+   * DiagnosticsService.
+   */
+  statuses?: readonly SystemStatusRow[];
   className?: string;
   style?: CSSProperties;
   /**
@@ -236,6 +245,7 @@ export function InteractiveDesktop({
   workspaceTitle = 'Banking Platform',
   creatorName = 'Creator',
   recentProjects,
+  statuses,
   className,
   style,
   windowContent,
@@ -486,6 +496,7 @@ export function InteractiveDesktop({
         className="cattipu-interactive-desktop__right-widgets"
         creatorName={creatorName}
         recentProjects={recentProjects}
+        statuses={statuses}
         onViewAll={() => launchWindow('projects')}
       />
 

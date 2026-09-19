@@ -16,7 +16,12 @@ import { ShellIcon } from "@/components/PixelIcon";
 import type { ShellIconName } from "@/components/PixelIcon";
 import { PixelLogo } from "@/components/Boot/PixelLogo";
 import { ProjectsWindow } from "@/components/ProjectsWindow/ProjectsWindow";
+import { systemStatusRows } from "@/components/Diagnostics/diagnosticsPresentation";
+import type { DiagnosticsSnapshot } from "@/lib/contracts/diagnostics/types";
+import { diagnosticsService } from "@/lib/services/diagnostics/diagnosticsService";
+import { useBootStore } from "@/store/useBootStore";
 import { useProjectStore } from "@/store/useProjectStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import {
   documentTitle,
   orderProjects,
@@ -41,6 +46,53 @@ import {
 /** The nine rail items the package's Sidebar declares. Every one resolves to
  *  a frozen PixelForge mark — Sheet 01 covers eight of them and `launch`
  *  comes from the same family. The rail draws nothing of its own. */
+
+/**
+ * SYSTEM STATUS, read from DiagnosticsService.
+ *
+ * The widget's own defaults are seven fixed claims, and the shell used to
+ * pass nothing, so the desktop showed SOUND: ON with sound muted and
+ * BUILD: IDLE with no build engine. This asks the diagnostics service for
+ * a snapshot and hands the widget the rows `systemStatusRows` reads off
+ * it. The shell adds no diagnostics logic and keeps no status store: the
+ * snapshot lives in local state and is replaced on every observation.
+ *
+ * The service is a pull API, so the shell asks again whenever an owner
+ * the rows depend on changes: boot phase (DESKTOP), Settings (SOUND,
+ * CURSOR) and projects (PROJECTS). ARCHITECT, BUILD and MEMORY describe
+ * code that exists or does not; they cannot change at runtime. Only the
+ * latest request may land, so a slow early answer cannot overwrite a
+ * newer one.
+ */
+function useSystemStatusRows() {
+  const [snapshot, setSnapshot] = useState<DiagnosticsSnapshot | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    let latest = 0;
+    const observe = () => {
+      const request = ++latest;
+      const land = (next: DiagnosticsSnapshot | null) => {
+        if (live && request === latest) setSnapshot(next);
+      };
+      // A failed observation is not a reading; UNKNOWN is the honest row.
+      diagnosticsService.getSnapshot().then(land, () => land(null));
+    };
+
+    observe();
+    const stop = [
+      useBootStore.subscribe(observe),
+      useSettingsStore.subscribe(observe),
+      useProjectStore.subscribe(observe),
+    ];
+    return () => {
+      live = false;
+      stop.forEach((unsubscribe) => unsubscribe());
+    };
+  }, []);
+
+  return useMemo(() => systemStatusRows(snapshot), [snapshot]);
+}
 
 function useDateTimeText(): string {
   /**
@@ -230,6 +282,7 @@ export function CattipuShell() {
   // silently reinstated them and no project created after boot ever
   // appeared. Exactly the trap `workspaceTitle` had, in a second place.
   const recents = useMemo(() => recentProjectNames(projects), [projects]);
+  const statuses = useSystemStatusRows();
 
   // M21. The applied wallpaper, from Settings through the registry. The
   // desktop slot paints it and tells the object layer its tone; nothing
@@ -258,6 +311,7 @@ export function CattipuShell() {
       // `workspaceTitle ? ... : null` renders the brand alone.
       workspaceTitle={title ?? ""}
       recentProjects={recents}
+      statuses={statuses}
       creatorName="Creator"
       windowContent={WINDOW_CONTENT}
       renderProjectsWindow={(controls) => <LiveProjectsWindow {...controls} />}

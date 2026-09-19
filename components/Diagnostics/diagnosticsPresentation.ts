@@ -5,13 +5,15 @@
  * No React, no store reads, no service calls: these functions only
  * shape a `DiagnosticsSnapshot` (or a piece of one) into what the panel
  * displays, so the mapping can be verified without rendering anything.
- * `DeveloperDiagnostics.tsx` and `ServiceHealthRow.tsx` are the only
- * consumers.
+ * `DeveloperDiagnostics.tsx` and `ServiceHealthRow.tsx` consume the panel
+ * helpers; the shell consumes `systemStatusRows` for the desktop widget.
  */
 
 import {
   DIAGNOSTIC_STATUSES,
   type DiagnosticStatus,
+  type DiagnosticValue,
+  type DiagnosticsSnapshot,
   type ServiceHealth,
 } from "@/lib/contracts/diagnostics/types";
 
@@ -61,4 +63,82 @@ export function describeSnapshotError(error: unknown): string {
 export function formatObservedAt(iso: string): string {
   const parsed = new Date(iso);
   return Number.isNaN(parsed.getTime()) ? iso : parsed.toLocaleString();
+}
+
+// ── SYSTEM STATUS widget ────────────────────────────────────────────────
+
+/** One SYSTEM STATUS row. Structurally the widget's `SystemStatusRow`;
+ *  declared here so this module stays free of component imports. */
+export interface SystemStatusReadout {
+  label: string;
+  value: string;
+}
+
+const SYSTEM_STATUS_LABELS = [
+  "DESKTOP:",
+  "ARCHITECT:",
+  "BUILD:",
+  "PROJECTS:",
+  "MEMORY:",
+  "SOUND:",
+  "CURSOR:",
+] as const;
+
+/**
+ * The desktop's SYSTEM STATUS rows, read off a `DiagnosticsSnapshot`.
+ *
+ * These rows used to be seven hardcoded claims: BUILD: IDLE with no build
+ * engine, MEMORY INDEXED: OK with no index, and SOUND: ON after sound was
+ * muted. Each row now repeats what the diagnostics service observed and
+ * decides nothing itself:
+ *
+ * - DESKTOP, BUILD, MEMORY: the status of the system, forge and memory
+ *   services, in the same words the diagnostics panel uses.
+ * - ARCHITECT: SEEDED while Architect works but its generator returns seed
+ *   templates, because no AI provider is connected. It reads READY only
+ *   once the ai service does.
+ * - PROJECTS: the project count.
+ * - SOUND, CURSOR: the Settings toggles as the service reported them.
+ *
+ * With no snapshot yet (the server render, and the client's first render
+ * before the service answers), every row is UNKNOWN. That is honest, and
+ * it is the same on both sides of hydration.
+ */
+export function systemStatusRows(
+  snapshot: DiagnosticsSnapshot | null,
+): SystemStatusReadout[] {
+  const unknown = STATUS_PRESENTATION.unknown.label;
+  if (!snapshot) {
+    return SYSTEM_STATUS_LABELS.map((label) => ({ label, value: unknown }));
+  }
+
+  const service = (id: string) => snapshot.services.find((s) => s.id === id);
+  const statusOf = (id: string) => {
+    const found = service(id);
+    return found ? STATUS_PRESENTATION[found.status].label : unknown;
+  };
+  const detail = (serviceId: string, checkId: string, key: string) =>
+    service(serviceId)?.checks?.find((c) => c.id === checkId)?.detail?.[key];
+  const toggle = (value: DiagnosticValue | undefined) =>
+    typeof value === "boolean" ? (value ? "ON" : "OFF") : unknown;
+
+  const architect = service("architect")?.status;
+  const ai = service("ai")?.status;
+  const projectCount = detail("project", "project.count", "count");
+
+  return [
+    { label: "DESKTOP:", value: statusOf("system") },
+    {
+      label: "ARCHITECT:",
+      value: architect === "ready" && ai !== "ready" ? "SEEDED" : statusOf("architect"),
+    },
+    { label: "BUILD:", value: statusOf("forge") },
+    {
+      label: "PROJECTS:",
+      value: typeof projectCount === "number" ? String(projectCount) : unknown,
+    },
+    { label: "MEMORY:", value: statusOf("memory") },
+    { label: "SOUND:", value: toggle(detail("system", "system.sound", "soundEnabled")) },
+    { label: "CURSOR:", value: toggle(detail("system", "system.cursor", "cursorEnabled")) },
+  ];
 }
