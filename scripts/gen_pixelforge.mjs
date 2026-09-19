@@ -124,7 +124,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     for (const [size, file] of targets(name, mark)) {
       const svg = toSvg(readGrid(size, name), mark.label);
       if (check) {
-        if (!existsSync(file) || readFileSync(file, 'utf8') !== svg) stale.push(file);
+        // Line endings are normalised: a Windows checkout with core.autocrlf
+        // stores the same artwork with CRLF.
+        if (!existsSync(file) || readFileSync(file, 'utf8').replace(/\r\n/g, '\n') !== svg) stale.push(file);
       } else {
         writeFileSync(file, svg);
         written += 1;
