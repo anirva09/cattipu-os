@@ -47,6 +47,9 @@ export const PIXELFORGE_MARKS = {
   openfile: { label: 'Shortcut', id: 'CAT-UTIL-004', shell: true },
   newproject: { label: 'New Project', id: 'CAT-UTIL-001', shell: true },
   recent: { label: 'Recent', id: 'CAT-UTIL-002', shell: true },
+  // applications
+  architect: { label: 'Architect', id: 'CAT-SHELL-003', shell: true },
+  canvas: { label: 'Canvas', id: 'CAT-SHELL-004', shell: true },
 };
 
 function readGrid(size, name) {
