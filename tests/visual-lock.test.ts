@@ -106,6 +106,77 @@ test("Settings is built from the shell's roles and primitives, not a Tailwind ca
   assert.doesNotMatch(src, /\brounded(-\w+)?\b|\bfont-(medium|semibold|bold)\b|\btext-(xs|sm|base)\b|\bitalic\b/);
 });
 
+// ── two faces: display titles, proportional GUI body ──────────────────
+
+const UI_FACES = [
+  { family: "Ark Pixel 12px Proportional", file: "ArkPixel-12px-Proportional-Latin.woff2", grid: 12, role: 13 },
+  { family: "Ark Pixel 10px Proportional", file: "ArkPixel-10px-Proportional-Latin.woff2", grid: 10, role: 11 },
+] as const;
+
+test("the GUI face ships locally with its OFL licence and provenance", () => {
+  for (const face of UI_FACES) assert.ok(existsSync(join(ROOT, "public/fonts", face.file)), face.file);
+  const licence = read("public/fonts/LICENSE-OFL-ark-pixel.txt");
+  assert.match(licence, /SIL OPEN FONT LICENSE Version 1\.1/);
+  assert.match(licence, /Copyright \(c\) 2021, TakWolf/);
+  const readme = read("public/fonts/README.md");
+  assert.match(readme, /Ark Pixel Proportional[\s\S]*SIL Open Font License 1\.1[\s\S]*LICENSE-OFL-ark-pixel\.txt/);
+});
+
+test("each GUI cut is registered once and drawn 1:1 at its role size", () => {
+  const css = read("app/globals.css");
+  for (const face of UI_FACES) {
+    const blocks = [...css.matchAll(/@font-face \{([^}]*)\}/g)].map((m) => m[1]).filter((b) => b.includes(`"${face.family}"`));
+    assert.equal(blocks.length, 1, `${face.family} must be declared exactly once`);
+    const block = blocks[0];
+    assert.match(block, new RegExp(`src: url\\("/fonts/${face.file.replace(/\./g, "\\.")}"\\) format\\("woff2"\\)`));
+    assert.match(block, /font-weight: 400;/);
+    const adjust = Number(block.match(/size-adjust: ([\d.]+)%;/)?.[1]);
+    // role size × size-adjust must land on the face's pixel grid.
+    assert.ok(Math.abs((face.role * adjust) / 100 - face.grid) < 0.001, `${face.family}: ${face.role}px × ${adjust}% is not ${face.grid}px`);
+  }
+});
+
+test("display, GUI and compact faces resolve through the design-system tokens", () => {
+  assert.match(cattipuTokens.type.family, /^'Px437 IBM VGA8'/);
+  assert.match(cattipuTokens.type.uiFamily, /^'Ark Pixel 12px Proportional'/);
+  assert.match(cattipuTokens.type.compactFamily, /^'Ark Pixel 10px Proportional'/);
+  assert.equal(cattipuCssVariables["--cattipu-font-family"], cattipuTokens.type.family);
+  assert.equal(cattipuCssVariables["--cattipu-font-ui"], cattipuTokens.type.uiFamily);
+  assert.equal(cattipuCssVariables["--cattipu-font-compact"], cattipuTokens.type.compactFamily);
+});
+
+test("titles keep Px437; body surfaces use the GUI face; status text the compact cut", () => {
+  // Title roles: the role tokens, plus the component variables bound to the window-title role
+  // (DetailsPanel, ProjectCard and Window publish theirs from cattipuTokens.type.windowTitle).
+  const TITLE_SIZE = /font-size:\s*var\(--cattipu-(type-(desktop-title|window-title|widget-header)-size|details-title-size|project-card-(title|progress)-size|window-title-font-size)\)/;
+  const STATUS_SIZE = /font-size:\s*var\(--cattipu-type-status-size\)/;
+  let uiContainers = 0;
+  for (const file of MIGRATED_CSS) {
+    const css = read(file).replace(/\/\*[\s\S]*?\*\//g, "");
+    assert.doesNotMatch(css, /font-family:[^;]*(Px437|Ark Pixel|VT323|Press Start)/, `${file}: literal family instead of a face token`);
+    if (file === "components/TopBar/TopBar.css") continue; // title-only chrome, asserted below
+    for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const [sel, body] = [m[1].trim(), m[2]];
+      const family = body.match(/font-family:\s*([^;]+);/)?.[1].trim();
+      if (TITLE_SIZE.test(body)) {
+        assert.equal(family, "var(--cattipu-font-family)", `${file} ${sel}: title role must use the display face`);
+      } else if (STATUS_SIZE.test(body)) {
+        assert.equal(family, "var(--cattipu-font-compact)", `${file} ${sel}: status role must use the compact face`);
+      } else if (family === "var(--cattipu-font-family)") {
+        // The one display-face exception outside the title roles: labels drawn inside the
+        // Architect Preview mini-diagram (8px, not a GUI text role).
+        assert.match(sel, /__architect-label$/, `${file} ${sel}: body surface overrides the GUI face with the display face`);
+      } else if (family === "var(--cattipu-font-ui)") {
+        uiContainers += 1;
+      }
+    }
+  }
+  assert.ok(uiContainers >= 12, `only ${uiContainers} shell surfaces set the GUI face`);
+  // The top bar holds only title-role text (brand, workspace, clock) and stays on the display face.
+  assert.match(read("components/TopBar/TopBar.css"), /font-family: var\(--cattipu-font-family\);/);
+  assert.doesNotMatch(read("components/TopBar/TopBar.css"), /--cattipu-font-ui/);
+});
+
 // ── menus ──────────────────────────────────────────────────────────────
 
 test("the portalled menu republishes the design-system variables and uses the body role", () => {
@@ -255,6 +326,17 @@ test("Settings navigation and the placeholder window use PixelForge only", () =>
   const placeholder = read("components/Window/PlaceholderApp.tsx");
   assert.doesNotMatch(placeholder, /AppIcon|framer-motion|rounded/);
   assert.match(placeholder, /<ShellIcon name=\{app\.icon\} size=\{32\} \/>/);
+});
+
+test("the PixelForge palette adds no colour: the rear plane is Welcome Gold", () => {
+  const palette = JSON.parse(read("scripts/pixelforge/palette.json")) as Record<string, string>;
+  assert.equal(palette.O, cattipuTokens.colors.welcome.toLowerCase(), "rear plane must be the Welcome Gold token");
+  const outputs = [
+    ...readdirSync(join(ROOT, "public/pixelforge/toolbox")).map((f) => `public/pixelforge/toolbox/${f}`),
+    ...["16", "32"].flatMap((size) => readdirSync(join(ROOT, "public/pixelforge/shell", size)).map((f) => `public/pixelforge/shell/${size}/${f}`)),
+  ];
+  const offenders = ["scripts/pixelforge/palette.json", ...outputs].filter((f) => /#d98a3a/i.test(read(f)));
+  assert.deepEqual(offenders, [], "the non-canonical orange #d98a3a is back");
 });
 
 // ── helpers / run ──────────────────────────────────────────────────────
