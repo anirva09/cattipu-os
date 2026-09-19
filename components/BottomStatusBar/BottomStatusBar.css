@@ -13,7 +13,7 @@
   overflow: hidden;
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
   border-radius: 0;
 }
 
@@ -57,6 +57,7 @@
   padding: 0 var(--cattipu-bottom-inline-padding);
   overflow: hidden;
   background: var(--cattipu-cream);
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   line-height: var(--cattipu-type-status-line);
   white-space: nowrap;

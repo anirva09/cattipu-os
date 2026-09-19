@@ -104,6 +104,11 @@ is now self-hosted: VileR's IBM VGA 8x16, CC BY-SA 4.0, from `public/fonts/`, re
 shipped face is weight 400 only, so `body` disables synthetic bold (`font-synthesis-weight: none`).
 Details and measurements: `docs/TYPOGRAPHY.md` §1a.
 
+**Final visual lock — two faces.** Shell titles (desktop title, window titles, widget headers)
+use Px437 IBM VGA8. Standard GUI text (body, menus, sidebar labels, buttons, inputs) uses Ark
+Pixel 12px Proportional, and compact/status text uses its 10px cut. Both are drawn pixel-exact
+at the 13px and 11px roles. The split is permanent; see `docs/TYPOGRAPHY.md` §1b.
+
 Corner-radius and one-off arbitrary text-size consolidation (documented in `docs/TYPOGRAPHY.md`)
 remain open, separate from the font-role freeze above — a scale-consolidation pass, not a family
 or role change, and out of this milestone's scope.

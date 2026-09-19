@@ -24,7 +24,7 @@
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
   border-radius: 0;
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
 }
 
 .cattipu-project-card__icon {
@@ -42,6 +42,7 @@
 
 .cattipu-project-card__title {
   overflow: hidden;
+  font-family: var(--cattipu-font-family);
   font-size: var(--cattipu-project-card-title-size);
   font-weight: var(--cattipu-type-weight);
   line-height: var(--cattipu-type-window-title-line);
@@ -59,6 +60,7 @@
 }
 
 .cattipu-project-card__progress-value {
+  font-family: var(--cattipu-font-family);
   font-size: var(--cattipu-project-card-progress-size);
   font-weight: var(--cattipu-type-weight);
   line-height: var(--cattipu-type-window-title-line);

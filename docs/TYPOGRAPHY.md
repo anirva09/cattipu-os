@@ -68,37 +68,35 @@ component CSS.
   `font-medium`/`font-semibold` declarations still in the code no longer render as Chromium faux
   bold. They render at the face's single weight.
 
-## 1b. Shell role metrics — final visual lock
+## 1b. Shell role metrics and faces — final visual lock
 
-`design-system/tokens.ts` now owns the shell's role sizes, whole-pixel line heights and weight.
-They are published as CSS variables through `cattipuCssVariables`, which every shell component
-already spreads. Components reference `var(--cattipu-type-<role>-size|line)` and
-`var(--cattipu-type-weight)` instead of literal values.
+`design-system/tokens.ts` owns the shell's role sizes, whole-pixel line heights, weight and
+faces. They reach components through `cattipuCssVariables`. Components reference
+`var(--cattipu-type-<role>-size|line)`, `var(--cattipu-type-weight)` and one of three face
+tokens, never a literal family.
 
-| Role | Size / line | Used by |
-|---|---|---|
-| Desktop title | 26 / 28 | Top-bar brand and workspace title |
-| Window title | 18 / 20 | Window title bars, details title, project-card titles |
-| Widget header | 15 / 16 | Right-widget headers, Settings section titles |
-| Body (menu, sidebar, button, body) | 13 / 16 | Menus, sidebar labels, tree, details, widget copy, buttons, Settings, Explorer |
-| Status | 11 / 12 | Bottom status bar, Settings group labels, secondary captions |
+CATTIPU uses two coordinated typefaces. This title/body split is part of the permanent identity:
 
-Weight is 400 everywhere, and `body` sets `font-synthesis: none`. Hierarchy comes from size,
-case, colour and the title plates.
+| Role | Face token | Face | Size / line |
+|---|---|---|---|
+| Desktop title | `--cattipu-font-family` | Px437 IBM VGA8 | 26 / 28 |
+| Window title | `--cattipu-font-family` | Px437 IBM VGA8 | 18 / 20 |
+| Widget header | `--cattipu-font-family` | Px437 IBM VGA8 | 15 / 16 |
+| Body, menu, sidebar, button, input | `--cattipu-font-ui` | Ark Pixel 12px Proportional | 13 / 16 |
+| Compact / status | `--cattipu-font-compact` | Ark Pixel 10px Proportional | 11 / 12 |
 
-**Measured rasterisation (Chrome, DPR 1).** A face is only pixel-exact at whole multiples of its
-design grid:
+- **Display face** (Px437 IBM VGA8) keeps the DOS/VGA personality for titles and plates.
+- **GUI face** (Ark Pixel Proportional, OFL 1.1, `public/fonts/README.md`) is a crisp,
+  proportional bitmap sans with late-1990s GUI character, for everything a person reads or
+  operates. Shell containers set the GUI face; title-role rules reassert the display face.
+- **Pixel-exact rendering.** A bitmap face is only crisp at its design size. Each GUI cut's
+  `@font-face` carries `size-adjust` (12/13 and 10/11), so the 13px and 11px roles draw the
+  12px and 10px designs at exactly 1:1. The role tokens keep their Golden Master sizes.
+- Weight is 400 everywhere; no shipped face has another weight. `body` sets
+  `font-synthesis: none`.
 
-| Face | Pixel-exact sizes | Anti-aliased ink at 13px |
-|---|---|---|
-| IBM VGA 8x16 (shell face) | 16, 32 | 46% |
-| VT323 | none | 65% |
-| Press Start 2P | 8, 16, 24, 32 | 36% |
-
-The roles keep the sizes the Golden Master locks (13/15/18/26), so body text is necessarily a
-scaled VGA outline. None of the three approved local faces is a proportional bitmap GUI sans.
-Reaching that character needs a new font asset, which is a sourcing decision for the owner and
-is recorded here instead of being substituted silently.
+Measured before the GUI face was added: Px437 IBM VGA8 is pixel-exact only at 16/32px (46% of
+its ink anti-aliased at 13px), VT323 never, Press Start 2P only at 8/16/24/32px.
 
 ## 2. `font-pixel-ui` sizes in use
 

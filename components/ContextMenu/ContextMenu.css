@@ -30,7 +30,7 @@
   padding: 2px;
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
   font-size: var(--cattipu-type-body-size);
   font-weight: var(--cattipu-type-weight);
   line-height: var(--cattipu-type-body-line);
@@ -48,7 +48,7 @@
   margin: 0 0 2px;
   padding: 0 4px;
   overflow: hidden;
-  font-family: inherit;
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   font-weight: var(--cattipu-type-weight);
   line-height: var(--cattipu-type-status-line);
@@ -156,6 +156,7 @@
   overflow: hidden;
   text-align: right;
   text-overflow: ellipsis;
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   line-height: var(--cattipu-type-status-line);
   color: var(--cattipu-bevel-bottom);
@@ -197,6 +198,7 @@
 .cattipu-context-menu__empty {
   height: 24px;
   padding: 0 32px;
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   line-height: 24px;
   letter-spacing: 1px;

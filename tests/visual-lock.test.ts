@@ -113,7 +113,7 @@ test("the portalled menu republishes the design-system variables and uses the bo
   assert.match(tsx, /createPortal\(/);
   assert.match(tsx, /\.\.\.cattipuCssVariables,/);
   const css = read("components/ContextMenu/ContextMenu.css");
-  assert.match(css, /\.cattipu-context-menu \{[\s\S]*?font-family: var\(--cattipu-font-family\);[\s\S]*?font-size: var\(--cattipu-type-body-size\);/);
+  assert.match(css, /\.cattipu-context-menu \{[\s\S]*?font-family: var\(--cattipu-font-ui\);[\s\S]*?font-size: var\(--cattipu-type-body-size\);/);
   assert.match(css, /\.cattipu-context-menu__item \{[\s\S]*?height: 24px;/);
   assert.match(css, /grid-template-columns: 24px [^;]* 16px;/);
 });

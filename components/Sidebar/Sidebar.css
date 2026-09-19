@@ -17,7 +17,7 @@
 
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
 }
 
 .cattipu-sidebar__raised,
@@ -103,7 +103,7 @@
 
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
 }
 
 .cattipu-sidebar__node-display {

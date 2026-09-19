@@ -209,6 +209,28 @@
   src: url("/fonts/Web437_IBM_VGA_8x16.woff") format("woff");
 }
 
+/* Standard GUI face — Ark Pixel 12px Proportional (OFL 1.1, public/fonts/README.md).
+   The body/menu/control role is 13px; size-adjust 12/13 draws the 12px pixel design
+   at exactly 1:1 inside it, so every stem lands on a whole pixel. */
+@font-face {
+  font-family: "Ark Pixel 12px Proportional";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  size-adjust: 92.3077%;
+  src: url("/fonts/ArkPixel-12px-Proportional-Latin.woff2") format("woff2");
+}
+
+/* Compact/status face — the same family's 10px design, drawn 1:1 inside the 11px role. */
+@font-face {
+  font-family: "Ark Pixel 10px Proportional";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  size-adjust: 90.9091%;
+  src: url("/fonts/ArkPixel-10px-Proportional-Latin.woff2") format("woff2");
+}
+
 html,
 body {
   height: 100%;

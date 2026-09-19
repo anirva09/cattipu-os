@@ -22,7 +22,7 @@
   appearance: none;
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
   font-size: var(--cattipu-sidebar-label-size);
   font-weight: var(--cattipu-type-weight);
   line-height: var(--cattipu-sidebar-label-line-height);

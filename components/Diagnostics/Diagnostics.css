@@ -11,7 +11,7 @@
   gap: 16px;
   width: 100%;
   color: var(--cattipu-outer-frame);
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
   font-size: var(--cattipu-type-body-size);
   line-height: var(--cattipu-type-body-line);
 }
@@ -24,6 +24,7 @@
 }
 
 .cattipu-diagnostics__title {
+  font-family: var(--cattipu-font-family);
   font-size: var(--cattipu-type-widget-header-size);
   font-weight: var(--cattipu-type-weight);
 }
@@ -121,6 +122,7 @@
   display: flex;
   gap: 12px;
   margin-top: 4px;
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   color: var(--cattipu-bevel-right);
 }

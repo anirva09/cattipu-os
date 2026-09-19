@@ -20,7 +20,7 @@
   z-index: 0;
   margin: 0;
   padding: 0;
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
   color: var(--cattipu-outer-frame);
 }
 

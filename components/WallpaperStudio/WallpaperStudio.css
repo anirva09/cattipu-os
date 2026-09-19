@@ -14,7 +14,7 @@
   gap: 16px;
   width: 100%;
   color: var(--cattipu-outer-frame);
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
   font-size: var(--cattipu-type-body-size);
   line-height: var(--cattipu-type-body-line);
 }
@@ -28,11 +28,13 @@
 }
 
 .cattipu-wallpaper-studio__title {
+  font-family: var(--cattipu-font-family);
   font-size: var(--cattipu-type-widget-header-size);
   font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-wallpaper-studio__applied {
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   font-weight: var(--cattipu-type-weight);
   color: var(--cattipu-bevel-right);
@@ -62,6 +64,7 @@
 
 .cattipu-wallpaper-studio__caption {
   margin-top: 4px;
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   font-weight: var(--cattipu-type-weight);
   text-align: center;
@@ -126,6 +129,7 @@
 }
 
 .cattipu-wallpaper-studio__label {
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   font-weight: var(--cattipu-type-weight);
 }
@@ -158,6 +162,7 @@
 }
 
 .cattipu-wallpaper-studio__marker {
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   line-height: 1;
 }
@@ -179,6 +184,7 @@
 }
 
 .cattipu-wallpaper-studio__flag {
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   font-weight: var(--cattipu-type-weight);
 }

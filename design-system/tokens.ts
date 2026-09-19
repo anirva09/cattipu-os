@@ -31,7 +31,17 @@ export const cattipuTokens = {
     24: 24,
   },
   type: {
+    /** Display face: desktop title, window titles, widget headers. */
     family: "'Px437 IBM VGA8', 'VT323', 'Perfect DOS VGA', monospace",
+    /**
+     * Standard GUI face: body, menus, sidebar labels, buttons, inputs. A
+     * proportional bitmap sans (Ark Pixel 12px, OFL 1.1) drawn 1:1 at the 13px
+     * role through its @font-face size-adjust. Titles stay on the display face;
+     * that title/body split is part of the CATTIPU identity.
+     */
+    uiFamily: "'Ark Pixel 12px Proportional', 'Px437 IBM VGA8', monospace",
+    /** Compact/status face: the same family's 10px design at the 11px role. */
+    compactFamily: "'Ark Pixel 10px Proportional', 'Ark Pixel 12px Proportional', monospace",
     desktopTitle: 26,
     windowTitle: 18,
     widgetHeader: 15,
@@ -82,6 +92,8 @@ export const cattipuCssVariables = {
   '--cattipu-bevel-gap': `${cattipuTokens.geometry.bevelGap}px`,
   '--cattipu-radius': `${cattipuTokens.geometry.radius}px`,
   '--cattipu-font-family': cattipuTokens.type.family,
+  '--cattipu-font-ui': cattipuTokens.type.uiFamily,
+  '--cattipu-font-compact': cattipuTokens.type.compactFamily,
   '--cattipu-type-weight': String(cattipuTokens.type.weight),
   '--cattipu-type-desktop-title-size': `${cattipuTokens.type.desktopTitle}px`,
   '--cattipu-type-desktop-title-line': `${cattipuTokens.type.lineHeight.desktopTitle}px`,

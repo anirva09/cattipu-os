@@ -25,7 +25,7 @@
   overflow: hidden;
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
 }
 
 .cattipu-interactive-desktop__sidebar {

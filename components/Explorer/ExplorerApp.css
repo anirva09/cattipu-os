@@ -22,7 +22,7 @@
   overflow: hidden;
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
 }
 
 /* ── toolbar ──────────────────────────────────────────────────────────── */
@@ -124,6 +124,7 @@
   color: var(--color-ink, #141110);
   font: inherit;
   font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
   outline: none;
 }
 
@@ -181,6 +182,7 @@
 
 .cattipu-explorer__found {
   margin: 0 0 var(--cattipu-explorer-pad);
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -271,6 +273,7 @@
   max-width: 100%;
   overflow: hidden;
   color: var(--cattipu-bevel-bottom);
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   line-height: var(--cattipu-type-status-line);
   white-space: nowrap;

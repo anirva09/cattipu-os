@@ -12,7 +12,7 @@
   margin: 0;
   padding: 0;
   color: var(--cattipu-outer-frame);
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
 }
 
 .cattipu-folder-tree-item[data-depth]:not([data-depth='0'])::before {

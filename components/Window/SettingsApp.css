@@ -20,7 +20,7 @@
   height: 100%;
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
-  font-family: var(--cattipu-font-family);
+  font-family: var(--cattipu-font-ui);
   font-size: var(--cattipu-type-body-size);
   font-weight: var(--cattipu-type-weight);
   line-height: var(--cattipu-type-body-line);
@@ -92,6 +92,7 @@
 
 .cattipu-settings__title {
   margin: 0;
+  font-family: var(--cattipu-font-family);
   font-size: var(--cattipu-type-widget-header-size);
   font-weight: var(--cattipu-type-weight);
   line-height: var(--cattipu-type-widget-header-line);
@@ -105,6 +106,7 @@
 
 .cattipu-settings__group-label {
   margin: 0 0 8px;
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   line-height: var(--cattipu-type-status-line);
   letter-spacing: 1px;
@@ -240,6 +242,7 @@
 }
 
 .cattipu-settings__preview-caption {
+  font-family: var(--cattipu-font-compact);
   font-size: var(--cattipu-type-status-size);
   line-height: var(--cattipu-type-status-line);
   text-transform: uppercase;
