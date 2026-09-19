@@ -50,6 +50,10 @@ export const PIXELFORGE_MARKS = {
   // applications
   architect: { label: 'Architect', id: 'CAT-SHELL-003', shell: true },
   canvas: { label: 'Canvas', id: 'CAT-SHELL-004', shell: true },
+  forge: { label: 'Forge', id: 'CAT-SHELL-005', shell: true },
+  memory: { label: 'Memory', id: 'CAT-SHELL-006', shell: true },
+  launch: { label: 'Launch', id: 'CAT-FAMILY-launch', shell: true },
+  settings: { label: 'Settings', id: 'CAT-SHELL-008', shell: true },
 };
 
 function readGrid(size, name) {

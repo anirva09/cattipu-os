@@ -1,0 +1,48 @@
+.cattipu-placeholder-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  padding: 0 32px;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-family);
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-body-line);
+  text-align: center;
+}
+
+.cattipu-placeholder-app__mark {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 8px;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-placeholder-app__title {
+  margin: 0;
+  font-size: var(--cattipu-type-window-title-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-window-title-line);
+}
+
+.cattipu-placeholder-app__tagline {
+  max-width: 320px;
+  margin: 0;
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-placeholder-app__status {
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: var(--cattipu-dark-cream);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
