@@ -178,6 +178,46 @@ export function cascadeLayout(
   return rects;
 }
 
+/**
+ * Cascade for these windows, sized so the whole stepped run fits.
+ *
+ * `cascadeLayout` alone gives every window `preferred` (the reference
+ * 920×612) and clamps any position that would push a window past the
+ * workspace edge. In a small workspace that clamp swallows the step: at
+ * 1366×768, five windows leave 100×32px of travel, so windows 3–5 landed
+ * on the same (100,16) and two title bars were hidden completely.
+ *
+ * Here the shared size is chosen BEFORE placing anything:
+ *
+ *   width  = max(largest min width,  min(preferred width,  box width  − run))
+ *   height = max(largest min height, min(preferred height, box height − run))
+ *
+ * where run = CASCADE_ORIGIN + CASCADE_STEP × (n − 1) is how far the last
+ * window sits from the corner. When `preferred` already fits, nothing
+ * changes. When it does not, the windows get just small enough that
+ * `size + run` fits, so no position is ever clamped and every window keeps
+ * its full step. The size never goes below the largest minimum, so no
+ * window drops under its own floor. At every supported viewport the floor
+ * plus the run fits, so the step is always kept (tests/workspace.test.ts).
+ */
+export function fittedCascadeLayout(
+  mins: readonly MinSize[],
+  box: WorkspaceBox,
+  preferred: MinSize,
+): WindowRect[] {
+  if (mins.length === 0) return [];
+  const run = CASCADE_ORIGIN + CASCADE_STEP * (mins.length - 1);
+  const floor = {
+    width: Math.max(...mins.map((m) => m.width)),
+    height: Math.max(...mins.map((m) => m.height)),
+  };
+  const size = {
+    width: Math.max(floor.width, Math.min(preferred.width, Math.floor(box.width - run))),
+    height: Math.max(floor.height, Math.min(preferred.height, Math.floor(box.height - run))),
+  };
+  return cascadeLayout(mins.length, box, size);
+}
+
 /** A window's floor, in the shape the layouts need. The values come from
  *  the window manager's `CATTIPU_WINDOW_MIN_SIZE`; nothing here names one. */
 export interface MinSize {

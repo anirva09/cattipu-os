@@ -27,6 +27,7 @@ import {
   SNAP_EDGE_THRESHOLD,
   TILE_GAP,
   cascadeLayout,
+  fittedCascadeLayout,
   keepOnScreen,
   resizeSize,
   snapRect,
@@ -885,6 +886,104 @@ test("snapped or maximized, then Tile, then Restore All goes home, not to the sn
     assert.equal(state.windows[id].snap, null);
     assert.deepEqual(state.windows[id].position, home[id].position, id);
     assert.equal(state.windows[id].zIndex, home[id].zIndex, id);
+  }
+});
+
+// ── the explicit Cascade command keeps every step ───────────────────────
+
+/** Windows of `state` in back-to-front order, and their rectangles. */
+function stack(state: WindowManagerState, ids: readonly CattipuWindowId[]) {
+  const order = [...ids].sort((a, b) => state.windows[a].zIndex - state.windows[b].zIndex);
+  return { order, rects: order.map((id) => rectOf(state, id)) };
+}
+
+const minsOf = (order: readonly CattipuWindowId[]) => order.map((id) => CATTIPU_WINDOW_MIN_SIZE[id]);
+
+test("Cascade keeps every 24px step, stays inside the workspace and above every minimum, everywhere", () => {
+  for (const [viewport, box] of Object.entries(WORKSPACES)) {
+    for (const ids of COMBINATIONS) {
+      const state = reduce(openOnly(ids), { type: "arrange", layout: "cascade", bounds: box });
+      const { order, rects } = stack(state, ids);
+      rects.forEach((r, i) => {
+        const id = order[i];
+        const min = CATTIPU_WINDOW_MIN_SIZE[id];
+        assert.ok(r.width >= min.width && r.height >= min.height, `${viewport} [${ids}] ${id} ${r.width}x${r.height}`);
+        assert.ok(r.x >= 0 && r.y >= 0 && r.x + r.width <= box.width && r.y + r.height <= box.height, `${viewport} [${ids}] ${id} outside`);
+        for (const v of [r.x, r.y, r.width, r.height]) assert.equal(v, Math.round(v));
+        // The step survives: no clamp pulled a window back onto another.
+        assert.equal(r.x, CASCADE_ORIGIN + CASCADE_STEP * i, `${viewport} [${ids}] ${id} x`);
+        assert.equal(r.y, CASCADE_ORIGIN + CASCADE_STEP * i, `${viewport} [${ids}] ${id} y`);
+      });
+    }
+  }
+});
+
+test("1366x768: five cascaded windows no longer pile three onto one spot", () => {
+  const box = WORKSPACES["1366x768"];
+  // The old command, for the record: windows 3-5 all at (100,16).
+  const old = cascadeLayout(5, box, CATTIPU_DEFAULT_WINDOW_SIZE);
+  assert.deepEqual(old.slice(2).map((r) => [r.x, r.y]), [[100, 16], [100, 16], [100, 16]]);
+
+  const ids = [...CATTIPU_WINDOW_IDS];
+  const { rects } = stack(reduce(openOnly(ids), { type: "arrange", layout: "cascade", bounds: box }), ids);
+  const run = CASCADE_ORIGIN + CASCADE_STEP * (ids.length - 1);
+  // The size is derived, not a constant: the reference size, cut to fit the run.
+  for (const r of rects) {
+    assert.equal(r.width, Math.min(CATTIPU_DEFAULT_WINDOW_SIZE.width, box.width - run));
+    assert.equal(r.height, Math.min(CATTIPU_DEFAULT_WINDOW_SIZE.height, box.height - run));
+  }
+  assert.equal(new Set(rects.map((r) => `${r.x},${r.y}`)).size, 5);
+});
+
+test("1366x768: three cascaded windows step apart instead of hiding Settings", () => {
+  const box = WORKSPACES["1366x768"];
+  const ids: CattipuWindowId[] = ["explorer", "settings", "architect"];
+  const { rects } = stack(reduce(openOnly(ids), { type: "arrange", layout: "cascade", bounds: box }), ids);
+  for (let i = 1; i < rects.length; i += 1) {
+    assert.equal(rects[i].x - rects[i - 1].x, CASCADE_STEP);
+    assert.equal(rects[i].y - rects[i - 1].y, CASCADE_STEP);
+  }
+});
+
+test("where the reference size already fits, Cascade is exactly what it was", () => {
+  for (const viewport of ["1440x900", "1600x900", "1920x1080"]) {
+    const box = WORKSPACES[viewport];
+    const ids = [...CATTIPU_WINDOW_IDS];
+    const { rects } = stack(reduce(openOnly(ids), { type: "arrange", layout: "cascade", bounds: box }), ids);
+    assert.deepEqual(rects, cascadeLayout(5, box, CATTIPU_DEFAULT_WINDOW_SIZE), viewport);
+  }
+});
+
+test("the Cascade command and Tile's fallback are one geometry path", () => {
+  const box = WORKSPACES["1366x768"];
+  const ids = [...CATTIPU_WINDOW_IDS];
+  const cascaded = reduce(openOnly(ids), { type: "arrange", layout: "cascade", bounds: box });
+  const tiled = reduce(openOnly(ids), { type: "arrange", layout: "tile", bounds: box });
+  const { order, rects } = stack(cascaded, ids);
+  assert.deepEqual(stack(tiled, ids).rects, rects, "impossible Tile lands exactly where Cascade does");
+  assert.deepEqual(rects, fittedCascadeLayout(minsOf(order), box, CATTIPU_DEFAULT_WINDOW_SIZE));
+});
+
+test("the fitted size never undercuts the largest minimum, even with no room to fit the run", () => {
+  const mins = [CATTIPU_WINDOW_MIN_SIZE.projects, CATTIPU_WINDOW_MIN_SIZE.settings];
+  for (const r of fittedCascadeLayout(mins, { width: 500, height: 290 }, CATTIPU_DEFAULT_WINDOW_SIZE)) {
+    assert.ok(r.width >= 480 && r.height >= 280);
+  }
+  assert.deepEqual(fittedCascadeLayout([], WORKSPACES["1366x768"], CATTIPU_DEFAULT_WINDOW_SIZE), []);
+});
+
+test("resize, then Cascade, then Restore All: back to the exact prior geometry and order", () => {
+  for (const box of [WORKSPACES["1366x768"], WORKSPACES["1920x1080"]]) {
+    let state = openOnly([...CATTIPU_WINDOW_IDS]);
+    state = reduce(state, { type: "resize", id: "settings", size: { width: 590, height: 301 } });
+    const before = { ...state.windows };
+    state = reduce(state, { type: "arrange", layout: "cascade", bounds: box }, { type: "restoreAll" });
+    for (const id of CATTIPU_WINDOW_IDS) {
+      assert.deepEqual(state.windows[id].position, before[id].position, id);
+      assert.deepEqual(state.windows[id].size ?? CATTIPU_DEFAULT_WINDOW_SIZE, before[id].size ?? CATTIPU_DEFAULT_WINDOW_SIZE, id);
+      assert.equal(state.windows[id].zIndex, before[id].zIndex, id);
+    }
+    assert.deepEqual(state.windows.settings.size, { width: 590, height: 301 });
   }
 });
 
