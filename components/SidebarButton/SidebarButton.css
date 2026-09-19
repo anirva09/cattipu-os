@@ -24,7 +24,7 @@
   color: var(--cattipu-outer-frame);
   font-family: var(--cattipu-font-family);
   font-size: var(--cattipu-sidebar-label-size);
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
   line-height: var(--cattipu-sidebar-label-line-height);
   text-align: center;
   cursor: default;

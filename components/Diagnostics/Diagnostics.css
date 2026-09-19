@@ -12,8 +12,8 @@
   width: 100%;
   color: var(--cattipu-outer-frame);
   font-family: var(--cattipu-font-family);
-  font-size: 13px;
-  line-height: 18px;
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
 }
 
 .cattipu-diagnostics__toolbar {
@@ -24,9 +24,8 @@
 }
 
 .cattipu-diagnostics__title {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: var(--cattipu-type-widget-header-size);
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-diagnostics__refresh {
@@ -34,8 +33,8 @@
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
   font-family: inherit;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
   cursor: default;
 }
 
@@ -45,7 +44,7 @@
 
 .cattipu-diagnostics__status-line {
   margin: 0;
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-diagnostics__status-line--error {
@@ -59,9 +58,8 @@
 
 .cattipu-diagnostics__panel-title {
   margin: 0 0 8px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-diagnostics__summary {
@@ -79,7 +77,7 @@
 .cattipu-diagnostics__summary-row dt,
 .cattipu-diagnostics__summary-row dd {
   margin: 0;
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-diagnostics__summary-counts {
@@ -116,14 +114,14 @@
 }
 
 .cattipu-diagnostics__service-name {
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-diagnostics__service-meta {
   display: flex;
   gap: 12px;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: var(--cattipu-type-status-size);
   color: var(--cattipu-bevel-right);
 }
 
@@ -163,7 +161,7 @@
 }
 
 .cattipu-diagnostics__check-label {
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-diagnostics__check-message {
@@ -173,7 +171,7 @@
 
 .cattipu-diagnostics__empty {
   margin: 0;
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
   color: var(--cattipu-bevel-right);
 }
 
@@ -181,7 +179,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
   white-space: nowrap;
 }
 

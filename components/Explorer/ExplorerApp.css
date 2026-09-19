@@ -80,7 +80,7 @@
   border: 0;
   color: var(--cattipu-outer-frame);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--cattipu-type-body-size);
   white-space: nowrap;
   text-overflow: ellipsis;
   cursor: default;
@@ -95,14 +95,14 @@
  * ink token; nothing new is introduced here. */
 .cattipu-explorer__crumb[data-current='true'] {
   color: var(--color-ink, #141110);
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-explorer__crumb-sep {
   flex: 0 0 auto;
   padding: 0 2px;
   color: var(--cattipu-bevel-bottom);
-  font-size: 13px;
+  font-size: var(--cattipu-type-body-size);
 }
 
 .cattipu-explorer__search {
@@ -123,7 +123,7 @@
   border: 0;
   color: var(--color-ink, #141110);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--cattipu-type-body-size);
   outline: none;
 }
 
@@ -138,7 +138,7 @@
   border: 0;
   color: var(--cattipu-outer-frame);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--cattipu-type-body-size);
   cursor: default;
 }
 
@@ -181,8 +181,8 @@
 
 .cattipu-explorer__found {
   margin: 0 0 var(--cattipu-explorer-pad);
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: var(--cattipu-type-status-size);
+  letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--cattipu-outer-frame);
 }
@@ -258,8 +258,8 @@
   max-height: 32px;
   overflow: hidden;
   color: var(--color-ink, #141110);
-  font-size: 12px;
-  line-height: 15px;
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -271,8 +271,8 @@
   max-width: 100%;
   overflow: hidden;
   color: var(--cattipu-bevel-bottom);
-  font-size: 10px;
-  line-height: 13px;
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -285,14 +285,14 @@
   border-radius: 0;
   color: var(--color-ink, #141110);
   font: inherit;
-  font-size: 12px;
-  line-height: 15px;
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
   text-align: center;
   outline: none;
 }
 
 .cattipu-explorer__empty {
   margin: var(--cattipu-explorer-pad) 0 0;
-  font-size: 12px;
+  font-size: var(--cattipu-type-body-size);
   color: var(--cattipu-bevel-bottom);
 }

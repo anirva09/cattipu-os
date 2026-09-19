@@ -101,8 +101,8 @@
   max-height: 32px;
   padding: 1px 3px;
   overflow: hidden;
-  font-size: 12px;
-  line-height: 15px;
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -116,8 +116,8 @@
   border-radius: 0;
   color: var(--cattipu-outer-frame);
   font-family: inherit;
-  font-size: 12px;
-  line-height: 15px;
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
   text-align: center;
   outline: none;
 }

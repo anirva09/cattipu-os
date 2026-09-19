@@ -37,6 +37,25 @@ export const cattipuTokens = {
     widgetHeader: 15,
     body: 13,
     status: 11,
+    /**
+     * Role line heights (px). Whole pixels only: the shell's face is a
+     * bitmap design, and a fractional line box puts every baseline on a
+     * half pixel. Menus, sidebar labels, buttons and body copy all use the
+     * body role (13/16).
+     */
+    lineHeight: {
+      desktopTitle: 28,
+      windowTitle: 20,
+      widgetHeader: 16,
+      body: 16,
+      status: 12,
+    },
+    /**
+     * Every shipped face (IBM VGA 8x16, VT323, Press Start 2P) has a 400
+     * face only. Hierarchy comes from size, case, colour and the title
+     * plates, never from a requested weight the browser cannot draw.
+     */
+    weight: 400,
   },
 } as const;
 
@@ -51,6 +70,7 @@ export const cattipuWindowTones = {
 export type CattipuWindowTone = keyof typeof cattipuWindowTones;
 
 export const cattipuCssVariables = {
+  '--cattipu-navy': cattipuTokens.colors.navy,
   '--cattipu-cream': cattipuTokens.colors.cream,
   '--cattipu-dark-cream': cattipuTokens.colors.darkCream,
   '--cattipu-outer-frame': cattipuTokens.colors.outerFrame,
@@ -62,4 +82,15 @@ export const cattipuCssVariables = {
   '--cattipu-bevel-gap': `${cattipuTokens.geometry.bevelGap}px`,
   '--cattipu-radius': `${cattipuTokens.geometry.radius}px`,
   '--cattipu-font-family': cattipuTokens.type.family,
+  '--cattipu-type-weight': String(cattipuTokens.type.weight),
+  '--cattipu-type-desktop-title-size': `${cattipuTokens.type.desktopTitle}px`,
+  '--cattipu-type-desktop-title-line': `${cattipuTokens.type.lineHeight.desktopTitle}px`,
+  '--cattipu-type-window-title-size': `${cattipuTokens.type.windowTitle}px`,
+  '--cattipu-type-window-title-line': `${cattipuTokens.type.lineHeight.windowTitle}px`,
+  '--cattipu-type-widget-header-size': `${cattipuTokens.type.widgetHeader}px`,
+  '--cattipu-type-widget-header-line': `${cattipuTokens.type.lineHeight.widgetHeader}px`,
+  '--cattipu-type-body-size': `${cattipuTokens.type.body}px`,
+  '--cattipu-type-body-line': `${cattipuTokens.type.lineHeight.body}px`,
+  '--cattipu-type-status-size': `${cattipuTokens.type.status}px`,
+  '--cattipu-type-status-line': `${cattipuTokens.type.lineHeight.status}px`,
 } as const;

@@ -59,8 +59,8 @@
 .cattipu-project-card__title {
   overflow: hidden;
   font-size: var(--cattipu-project-card-title-size);
-  font-weight: 700;
-  line-height: 24px;
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-window-title-line);
   white-space: nowrap;
   text-overflow: clip;
 }
@@ -68,16 +68,16 @@
 .cattipu-project-card__metadata {
   overflow: hidden;
   font-size: var(--cattipu-project-card-metadata-size);
-  font-weight: 700;
-  line-height: 18px;
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-body-line);
   white-space: nowrap;
   text-overflow: clip;
 }
 
 .cattipu-project-card__progress-value {
   font-size: var(--cattipu-project-card-progress-size);
-  font-weight: 700;
-  line-height: 24px;
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-window-title-line);
   text-align: right;
   white-space: nowrap;
 }

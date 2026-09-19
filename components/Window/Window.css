@@ -68,8 +68,8 @@
   min-width: 0;
   overflow: hidden;
   font-size: var(--cattipu-window-title-font-size);
-  font-weight: 700;
-  line-height: 28px;
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-window-title-line);
   white-space: nowrap;
   text-overflow: clip;
 }

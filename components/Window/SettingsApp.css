@@ -1,0 +1,274 @@
+/*
+ * Settings — the shell's own material and type, not a Tailwind card UI.
+ *
+ * Every value here comes from the design-system tokens the enclosing
+ * ManagedWindow already publishes (cattipuCssVariables) and from the
+ * bevel.css primitives the rest of the shell is built from. Square
+ * corners, hard bevels, the 13/16 body role for everything a person
+ * reads, and no requested weight the bitmap face cannot draw.
+ */
+
+.cattipu-settings,
+.cattipu-settings *,
+.cattipu-settings *::before,
+.cattipu-settings *::after {
+  box-sizing: border-box;
+}
+
+.cattipu-settings {
+  display: flex;
+  height: 100%;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-family);
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-body-line);
+  font-synthesis: none;
+}
+
+/* ── section navigation: the same row grammar as the shell's menus ── */
+
+.cattipu-settings__nav {
+  display: flex;
+  flex: 0 0 160px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: var(--cattipu-dark-cream);
+  border-right: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+}
+
+.cattipu-settings__nav-item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 4px;
+  height: 24px;
+  padding: 0 4px 0 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.cattipu-settings__nav-item:hover {
+  background: var(--cattipu-cream);
+}
+
+.cattipu-settings__nav-item[aria-current='page'] {
+  background: var(--cattipu-navy);
+  color: var(--cattipu-cream);
+}
+
+.cattipu-settings__nav-item:focus-visible {
+  outline: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  outline-offset: -2px;
+}
+
+.cattipu-settings__nav-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+}
+
+.cattipu-settings__nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── content ── */
+
+.cattipu-settings__content {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+.cattipu-settings__title {
+  margin: 0;
+  font-size: var(--cattipu-type-widget-header-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-widget-header-line);
+  text-transform: uppercase;
+}
+
+.cattipu-settings__sub {
+  margin: 4px 0 16px;
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-settings__group-label {
+  margin: 0 0 8px;
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-settings__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.cattipu-settings__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/* A physical key: raised at rest, pushed in when chosen or pressed. */
+.cattipu-settings__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 12px;
+  background: var(--cattipu-cream);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.cattipu-settings__button[aria-pressed='true'] {
+  background: var(--cattipu-navy);
+  color: var(--cattipu-cream);
+}
+
+.cattipu-settings__button:focus-visible {
+  outline: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  outline-offset: 1px;
+}
+
+.cattipu-settings__size-key {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-settings__size-key[aria-pressed='true'] {
+  background: var(--cattipu-dark-cream);
+}
+
+.cattipu-settings__size-swatch {
+  display: block;
+  background: var(--cattipu-navy);
+}
+
+/* An inset instrument panel for a setting and its switch. */
+.cattipu-settings__panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 12px;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-settings__panel-label {
+  margin: 0;
+}
+
+.cattipu-settings__panel-note {
+  margin: 0;
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-settings__note {
+  margin: 16px 0 0;
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-settings__switch {
+  position: relative;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 24px;
+  padding: 0;
+  background: var(--cattipu-dark-cream);
+}
+
+.cattipu-settings__switch[aria-checked='true'] {
+  background: var(--cattipu-navy);
+}
+
+.cattipu-settings__switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--cattipu-cream);
+  transition: left 120ms steps(3, end);
+}
+
+.cattipu-settings__switch[aria-checked='true'] .cattipu-settings__switch-knob {
+  left: 22px;
+}
+
+.cattipu-settings__previews {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-settings__preview {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+.cattipu-settings__preview-slot {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+}
+
+.cattipu-settings__preview-caption {
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  text-transform: uppercase;
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-settings__range {
+  width: 100%;
+  accent-color: var(--cattipu-navy);
+}
+
+.cattipu-settings__range:disabled {
+  filter: grayscale(1);
+}
+
+.cattipu-settings__about {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-settings__about p {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cattipu-settings__switch-knob {
+    transition: none;
+  }
+}

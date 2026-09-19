@@ -170,9 +170,9 @@
 }
 
 .cattipu-interactive-desktop__shell-window-status {
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 18px;
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-body-line);
   color: var(--cattipu-outer-frame);
   white-space: nowrap;
 }

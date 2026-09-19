@@ -15,8 +15,8 @@
   width: 100%;
   color: var(--cattipu-outer-frame);
   font-family: var(--cattipu-font-family);
-  font-size: 13px;
-  line-height: 18px;
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
 }
 
 .cattipu-wallpaper-studio__toolbar {
@@ -28,14 +28,13 @@
 }
 
 .cattipu-wallpaper-studio__title {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: var(--cattipu-type-widget-header-size);
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-wallpaper-studio__applied {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--cattipu-type-status-size);
+  font-weight: var(--cattipu-type-weight);
   color: var(--cattipu-bevel-right);
 }
 
@@ -63,8 +62,8 @@
 
 .cattipu-wallpaper-studio__caption {
   margin-top: 4px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--cattipu-type-status-size);
+  font-weight: var(--cattipu-type-weight);
   text-align: center;
 }
 
@@ -127,8 +126,8 @@
 }
 
 .cattipu-wallpaper-studio__label {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--cattipu-type-status-size);
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-wallpaper-studio__list {
@@ -159,7 +158,7 @@
 }
 
 .cattipu-wallpaper-studio__marker {
-  font-size: 11px;
+  font-size: var(--cattipu-type-status-size);
   line-height: 1;
 }
 
@@ -180,8 +179,8 @@
 }
 
 .cattipu-wallpaper-studio__flag {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--cattipu-type-status-size);
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-wallpaper-studio__info {
@@ -191,9 +190,8 @@
 
 .cattipu-wallpaper-studio__info-title {
   margin: 0 0 8px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-wallpaper-studio__readout {
@@ -212,7 +210,7 @@
 .cattipu-wallpaper-studio__readout dt,
 .cattipu-wallpaper-studio__readout dd {
   margin: 0;
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-wallpaper-studio__readout dt {
@@ -237,8 +235,8 @@
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
   font-family: inherit;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
   cursor: default;
 }
 

@@ -42,7 +42,7 @@ export const CATTIPU_SIDEBAR_REFERENCE = {
   nodeDisplayWidth: 40,
   nodeDisplayHeight: 32,
   nodeLabelSize: cattipuTokens.type.body,
-  nodeLabelLineHeight: 18,
+  nodeLabelLineHeight: cattipuTokens.type.lineHeight.body,
 } as const;
 
 type SidebarStyle = CSSProperties &

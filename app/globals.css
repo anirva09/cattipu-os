@@ -223,8 +223,10 @@ body {
   /* M20T1: every self-hosted face (IBM VGA 8x16, VT323, Press Start 2P)
      ships weight 400 only, so any 500-700 request was rendered as Chromium
      faux bold — smeared, partly transparent strokes on a pixel grid. Declared
-     weights are left as they are; they just no longer get synthesized. */
-  font-synthesis-weight: none;
+     weights are left as they are; they just no longer get synthesized.
+     Final visual lock: the shell roles now request 400 outright, and no
+     synthetic italic or small-caps is drawn either. */
+  font-synthesis: none;
 }
 
 * {

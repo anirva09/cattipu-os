@@ -58,9 +58,9 @@
 .cattipu-right-widget-stack__header-title {
   min-width: 0;
   overflow: hidden;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 20px;
+  font-size: var(--cattipu-type-widget-header-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-widget-header-line);
   white-space: nowrap;
   text-overflow: clip;
 }
@@ -138,12 +138,12 @@
   display: grid;
   align-content: start;
   gap: 0;
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
 }
 
 .cattipu-right-widget-stack__welcome-copy strong {
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
 }
 
 .cattipu-right-widget-stack__recent {
@@ -156,9 +156,9 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 20px;
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-body-line);
 }
 
 .cattipu-right-widget-stack__view-all {
@@ -173,9 +173,9 @@
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
   font-family: inherit;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 20px;
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-body-line);
   cursor: default;
 }
 
@@ -210,7 +210,7 @@
   fill: var(--cattipu-outer-frame);
   font-family: var(--cattipu-font-family);
   font-size: 8px;
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
   text-anchor: middle;
 }
 
@@ -232,9 +232,9 @@
   width: 100%;
   margin: 0;
   padding: 0;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 20px;
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-body-line);
 }
 
 .cattipu-right-widget-stack__status-row {
@@ -313,9 +313,9 @@
 
 .cattipu-right-widget-stack__tool-label {
   display: block;
-  height: 18px;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 18px;
+  height: 16px;
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-body-line);
   white-space: nowrap;
 }

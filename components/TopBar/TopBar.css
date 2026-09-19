@@ -39,8 +39,8 @@
   display: block;
   flex: 0 0 auto;
   font-size: var(--cattipu-top-bar-brand-size);
-  font-weight: 400;
-  line-height: 32px;
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-desktop-title-line);
   letter-spacing: 1px;
   white-space: nowrap;
 }
@@ -169,7 +169,7 @@
   display: block;
   color: var(--cattipu-top-bar-active);
   font-size: var(--cattipu-top-bar-date-size);
-  font-weight: 700;
-  line-height: 16px;
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-widget-header-line);
   white-space: nowrap;
 }

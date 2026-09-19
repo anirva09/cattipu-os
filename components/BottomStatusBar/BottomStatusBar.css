@@ -57,15 +57,15 @@
   padding: 0 var(--cattipu-bottom-inline-padding);
   overflow: hidden;
   background: var(--cattipu-cream);
-  font-size: var(--cattipu-bottom-label-size);
-  line-height: 18px;
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
   white-space: nowrap;
 }
 
 .cattipu-bottom-status-bar__segment strong {
   min-width: 0;
   overflow: hidden;
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
   text-overflow: clip;
 }
 

@@ -17,6 +17,14 @@ import { CATTIPU_VERSION, CATTIPU_BUILD, CATTIPU_TAGLINE } from "@/lib/version";
 import { DeveloperDiagnostics } from "@/components/Diagnostics/DeveloperDiagnostics";
 import { WallpaperStudio } from "@/components/WallpaperStudio/WallpaperStudio";
 
+import "../../design-system/bevel.css";
+import "./SettingsApp.css";
+
+/** A raised physical key: the shell's bevel primitives, square corners. */
+const KEY = "cattipu-edge--outer cattipu-bevel--raised cattipu-bevel--pressable";
+/** A sunk instrument well. */
+const WELL = "cattipu-edge--outer cattipu-bevel--inset";
+
 type Section =
   | "wallpaper"
   | "dock"
@@ -67,28 +75,29 @@ export function SettingsApp() {
   const [section, setSection] = useState<Section>("wallpaper");
 
   return (
-    <div className="flex h-full bg-surface-solid">
-      <nav className="flex w-40 shrink-0 flex-col gap-0.5 border-r border-border bg-surface px-2 py-3">
+    <div className="cattipu-settings">
+      <nav className="cattipu-settings__nav" aria-label="Settings sections">
         {SECTIONS.map((s) => {
           const Icon = s.icon;
           const active = s.id === section;
           return (
             <button
               key={s.id}
+              type="button"
               onClick={() => setSection(s.id)}
-              className={[
-                "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] leading-5 font-medium transition-colors",
-                active ? "bg-navy text-white" : "text-ink hover:bg-navy/[0.06]",
-              ].join(" ")}
+              aria-current={active ? "page" : undefined}
+              className="cattipu-settings__nav-item"
             >
-              <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
-              {s.label}
+              <span className="cattipu-settings__nav-icon" aria-hidden="true">
+                <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
+              </span>
+              <span className="cattipu-settings__nav-label">{s.label}</span>
             </button>
           );
         })}
       </nav>
 
-      <div className="min-w-0 flex-1 overflow-auto px-6 py-5">
+      <div className="cattipu-settings__content">
         {section === "wallpaper" && <WallpaperStudio />}
         {section === "dock" && <DockSection />}
         {section === "cursor" && <CursorSection />}
@@ -103,9 +112,9 @@ export function SettingsApp() {
 
 function SectionTitle({ title, sub }: { title: string; sub: string }) {
   return (
-    <div className="mb-5">
-      <h2 className="text-base font-semibold text-ink">{title}</h2>
-      <p className="text-sm text-ink-dim">{sub}</p>
+    <div>
+      <h2 className="cattipu-settings__title">{title}</h2>
+      <p className="cattipu-settings__sub">{sub}</p>
     </div>
   );
 }
@@ -120,45 +129,38 @@ function DockSection() {
     <div>
       <SectionTitle title="Dock" sub="How the icon rail behaves." />
 
-      <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
-        Behavior
-      </p>
-      <div className="mb-6 flex gap-2">
+      <p className="cattipu-settings__group-label">Behavior</p>
+      <div className="cattipu-settings__row">
         {(["hover", "always"] as DockMode[]).map((mode) => (
           <button
             key={mode}
+            type="button"
             onClick={() => setDockMode(mode)}
-            className={[
-              "rounded-md border px-3 py-1.5 text-[13px] font-medium transition-colors",
-              dockMode === mode
-                ? "border-navy bg-navy text-white"
-                : "border-border-strong text-ink hover:bg-navy/[0.06]",
-            ].join(" ")}
+            aria-pressed={dockMode === mode}
+            className={`cattipu-settings__button ${KEY}`}
           >
             {mode === "hover" ? "Hover to expand" : "Always expanded"}
           </button>
         ))}
       </div>
 
-      <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
-        Icon size
-      </p>
-      <div className="flex gap-2">
+      <p className="cattipu-settings__group-label">Icon size</p>
+      <div className="cattipu-settings__row">
         {(["sm", "md", "lg"] as DockIconSize[]).map((size) => (
           <button
             key={size}
+            type="button"
             onClick={() => setDockIconSize(size)}
-            className={[
-              "flex h-11 w-11 items-center justify-center rounded-md border transition-colors",
-              dockIconSize === size
-                ? "border-navy bg-navy/10"
-                : "border-border-strong hover:bg-navy/[0.06]",
-            ].join(" ")}
+            aria-pressed={dockIconSize === size}
+            className={`cattipu-settings__size-key ${KEY}`}
             title={size.toUpperCase()}
           >
             <span
-              className="rounded-sm bg-navy"
-              style={{ width: DOCK_ICON_SIZE_PX[size] * 0.5, height: DOCK_ICON_SIZE_PX[size] * 0.5 }}
+              className="cattipu-settings__size-swatch"
+              style={{
+                width: Math.round(DOCK_ICON_SIZE_PX[size] / 2),
+                height: Math.round(DOCK_ICON_SIZE_PX[size] / 2),
+              }}
             />
           </button>
         ))}
@@ -188,15 +190,15 @@ function CursorSection() {
         checked={cursorEnabled}
         onChange={setCursorEnabled}
       />
-      <div className="mt-5 flex items-center gap-4 rounded-lg border border-border bg-surface px-4 py-3">
+      <div className={`cattipu-settings__previews ${WELL}`}>
         {CURSOR_PREVIEWS.map((c) => (
-          <div key={c.id} className="flex flex-col items-center gap-1.5">
+          <div key={c.id} className="cattipu-settings__preview">
             {/* M20C1: each cursor PNG is cropped to its own glyph, so the
                 sizes differ and a fixed square box would stretch them.
                 Every preview renders at its true pixel size, centred in a
                 common 32px slot, and `unoptimized` keeps the two-colour
                 artwork out of the lossy WebP pipeline. */}
-            <span className="flex h-8 w-8 items-center justify-center">
+            <span className="cattipu-settings__preview-slot">
               <Image
                 src={`/cursors/${c.id}.png`}
                 alt={c.id}
@@ -206,7 +208,7 @@ function CursorSection() {
                 className="pixelated"
               />
             </span>
-            <span className="text-[11px] capitalize text-ink-dim">{c.id}</span>
+            <span className="cattipu-settings__preview-caption">{c.id}</span>
           </div>
         ))}
       </div>
@@ -229,10 +231,8 @@ function SoundSection() {
         checked={soundEnabled}
         onChange={setSoundEnabled}
       />
-      <div className="mt-5">
-        <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
-          Volume
-        </p>
+      <div className="cattipu-settings__note">
+        <p className="cattipu-settings__group-label">Volume</p>
         <input
           type="range"
           min={0}
@@ -241,7 +241,7 @@ function SoundSection() {
           value={soundVolume}
           disabled={!soundEnabled}
           onChange={(e) => setSoundVolume(Number(e.target.value))}
-          className="w-full accent-navy disabled:opacity-40"
+          className="cattipu-settings__range"
         />
       </div>
     </div>
@@ -293,19 +293,20 @@ function NotificationsSection() {
         title="Notifications"
         sub="Native CATTIPU system notifications — hard-bordered, no modern toast styling."
       />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="cattipu-settings__grid">
         {SAMPLE_NOTIFICATIONS.map((n) => (
           <button
             key={n.type}
+            type="button"
             onClick={() => push(n.type, n.title, { message: n.message })}
-            className="cattipu-cursor-hand flex items-center gap-2.5 rounded-lg border border-border bg-surface px-3 py-2.5 text-left transition-colors hover:bg-navy/[0.05]"
+            className={`cattipu-cursor-hand cattipu-settings__button ${KEY}`}
           >
             <UtilityIcon id={n.iconId} size={16} className="shrink-0" />
-            <span className="text-[13px] font-medium text-ink">Send {n.label}</span>
+            <span>Send {n.label}</span>
           </button>
         ))}
       </div>
-      <p className="mt-4 text-xs text-ink-dim">
+      <p className="cattipu-settings__note">
         Ordinary notifications clear themselves in a few seconds. Errors stay until dismissed.
       </p>
     </div>
@@ -316,14 +317,14 @@ function AboutSection() {
   return (
     <div>
       <SectionTitle title="About" sub="This copy of CATTIPU OS." />
-      <div className="flex items-center gap-4 rounded-lg border border-border bg-surface px-4 py-4">
+      <div className={`cattipu-settings__about ${WELL}`}>
         <PixelLogo mode="retro" variant="mark" className="h-10 w-auto" />
         <div>
-          <p className="text-sm font-semibold text-ink">CATTIPU OS</p>
-          <p className="text-xs text-ink-dim">
+          <p>CATTIPU OS</p>
+          <p className="cattipu-settings__panel-note">
             v{CATTIPU_VERSION} · build {CATTIPU_BUILD}
           </p>
-          <p className="mt-1 text-xs italic text-ink-faint">{CATTIPU_TAGLINE}</p>
+          <p className="cattipu-settings__panel-note">{CATTIPU_TAGLINE}</p>
         </div>
       </div>
     </div>
@@ -342,26 +343,20 @@ function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface px-4 py-3">
+    <div className={`cattipu-settings__panel ${WELL}`}>
       <div>
-        <p className="text-[13px] font-medium text-ink">{label}</p>
-        <p className="text-xs text-ink-dim">{description}</p>
+        <p className="cattipu-settings__panel-label">{label}</p>
+        <p className="cattipu-settings__panel-note">{description}</p>
       </div>
       <button
+        type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
-        className={[
-          "cattipu-cursor-hand cattipu-recessed relative h-6 w-11 shrink-0 rounded-[4px] transition-colors",
-          checked ? "bg-navy" : "bg-bg-dim",
-        ].join(" ")}
+        className={`cattipu-cursor-hand cattipu-settings__switch ${WELL}`}
       >
-        <span
-          className={[
-            "cattipu-raised absolute top-0.5 h-4 w-4 rounded-[3px] bg-surface-solid transition-transform",
-            checked ? "translate-x-[22px]" : "translate-x-0.5",
-          ].join(" ")}
-        />
+        <span className="cattipu-settings__switch-knob cattipu-edge--outer" />
       </button>
     </div>
   );

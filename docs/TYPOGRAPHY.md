@@ -68,6 +68,38 @@ component CSS.
   `font-medium`/`font-semibold` declarations still in the code no longer render as Chromium faux
   bold. They render at the face's single weight.
 
+## 1b. Shell role metrics — final visual lock
+
+`design-system/tokens.ts` now owns the shell's role sizes, whole-pixel line heights and weight.
+They are published as CSS variables through `cattipuCssVariables`, which every shell component
+already spreads. Components reference `var(--cattipu-type-<role>-size|line)` and
+`var(--cattipu-type-weight)` instead of literal values.
+
+| Role | Size / line | Used by |
+|---|---|---|
+| Desktop title | 26 / 28 | Top-bar brand and workspace title |
+| Window title | 18 / 20 | Window title bars, details title, project-card titles |
+| Widget header | 15 / 16 | Right-widget headers, Settings section titles |
+| Body (menu, sidebar, button, body) | 13 / 16 | Menus, sidebar labels, tree, details, widget copy, buttons, Settings, Explorer |
+| Status | 11 / 12 | Bottom status bar, Settings group labels, secondary captions |
+
+Weight is 400 everywhere, and `body` sets `font-synthesis: none`. Hierarchy comes from size,
+case, colour and the title plates.
+
+**Measured rasterisation (Chrome, DPR 1).** A face is only pixel-exact at whole multiples of its
+design grid:
+
+| Face | Pixel-exact sizes | Anti-aliased ink at 13px |
+|---|---|---|
+| IBM VGA 8x16 (shell face) | 16, 32 | 46% |
+| VT323 | none | 65% |
+| Press Start 2P | 8, 16, 24, 32 | 36% |
+
+The roles keep the sizes the Golden Master locks (13/15/18/26), so body text is necessarily a
+scaled VGA outline. None of the three approved local faces is a proportional bitmap GUI sans.
+Reaching that character needs a new font asset, which is a sourcing decision for the owner and
+is recorded here instead of being substituted silently.
+
 ## 2. `font-pixel-ui` sizes in use
 
 All arbitrary rem values (no standard Tailwind size is used with this font). Sorted by

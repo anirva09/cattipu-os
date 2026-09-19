@@ -21,7 +21,7 @@ export const CATTIPU_BOTTOM_STATUS_BAR_REFERENCE = {
   inlinePadding: cattipuTokens.spacing[8],
   meterWidth: 152,
   meterHeight: 18,
-  labelSize: cattipuTokens.type.body,
+  labelSize: cattipuTokens.type.status,
 } as const;
 
 type BottomStatusBarStyle = CSSProperties &

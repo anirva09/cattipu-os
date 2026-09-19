@@ -18,7 +18,7 @@ export const CATTIPU_SIDEBAR_BUTTON_REFERENCE = {
   iconSize: 40,
   labelGap: cattipuTokens.spacing[8],
   labelSize: cattipuTokens.type.body,
-  labelLineHeight: 18,
+  labelLineHeight: cattipuTokens.type.lineHeight.body,
 } as const;
 
 type SidebarButtonStyle = CSSProperties &

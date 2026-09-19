@@ -137,7 +137,7 @@
   height: var(--cattipu-sidebar-node-label-line-height);
   color: var(--cattipu-outer-frame);
   font-size: var(--cattipu-sidebar-node-label-size);
-  font-weight: 700;
+  font-weight: var(--cattipu-type-weight);
   line-height: var(--cattipu-sidebar-node-label-line-height);
   text-align: center;
   white-space: nowrap;
