@@ -20,6 +20,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const tests: Array<[string, () => Promise<void> | void]> = [];
 const test = (name: string, fn: () => Promise<void> | void) => tests.push([name, fn]);
@@ -115,6 +116,59 @@ test("the Toolbox, PixelIcon registry and Wallpaper Studio import no Lucide glyp
     "components/WallpaperStudio/WallpaperStudio.tsx",
   ]) {
     assert.doesNotMatch(read(file), /lucide-react/, file);
+  }
+});
+
+// ── family completion ──────────────────────────────────────────────────
+
+async function marks(): Promise<Record<string, { toolbox?: boolean }>> {
+  const mod = await import(pathToFileURL(join(ROOT, "scripts/gen_pixelforge.mjs")).href);
+  return mod.PIXELFORGE_MARKS;
+}
+const shellNames = () =>
+  [...read("components/PixelIcon/shellIcons.ts").matchAll(/^import \w+32 from '\.\.\/\.\.\/public\/pixelforge\/shell\/32\/(\w+)\.svg';/gm)].map((m) => m[1]);
+
+test("every canonical mark is manufactured from a grid — no hand-drawn SVG outside the pipeline", async () => {
+  const owned = await marks();
+  for (const name of shellNames()) assert.ok(owned[name] && !owned[name].toolbox, `shell mark ${name} has no grid`);
+  for (const id of toolboxIds) assert.ok(owned[id]?.toolbox, `toolbox mark ${id} has no grid`);
+});
+
+test("every committed PixelForge SVG belongs to a registered mark (no orphans)", () => {
+  const names = new Set(shellNames());
+  for (const size of ["16", "32"]) {
+    for (const file of readdirSync(join(ROOT, SHELL_DIR, size))) {
+      assert.ok(names.has(file.replace(/\.svg$/, "")), `${size}/${file} is not in the shell registry`);
+    }
+  }
+});
+
+test("every PixelForge colour comes from the locked palette", () => {
+  const palette = new Set(Object.values(JSON.parse(read("scripts/pixelforge/palette.json")) as Record<string, string>).map((c) => c.toLowerCase()));
+  const files = [
+    ...readdirSync(join(ROOT, TOOLBOX_DIR)).map((f) => `${TOOLBOX_DIR}/${f}`),
+    ...["16", "32"].flatMap((size) => readdirSync(join(ROOT, SHELL_DIR, size)).map((f) => `${SHELL_DIR}/${size}/${f}`)),
+  ];
+  for (const file of files) {
+    const stray = [...fills(read(file))].filter((c) => !palette.has(c));
+    assert.deepEqual(stray, [], `${file}: colours outside palette.json`);
+  }
+});
+
+test("surfaces that render PixelForge marks import no Lucide glyphs and no legacy M13 icon set", () => {
+  const surfaces: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+      const path = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(path);
+      else if (/\.tsx?$/.test(entry.name) && !path.startsWith("components/PixelIcon/") && /\b(ShellIcon|PixelIcon)\b/.test(read(path))) surfaces.push(path);
+    }
+  };
+  walk("components");
+  assert.ok(surfaces.length >= 8, `only ${surfaces.length} PixelForge surfaces found`);
+  for (const file of surfaces) {
+    assert.doesNotMatch(read(file), /from ["']lucide-react["']/, `${file} mixes Lucide into a PixelForge surface`);
+    assert.doesNotMatch(read(file), /from ["'][^"']*components\/Icons["']/, `${file} imports the legacy M13 icon set`);
   }
 });
 

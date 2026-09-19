@@ -17,9 +17,9 @@
  * on each part plus a 1px exterior ring, which leaves every convex corner
  * stepped — 1px internal divisions, a 1px top-left highlight and a 1–2px
  * bottom-right shade. 16×16 masters are drawn separately with a 1px contour.
- * Nothing here scales one size into the other; the few 32 masters whose only
- * production use is 16px (Settings navigation, status marks) are 2× pixel
- * doublings of their hand-drawn 16, which keeps the 2px-outline rule exact.
+ * Nothing here scales one size into the other: every mark has its own 32 and
+ * its own 16 drawing, and every canonical shell mark is listed below, so the
+ * grids are the whole family.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -36,6 +36,21 @@ const PALETTE = JSON.parse(readFileSync(join(SRC, 'palette.json'), 'utf8'));
  * department). Ids are unique across the table.
  */
 export const PIXELFORGE_MARKS = {
+  // top-bar reference trio — the construction every other mark follows.
+  // Full-bleed: drawn edge to edge for the 32px top-bar key, so they are the
+  // one set exempt from the 1px breathing row (the pixels predate the grids
+  // and were moved in unchanged).
+  search: { label: 'Search', id: 'CAT-SHELL-009', shell: true, fullBleed: true },
+  bell: { label: 'Bell', id: 'CAT-SHELL-010', shell: true, fullBleed: true },
+  clock: { label: 'Clock', id: 'CAT-SYS-002', shell: true, fullBleed: true },
+  home: { label: 'Home', id: 'CAT-SHELL-001', shell: true },
+  // system utilities
+  terminal: { label: 'Terminal', id: 'CAT-SYS-001', shell: true },
+  calendar: { label: 'Calendar', id: 'CAT-SYS-003', shell: true },
+  volume: { label: 'Volume', id: 'CAT-SYS-004', shell: true },
+  network: { label: 'Network', id: 'CAT-SYS-005', shell: true },
+  save: { label: 'Save', id: 'CAT-UTIL-003', shell: true },
+  favorite: { label: 'Favorite', id: 'CAT-UTIL-005', shell: true },
   // filesystem family
   folder: { label: 'Folder', id: 'CAT-FAMILY-folder', shell: true },
   folderopen: { label: 'Open Folder', id: 'CAT-EXP-003', shell: true },

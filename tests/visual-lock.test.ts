@@ -220,7 +220,7 @@ test("menu labels are unique Title Case and every menu mark is a registered shel
 
 // ── icons ──────────────────────────────────────────────────────────────
 
-type Mark = { label: string; id: string; shell?: boolean; toolbox?: boolean };
+type Mark = { label: string; id: string; shell?: boolean; toolbox?: boolean; fullBleed?: boolean };
 async function generator(): Promise<{ PIXELFORGE_MARKS: Record<string, Mark>; toSvg: (rows: string[], label: string) => string }> {
   return import(pathToFileURL(join(ROOT, "scripts/gen_pixelforge.mjs")).href);
 }
@@ -242,30 +242,31 @@ test("every manufactured SVG is exactly its grid", async () => {
   }
 });
 
-test("32px masters shown at 32 keep the 2px near-black contour inside the breathing row", async () => {
+test("every 32px master keeps the 2px near-black contour inside the breathing row", async () => {
   const { PIXELFORGE_MARKS } = await generator();
   const palette = JSON.parse(read("scripts/pixelforge/palette.json")) as Record<string, string>;
   assert.equal(palette.K, "#241f12");
-  // 16-first marks: their only production size is 16; the 32 is a 2× doubling.
-  const sixteenFirst = new Set(["wallpaper", "dock", "cursor", "sound", "diagnostics", "about", "info", "ready", "warning", "error"]);
-  for (const name of Object.keys(PIXELFORGE_MARKS).filter((n) => !sixteenFirst.has(n))) {
+  // Every mark has its own 32 drawing now; no mark's 32 is a doubled 16.
+  // Only the full-bleed top-bar reference trio may touch the canvas edge.
+  for (const [name, mark] of Object.entries(PIXELFORGE_MARKS)) {
     const rows = gridRows(32, name);
-    assert.ok(/^\.+$/.test(rows[0]) && /^\.+$/.test(rows[31]), `${name}: draws in row 0 or 31`);
-    assert.ok(rows.every((r) => r[0] === "." && r[31] === "."), `${name}: draws in column 0 or 31`);
+    if (!mark.fullBleed) {
+      assert.ok(/^\.+$/.test(rows[0]) && /^\.+$/.test(rows[31]), `${name}: draws in row 0 or 31`);
+      assert.ok(rows.every((r) => r[0] === "." && r[31] === "."), `${name}: draws in column 0 or 31`);
+    }
     // Every opaque pixel on the silhouette edge is outline: the exterior ring.
     for (let y = 1; y < 31; y++) for (let x = 1; x < 31; x++) {
       if (rows[y][x] === ".") continue;
       const edge = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => rows[y + dy][x + dx] === ".");
       if (edge) assert.equal(rows[y][x], "K", `${name}: non-outline pixel on the silhouette at ${x},${y}`);
     }
-  }
-  for (const name of sixteenFirst) {
+    if (mark.toolbox) continue;
     const small = gridRows(16, name);
     const doubled = small.flatMap((r) => {
       const w = [...r].map((c) => c + c).join("");
       return [w, w];
     });
-    assert.deepEqual(gridRows(32, name), doubled, `${name}: 32 is not the 2× doubling of its 16`);
+    assert.notDeepEqual(rows, doubled, `${name}: 32 is a 2× doubling of its 16, not its own drawing`);
   }
 });
 

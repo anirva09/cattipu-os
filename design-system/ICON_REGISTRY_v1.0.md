@@ -68,6 +68,36 @@ Toolbox mark was rebuilt to match them. It adds to v1.0.1 and renumbers nothing.
 - Where these silhouettes differ from the Volume III tables (Forge's crossed tools, Memory's
   microchip, Service's bust, Entity's crosshair, Config's tools), v1.0.2 governs.
 
+## Revision note — family lock (v1.0.3)
+
+Every canonical mark now follows the v1.0.2 construction. That includes marks no live
+surface renders today. Volume VII lists every shipped mark and its status.
+
+- **One pipeline.** Every shipped mark, including Search, Bell and Clock, is manufactured
+  from a grid by `scripts/gen_pixelforge.mjs`. The reference trio moved in pixel-identical.
+  It is the one full-bleed set: drawn edge to edge for the 32px top-bar key and exempt from
+  the breathing row. Every other 32 master keeps rows and columns 0 and 31 empty.
+- **No doubled masters.** The Settings-navigation and status 32s were 2× doublings of their
+  16s, which gave them 2px highlights. They now have their own 32 drawings. This supersedes
+  the v1.0.1 "16-first" exception.
+- **Architect.** A wide purple hub with an integrated gold core and cream centre. Three
+  dependent purple nodes sit off it on 2-row metal bus necks. Its black silhouette shows
+  core, links and nodes. It supersedes the v1.0.2 description.
+- **Memory.** A green store with two filed cream records, one gold record raised (recalled)
+  with its index line, and a gold index pull. It has no label plate and no nested frame.
+- **Canvas.** The gold selection handles now sit on the navy design plane's corners and stand past its edge, around one placed cream component. Filled black, it reads as a selected surface. Before, it was a plain square. This supersedes the v1.0.2 description.
+- **Home.** A navy System roof over a cream shell hall with one gold root doorway. The red
+  roof and the suburban windows are gone. Red belongs to Projects.
+- **System utilities** now use palette colours only. Network, Volume and Calendar had used
+  `#456c39` and `#a8946f`, which were never in the palette. Network is three green link
+  bars on a metal interface base. Volume is a metal cone with two navy output bars.
+  Terminal is a metal console with a black screen, a green prompt and a keyboard slab.
+  Calendar is a cream page with a red header, metal binder rings and a gold "today" cell.
+  Save is a navy disk with a metal shutter and a cream label. Favorite is a chunky gold star.
+- **Settings/status 16s redrawn.** Dock, whose tiles floated, is now docked. Cursor was lit
+  from the wrong side. Sound had floating 1px waves and is now a speaker cabinet. About was a
+  near-duplicate of Info and is now a gold identification plate.
+
 > **Normative language:** **MUST**, **MUST NOT**, **SHOULD**, and **MAY** are requirements terms. An icon that violates a MUST/MUST NOT rule is not PixelForge-compliant.
 
 ## Registry Principles
@@ -705,6 +735,80 @@ forbidden:
 Claude or any future manufacturing agent must treat the registry entry as the **specification source**, not infer a new style from generic icon libraries.
 
 ---
+
+# Volume VII — Shipped Production Registry (v1.0.3)
+
+These are the 44 marks that ship. Each is manufactured from `scripts/pixelforge/grids/` and
+registered in `components/PixelIcon/`. The IDs are the permanent IDs the code carries. Some
+Sheet 01 and M16 IDs collide with the planning IDs in Volume III: Projects is CAT-SHELL-002
+here, and CAT-UTIL-001–005 name the Sheet 01 utilities. IDs are never renumbered (II.1), so
+this table is authoritative for shipped assets and Volume III remains the planning register.
+
+Status: **PASS** means the mark was reviewed and already follows the construction.
+**REBUILT** means it was redrawn to follow it. "16 live" means some live surface draws the
+16px master today.
+
+| ID | Name | Purpose | 32 | 16 | Status |
+|---|---|---|:---:|:---:|---|
+| CAT-SHELL-009 | Search | Find across the workspace (top bar) | ✓ | ✓ 16 live | PASS — reference |
+| CAT-SHELL-010 | Bell | Notification Center (top bar) | ✓ | ✓ 16 live | PASS — reference |
+| CAT-SYS-002 | Clock | Local time (top bar) | ✓ | ✓ | PASS — reference |
+| CAT-SHELL-001 | Home | Shell root / desktop home | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-SHELL-002 | Projects | Project containers | ✓ | ✓ 16 live | PASS (rebuilt v1.0.2) |
+| CAT-SHELL-003 | Architect | System architecture workspace | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-SHELL-004 | Canvas | Visual-layout workspace | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-SHELL-005 | Forge | Build / fabrication | ✓ | ✓ | PASS (rebuilt v1.0.2) |
+| CAT-SHELL-006 | Memory | Indexed project memory | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-FAMILY-launch | Launch | Deployment / release | ✓ | ✓ | PASS (rebuilt v1.0.2) |
+| CAT-SHELL-007 | Explorer | Filesystem browsing | ✓ | ✓ | PASS (rebuilt v1.0.2) |
+| CAT-SHELL-008 | Settings | System configuration | ✓ | ✓ | PASS (rebuilt v1.0.2) |
+| CAT-ARCH-002 | Entity | Domain record (Toolbox) | ✓ | — | PASS (rebuilt v1.0.2) |
+| CAT-ARCH-003 | Service | Running service unit (Toolbox) | ✓ | — | PASS (rebuilt v1.0.2) |
+| CAT-ARCH-004 | Flow | Branching workflow (Toolbox) | ✓ | — | PASS (rebuilt v1.0.2) |
+| CAT-ARCH-006 | Screen | UI screen (Toolbox) | ✓ | — | PASS (rebuilt v1.0.2) |
+| CAT-ARCH-005 | API | Endpoint / interface (Toolbox) | ✓ | — | PASS (rebuilt v1.0.2) |
+| CAT-ARCH-014 | Job | Recurring background process (Toolbox) | ✓ | — | PASS (rebuilt v1.0.2) |
+| CAT-EXP-008 | Script | Executable script (Toolbox) | ✓ | — | PASS (rebuilt v1.0.2) |
+| CAT-FORGE-017 | Config | Configuration control (Toolbox) | ✓ | — | PASS (rebuilt v1.0.2) |
+| CAT-FAMILY-folder | Folder | Folder object | ✓ | ✓ 16 live | PASS |
+| CAT-EXP-003 | Open Folder | Opened folder / Open command | ✓ | ✓ 16 live | PASS |
+| CAT-EXP-004 | File | Generic file | ✓ | ✓ | PASS |
+| CAT-EXP-009 | Archive | Archived projects | ✓ | ✓ 16 live | PASS |
+| CAT-UTIL-002 | Recent | Recent files | ✓ | ✓ | PASS |
+| CAT-PROJ-002 | Template Folder | Project templates | ✓ | ✓ 16 live | PASS |
+| CAT-UTIL-004 | Shortcut | Desktop shortcut to a project | ✓ | ✓ | PASS |
+| CAT-UTIL-001 | New Project | Create a project | ✓ | ✓ 16 live | PASS |
+| CAT-SYS-001 | Terminal | Console / command surface | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-SYS-003 | Calendar | Date / schedule | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-SYS-004 | Volume | Sound output level | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-SYS-005 | Network | Connectivity | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-UTIL-003 | Save | Save / persist | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-UTIL-005 | Favorite | Starred item | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-UTIL-022 | Wallpaper | Settings: wallpaper | ✓ | ✓ 16 live | 32 REBUILT, 16 PASS |
+| CAT-UTIL-023 | Dock | Settings: dock | ✓ | ✓ 16 live | REBUILT v1.0.3 |
+| CAT-CANVAS-002 | Cursor | Settings: cursor | ✓ | ✓ 16 live | REBUILT v1.0.3 |
+| CAT-UTIL-018 | Sound | Settings: sound | ✓ | ✓ 16 live | REBUILT v1.0.3 |
+| CAT-UTIL-024 | Diagnostics | Settings: diagnostics | ✓ | ✓ 16 live | 32 REBUILT, 16 PASS |
+| CAT-UTIL-025 | About | Settings: about | ✓ | ✓ 16 live | REBUILT v1.0.3 |
+| CAT-UTIL-007 | Info | Info status | ✓ | ✓ 16 live | 32 REBUILT, 16 PASS |
+| CAT-UTIL-010 | Success | Success status | ✓ | ✓ 16 live | 32 REBUILT, 16 PASS |
+| CAT-UTIL-008 | Warning | Warning status | ✓ | ✓ 16 live | 32 REBUILT, 16 PASS |
+| CAT-UTIL-009 | Error | Error status | ✓ | ✓ 16 live | 32 REBUILT, 16 PASS |
+
+Every shell mark has both masters, and the Toolbox marks are 32-only because the Toolbox
+renders only at 32. `tests/icons.test.ts` and `tests/visual-lock.test.ts` enforce the
+following:
+
+- every mark is grid-owned;
+- there are no orphan SVGs;
+- every colour is in `palette.json`;
+- every non-reference 32 keeps the breathing row and a near-black silhouette edge;
+- no 32 is a doubled 16;
+- no surface that renders PixelForge imports Lucide or the legacy M13 set.
+
+**Outside this registry.** Architect's internal workspace panels (`components/Architect/*`)
+still draw about 40 Lucide glyphs inside the live Architect window. They are not
+PixelForge marks. Migrating them needs new marks and is recorded as open work.
 
 # Appendix A — Registry Governance
 
