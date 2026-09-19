@@ -11,6 +11,7 @@ import {
 
 import { cattipuCssVariables, cattipuTokens } from "../../design-system/tokens";
 import { ContextMenu, type ContextMenuItem } from "../ContextMenu";
+import { MENU_COMMANDS, MENU_OBJECT_ICONS } from "../ContextMenu/menuCommands";
 import { DividerGroove } from "../DividerGroove/DividerGroove";
 import { FolderTree, type FolderTreeNode } from "../FolderTree/FolderTree";
 import { ShellIcon } from "../PixelIcon";
@@ -256,7 +257,7 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
       return usable.map((t) => ({
         id: t.id ?? "__root__",
         label: t.label,
-        icon: "folder" as ShellIconName,
+        icon: MENU_OBJECT_ICONS.folder,
         onSelect: () => moveIntoFolder(objectId, t.id),
       }));
     },
@@ -266,18 +267,16 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
   const backgroundItems = (): ContextMenuItem[] => [
     {
       id: "new-folder",
-      label: "New Folder",
-      icon: "folder",
+      ...MENU_COMMANDS.newFolder,
       // Created in the folder you are standing in. At the root that means
       // it lands on the desktop too, because the root IS the desktop.
       onSelect: () => createFolder(location),
     },
     { kind: "separator", id: "sep-1" },
-    { id: "paste", label: "Paste", disabled: true, hint: "EMPTY" },
+    { id: "paste", ...MENU_COMMANDS.paste, disabled: true },
     {
       id: "refresh",
-      label: "Refresh",
-      icon: "recent",
+      ...MENU_COMMANDS.refresh,
       // The listing is derived from state on every render, so there is
       // nothing to reload. Clearing the selection and the search is what
       // a person actually gets here, and claiming a reload would be
@@ -292,13 +291,12 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
   const entryItems = (entry: ExplorerEntry): ContextMenuItem[] => {
     const openItem: ContextMenuItem = {
       id: "open",
-      label: "Open",
-      icon: "openfile",
+      ...MENU_COMMANDS.open,
       onSelect: () => open(entry),
     };
     const renameItem: ContextMenuItem = {
       id: "rename",
-      label: "Rename",
+      ...MENU_COMMANDS.rename,
       onSelect: () => setRenamingId(entry.id),
     };
 
@@ -310,14 +308,13 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
         renameItem,
         {
           id: "move",
-          label: "Move to",
-          icon: "folder",
+          ...MENU_COMMANDS.moveTo,
           disabled: targets.length === 0,
           children: targets,
         },
         {
           id: "delete",
-          label: "Delete",
+          ...MENU_COMMANDS.delete,
           // Said out loud, because it is the one action here that can
           // remove something the person cannot see from this row.
           hint: descendantIds(objects, entry.objectId).length
@@ -336,15 +333,13 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
         renameItem,
         {
           id: "move",
-          label: "Move to",
-          icon: "folder",
+          ...MENU_COMMANDS.moveTo,
           disabled: targets.length === 0,
           children: targets,
         },
         {
           id: "remove",
-          label: "Remove Shortcut",
-          hint: "KEEPS PROJECT",
+          ...MENU_COMMANDS.removeShortcut,
           onSelect: () => removeObject(entry.objectId as string),
         },
       ];
@@ -356,15 +351,14 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
       renameItem,
       {
         id: "duplicate",
-        label: "Duplicate",
-        icon: "newproject",
+        ...MENU_COMMANDS.duplicate,
         onSelect: () => {
           if (entry.projectId) duplicateProject(entry.projectId);
         },
       },
       {
         id: "delete",
-        label: "Delete",
+        ...MENU_COMMANDS.delete,
         onSelect: () => {
           if (entry.projectId) removeProject(entry.projectId);
         },

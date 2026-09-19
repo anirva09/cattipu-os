@@ -11,7 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
-import { cattipuTokens } from "../../design-system/tokens";
+import { cattipuCssVariables } from "../../design-system/tokens";
 import { ShellIcon } from "../PixelIcon";
 import type { ShellIconName } from "../PixelIcon";
 
@@ -129,11 +129,44 @@ export function ContextMenu({ x, y, title, items, onClose }: ContextMenuProps) {
     });
   }, [x, y, trail, items]);
 
+  // Keyboard selection moves real focus between rows, so the keyboard
+  // state and the hover state are one :focus/:hover treatment.
+  const moveFocus = useCallback((step: 1 | -1 | "first" | "last") => {
+    const rows = [
+      ...(rootRef.current?.querySelectorAll<HTMLButtonElement>(
+        ".cattipu-context-menu__item:not([disabled])",
+      ) ?? []),
+    ];
+    if (!rows.length) return;
+    const at = rows.indexOf(document.activeElement as HTMLButtonElement);
+    const next =
+      step === "first" ? 0
+      : step === "last" ? rows.length - 1
+      : at === -1 ? (step === 1 ? 0 : rows.length - 1)
+      : (at + step + rows.length) % rows.length;
+    rows[next].focus({ preventScroll: true });
+  }, []);
+
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) onClose();
     };
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp" || event.key === "Home" || event.key === "End") {
+        event.preventDefault();
+        moveFocus(
+          event.key === "ArrowDown" ? 1
+          : event.key === "ArrowUp" ? -1
+          : event.key === "Home" ? "first"
+          : "last",
+        );
+        return;
+      }
+      if (event.key === "ArrowLeft" && trail.length) {
+        event.preventDefault();
+        setTrail((t) => t.slice(0, -1));
+        return;
+      }
       if (event.key === "Escape") {
         event.stopPropagation();
         // Escape backs out one level before closing — otherwise a
@@ -151,7 +184,7 @@ export function ContextMenu({ x, y, title, items, onClose }: ContextMenuProps) {
       window.removeEventListener("keydown", onKeyDown, true);
       window.removeEventListener("resize", onClose);
     };
-  }, [onClose, trail.length]);
+  }, [moveFocus, onClose, trail.length]);
 
   useEffect(() => {
     rootRef.current?.focus({ preventScroll: true });
@@ -180,9 +213,13 @@ export function ContextMenu({ x, y, title, items, onClose }: ContextMenuProps) {
 
   const style = useMemo<MenuStyle>(
     () => ({
+      // The menu is portalled to <body>, outside every component that
+      // publishes the design-system variables. Without re-publishing them
+      // here the frame, cream surface, bevel and shell face all resolve to
+      // nothing and the menu falls back to the page's body font.
+      ...cattipuCssVariables,
       left: `${position.left}px`,
       top: `${position.top}px`,
-      "--cattipu-menu-highlight": cattipuTokens.colors.navy,
     }),
     [position.left, position.top],
   );
@@ -229,20 +266,25 @@ export function ContextMenu({ x, y, title, items, onClose }: ContextMenuProps) {
                 data-disabled={item.disabled ? "true" : undefined}
                 aria-disabled={item.disabled || undefined}
                 disabled={item.disabled}
+                aria-haspopup={item.children ? "menu" : undefined}
                 onClick={() => select(item)}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowRight" && item.children && !item.disabled) {
+                    event.preventDefault();
+                    select(item);
+                  }
+                }}
               >
-                <span className="cattipu-context-menu__icon">
+                <span className="cattipu-context-menu__icon" aria-hidden="true">
                   {item.icon ? <ShellIcon name={item.icon} size={16} /> : null}
                 </span>
                 <span className="cattipu-context-menu__label">{item.label}</span>
-                {item.children ? (
-                  <span
-                    className="cattipu-context-menu__more"
-                    aria-hidden="true"
-                  />
-                ) : item.hint ? (
-                  <span className="cattipu-context-menu__hint">{item.hint}</span>
-                ) : null}
+                <span className="cattipu-context-menu__hint">
+                  {item.children ? null : item.hint}
+                </span>
+                <span className="cattipu-context-menu__arrow" aria-hidden="true">
+                  {item.children ? <span className="cattipu-context-menu__more" /> : null}
+                </span>
               </button>
             </li>
           ) : (

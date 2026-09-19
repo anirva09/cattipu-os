@@ -11,6 +11,7 @@ import {
 
 import { cattipuTokens } from "../../design-system/tokens";
 import { ContextMenu, type ContextMenuItem } from "../ContextMenu";
+import { MENU_COMMANDS, MENU_OBJECT_ICONS } from "../ContextMenu/menuCommands";
 import { ShellIcon } from "../PixelIcon";
 import type { ShellIconName } from "../PixelIcon";
 import {
@@ -256,8 +257,7 @@ export function DesktopObjectLayer({
     return [
       {
         id: "new-folder",
-        label: "New Folder",
-        icon: "folder",
+        ...MENU_COMMANDS.newFolder,
         onSelect: () => createFolder(),
       },
       {
@@ -266,13 +266,12 @@ export function DesktopObjectLayer({
         // them rather than behind new chrome. The templates drill down in
         // the same way the shortcut list does.
         id: "new-project",
-        label: "New Project",
-        icon: "newproject",
+        ...MENU_COMMANDS.newProject,
         children: PROJECT_TEMPLATES.map((template) => ({
           id: template.id,
           label: template.label,
           hint: template.summary.toUpperCase(),
-          icon: "projects" as ShellIconName,
+          icon: MENU_OBJECT_ICONS.project,
           onSelect: () => {
             const project = addProjectFromTemplate(template.id);
             // One action, one shared state (Part E). The project record
@@ -295,32 +294,29 @@ export function DesktopObjectLayer({
       },
       {
         id: "new-shortcut",
-        label: "New Project Shortcut",
-        icon: "projects",
+        ...MENU_COMMANDS.newProjectShortcut,
         // Disabled rather than hidden when there is nothing to link: the
         // capability exists, you have simply linked everything already.
         disabled: offerable.length === 0,
         children: offerable.map((project) => ({
           id: project.id,
           label: project.name,
-          icon: "projects" as ShellIconName,
+          icon: MENU_OBJECT_ICONS.project,
           onSelect: () => createProjectShortcut(project.id),
         })),
       },
       { kind: "separator", id: "sep-1" },
       {
         id: "paste",
-        label: "Paste",
+        ...MENU_COMMANDS.paste,
         // There is no desktop clipboard yet. The item is here because the
         // machine will have one, and shipping it disabled is honest about
         // both halves of that.
         disabled: true,
-        hint: "EMPTY",
       },
       {
         id: "refresh",
-        label: "Refresh",
-        icon: "recent",
+        ...MENU_COMMANDS.refresh,
         // The desktop renders from state and re-renders when state
         // changes, so there is nothing to reload. Clearing the selection
         // is the one thing a person actually gets from Refresh here, and
@@ -334,27 +330,25 @@ export function DesktopObjectLayer({
         // would change the Golden Master, and a right-click on the
         // desktop is where an OS keeps these anyway.
         id: "window",
-        label: "Window",
-        icon: "explorer",
+        ...MENU_COMMANDS.window,
         // Nothing to arrange is not the same as the feature being
         // missing, so the row stays and dims.
         disabled: visibleWindowCount === 0,
         children: [
           {
             id: "cascade",
-            label: "Cascade",
+            ...MENU_COMMANDS.cascade,
             onSelect: () => onArrangeWindows?.("cascade"),
           },
           {
             id: "tile",
-            label: "Tile",
+            ...MENU_COMMANDS.tile,
             onSelect: () => onArrangeWindows?.("tile"),
           },
           { kind: "separator", id: "win-sep" },
           {
             id: "restore-all",
-            label: "Restore All",
-            hint: "SIZE + PLACE + ORDER",
+            ...MENU_COMMANDS.restoreAll,
             onSelect: () => onRestoreAllWindows?.(),
           },
         ],
@@ -362,8 +356,7 @@ export function DesktopObjectLayer({
       { kind: "separator", id: "sep-3" },
       {
         id: "wallpaper",
-        label: "Change Wallpaper",
-        icon: "canvas",
+        ...MENU_COMMANDS.changeWallpaper,
         // M21. Wallpaper Studio is the Settings section that opens first,
         // so raising Settings is the whole command — no second picker here.
         onSelect: () => onOpenWindow("settings"),
@@ -387,34 +380,33 @@ export function DesktopObjectLayer({
     (object: OsObject): ContextMenuItem[] => {
       if (object.kind === "folder") {
         return [
-          { id: "open", label: "Open", icon: "openfile", onSelect: () => open(object) },
+          { id: "open", ...MENU_COMMANDS.open, onSelect: () => open(object) },
           { kind: "separator", id: "sep-1" },
           {
             id: "rename",
-            label: "Rename",
+            ...MENU_COMMANDS.rename,
             onSelect: () => setRenamingId(object.id),
           },
           {
             id: "delete",
-            label: "Delete",
+            ...MENU_COMMANDS.delete,
             onSelect: () => removeObject(object.id),
           },
         ];
       }
       return [
-        { id: "open", label: "Open", icon: "openfile", onSelect: () => open(object) },
+        { id: "open", ...MENU_COMMANDS.open, onSelect: () => open(object) },
         { kind: "separator", id: "sep-1" },
         {
           id: "rename",
-          label: "Rename",
+          ...MENU_COMMANDS.rename,
           onSelect: () => setRenamingId(object.id),
         },
         {
           id: "remove",
-          label: "Remove Shortcut",
           // Named for what it does. "Delete" on a shortcut is the wording
           // that makes people believe they deleted the project.
-          hint: "KEEPS PROJECT",
+          ...MENU_COMMANDS.removeShortcut,
           onSelect: () => removeObject(object.id),
         },
       ];

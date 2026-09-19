@@ -5,19 +5,36 @@
   box-sizing: border-box;
 }
 
-/* Fixed, because the menu is anchored to the pointer and the pointer is a
+/*
+ * The shell's one menu grammar — desktop, Explorer, every submenu.
+ *
+ * Row: 24px tall. Columns, left to right: 4px padding, a 24px icon
+ * column holding a 16×16 PixelForge mark, a 4px gap, the label, an
+ * optional hint, a 16px submenu-arrow column, 4px padding. Every row
+ * reserves the icon and arrow columns whether it uses them or not, so
+ * labels and arrows line up down the whole menu.
+ *
+ * Text is the body role (13/16) in the shell face at weight 400.
+ * Selection is System navy with cream text, for pointer and keyboard
+ * alike. Square corners, hard bevel, no fade.
+ *
+ * Fixed, because the menu is anchored to the pointer and the pointer is a
  * viewport coordinate. Positioning it inside the desktop would mean
- * subtracting the sidebar and top bar by hand at every call site, and
- * getting that wrong is invisible until the menu opens near an edge. */
+ * subtracting the sidebar and top bar by hand at every call site.
+ */
 .cattipu-context-menu {
   position: fixed;
   z-index: 12000;
   min-width: 196px;
-  max-width: 288px;
+  max-width: 320px;
   padding: 2px;
   background: var(--cattipu-cream);
   color: var(--cattipu-outer-frame);
   font-family: var(--cattipu-font-family);
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-body-line);
+  font-synthesis: none;
   outline: none;
 }
 
@@ -25,39 +42,39 @@
 .cattipu-context-menu__back {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
-  height: 22px;
-  padding: 0 8px;
+  height: 20px;
+  margin: 0 0 2px;
+  padding: 0 4px;
   overflow: hidden;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-family: inherit;
+  font-size: var(--cattipu-type-status-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-status-line);
+  letter-spacing: 1px;
   text-transform: uppercase;
   white-space: nowrap;
   background: var(--cattipu-dark-cream);
   border: 0;
-  border-bottom: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  border-bottom: 1px solid var(--cattipu-bevel-right);
   color: var(--cattipu-outer-frame);
   text-align: left;
 }
 
-.cattipu-context-menu__back {
-  cursor: pointer;
-}
-
-.cattipu-context-menu__back:hover {
-  background: var(--cattipu-menu-highlight);
+.cattipu-context-menu__back:hover,
+.cattipu-context-menu__back:focus-visible {
+  background: var(--cattipu-navy);
   color: var(--cattipu-cream);
+  outline: none;
 }
 
-/* Drawn, not typed. A "<" from the VGA face sits on a different baseline
- * to the pixel marks beside it; a 2px triangle made of borders lands on
- * whole pixels at every zoom the rest of the shell is drawn for. */
+/* Drawn, not typed: a border triangle lands on whole pixels. */
 .cattipu-context-menu__back-arrow {
   flex: 0 0 auto;
   width: 0;
   height: 0;
+  margin: 0 5px;
   border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
   border-right: 5px solid currentColor;
@@ -71,91 +88,117 @@
 }
 
 .cattipu-context-menu__item {
-  display: flex;
+  display: grid;
+  /* The label keeps its width (up to 240px); a long hint truncates. */
+  grid-template-columns: 24px fit-content(240px) minmax(0, 1fr) 16px;
   align-items: center;
-  gap: 8px;
+  column-gap: 4px;
   width: 100%;
-  height: 26px;
-  padding: 0 8px;
+  height: 24px;
+  padding: 0 4px;
+  margin: 0;
   background: transparent;
   border: 0;
   color: inherit;
-  font-family: inherit;
-  font-size: 13px;
-  line-height: 26px;
+  font: inherit;
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
 }
 
+/* Hover and keyboard selection are one state. */
 .cattipu-context-menu__item:hover,
-.cattipu-context-menu__item:focus-visible {
-  background: var(--cattipu-menu-highlight);
+.cattipu-context-menu__item:focus-visible,
+.cattipu-context-menu__item:focus {
+  background: var(--cattipu-navy);
   color: var(--cattipu-cream);
   outline: none;
 }
 
-/* Disabled items stay in the list rather than disappearing. "Paste" that
- * vanishes when the clipboard is empty teaches nothing; "Paste" that is
- * visibly unavailable tells you the machine has the concept and you have
- * not copied anything yet. */
-.cattipu-context-menu__item[data-disabled='true'] {
-  color: var(--cattipu-bevel-bottom);
-  cursor: default;
+/* Pressed: the lit row sinks by a hard inset edge. */
+.cattipu-context-menu__item:active {
+  box-shadow:
+    inset 1px 1px 0 var(--cattipu-outer-frame),
+    inset -1px -1px 0 var(--cattipu-bevel-bottom);
 }
 
+/* Disabled items stay in the list, drawn as an engraved label. "Paste"
+ * that vanishes teaches nothing; "Paste" that is visibly unavailable says
+ * the machine has the concept and you have not copied anything yet. */
+.cattipu-context-menu__item[data-disabled='true'],
 .cattipu-context-menu__item[data-disabled='true']:hover {
   background: transparent;
   color: var(--cattipu-bevel-bottom);
+  text-shadow: 1px 1px 0 var(--cattipu-bevel-top);
+  box-shadow: none;
+  cursor: default;
+}
+
+.cattipu-context-menu__item[data-disabled='true'] .cattipu-context-menu__icon {
+  opacity: 0.5;
 }
 
 .cattipu-context-menu__icon {
   display: grid;
-  flex: 0 0 16px;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
 }
 
 .cattipu-context-menu__label {
-  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .cattipu-context-menu__hint {
-  flex: 0 0 auto;
-  font-size: 11px;
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
   color: var(--cattipu-bevel-bottom);
 }
 
-.cattipu-context-menu__item:hover .cattipu-context-menu__hint {
+.cattipu-context-menu__item:hover .cattipu-context-menu__hint,
+.cattipu-context-menu__item:focus .cattipu-context-menu__hint {
   color: var(--cattipu-dark-cream);
 }
 
+.cattipu-context-menu__item[data-disabled='true'] .cattipu-context-menu__hint {
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-context-menu__arrow {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+}
+
 .cattipu-context-menu__more {
-  flex: 0 0 auto;
   width: 0;
   height: 0;
   border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
-  border-left: 5px solid currentColor;
+  border-left: 4px solid currentColor;
 }
 
-/* The same two-line groove the dividers elsewhere in the shell use, so a
- * menu separator and a panel separator are the same object. */
+/* The same carved groove the shell's dividers use: 1px shade over 1px
+ * highlight, so a menu separator and a panel separator are one object. */
 .cattipu-context-menu__separator {
-  height: 4px;
-  margin: 2px 4px;
-  border-top: 1px solid var(--cattipu-bevel-right);
+  height: 2px;
+  margin: 3px 2px;
+  border-top: 1px solid var(--cattipu-bevel-bottom);
   border-bottom: 1px solid var(--cattipu-bevel-top);
 }
 
 .cattipu-context-menu__empty {
-  padding: 0 8px;
-  font-size: 11px;
-  line-height: 26px;
-  letter-spacing: 0.06em;
+  height: 24px;
+  padding: 0 32px;
+  font-size: var(--cattipu-type-status-size);
+  line-height: 24px;
+  letter-spacing: 1px;
   color: var(--cattipu-bevel-bottom);
 }

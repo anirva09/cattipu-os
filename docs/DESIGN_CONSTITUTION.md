@@ -156,6 +156,27 @@ Notifications has one button per type, each firing a real sample through the rea
 the top-bar bell glyph to this system, and adding notification triggers elsewhere in the app, are
 both explicitly deferred — "do not retrofit every feature onto notifications in this milestone."
 
+## 7a. Frozen menu grammar (final visual lock)
+
+One menu component, `components/ContextMenu`, draws every shell menu: desktop and Explorer
+right-click, every drill-down submenu. It is portalled to `<body>`, so it re-publishes
+`cattipuCssVariables` itself. Without that the menu has no surface, bevel or shell face.
+
+- Row: 24px. Columns: 4px padding, a 24px icon column holding a 16×16 PixelForge mark, a 4px
+  gap, the label (up to 240px), a right-aligned hint that truncates first, a 16px submenu-arrow
+  column, 4px padding. Every row reserves the icon and arrow columns, so labels and arrows align.
+- Text: body role 13/16, weight 400. Heading/back plate: status role 11/12, uppercase, on dark cream.
+- States: hover and keyboard focus are one state, System navy with cream text. Pressed adds a
+  hard 1px inset. Disabled rows stay visible as an engraved label. Separators are the shell's
+  1px-shade-over-1px-highlight groove.
+- Keyboard: ↑/↓/Home/End move focus, → enters a submenu, ← or Esc backs out.
+- Labels, capitalisation, marks and hints come from one table, `components/ContextMenu/menuCommands.ts`.
+  Both menu builders spread it; neither restates a label. Verbs with no object (Rename, Delete,
+  Paste, Refresh, window arrangement) are text-only.
+
+The Command Palette and NotificationCenter are mounted only by the retired legacy desktop, so the
+live shell has no reachable left-click popup menu today.
+
 ## 8. Frozen cursor language
 
 Six roles, all implemented: Arrow (`arrow.png`), I-Beam (`text.png`), Pointing Hand (`hand.png`),
