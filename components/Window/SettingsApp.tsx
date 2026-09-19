@@ -284,7 +284,7 @@ function NotificationsSection() {
         ))}
       </div>
       <p className="cattipu-settings__note">
-        Ordinary notifications clear themselves in a few seconds. Errors stay until dismissed.
+        Each sample goes to the Notification Center under the top-bar bell.
       </p>
     </div>
   );
