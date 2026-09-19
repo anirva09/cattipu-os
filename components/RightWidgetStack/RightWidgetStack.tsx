@@ -318,14 +318,28 @@ export function RightWidgetStack({
         controls={['minimize', 'maximize', 'close']}
       >
         <div className="cattipu-right-widget-stack__toolbox">
+          {/* A tool is only pressable when something will receive it. No
+           * tool has a canonical destination yet (BOUNDARY_AUDIT.md §2.9),
+           * so the live shell passes no handler, and a plate that pressed
+           * in and did nothing would be a promise the OS cannot keep. They
+           * stay on the shelf, disabled and engraved, the way the context
+           * menu shows Paste: the machine has the concept; it is planned. */}
           {TOOLBOX_TOOLS.map(({ id, label }) => (
             <button
               key={id}
               type="button"
               className="cattipu-right-widget-stack__tool cattipu-focus--mechanical"
-              onClick={() => onToolSelect?.(id)}
+              disabled={!onToolSelect}
+              data-availability={onToolSelect ? 'available' : 'planned'}
+              title={onToolSelect ? label : `${label} — planned`}
+              onClick={onToolSelect ? () => onToolSelect(id) : undefined}
             >
-              <span className="cattipu-right-widget-stack__tool-icon cattipu-bevel--raised cattipu-bevel--pressable">
+              <span
+                className={[
+                  'cattipu-right-widget-stack__tool-icon cattipu-bevel--raised',
+                  onToolSelect && 'cattipu-bevel--pressable',
+                ].filter(Boolean).join(' ')}
+              >
                 <PixelIcon name={id} size={32} />
               </span>
               <span className="cattipu-right-widget-stack__tool-label">

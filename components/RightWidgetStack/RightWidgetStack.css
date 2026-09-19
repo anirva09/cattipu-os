@@ -320,3 +320,11 @@
   line-height: var(--cattipu-type-body-line);
   white-space: nowrap;
 }
+
+/* A planned tool: the context menu's disabled grammar (ContextMenu.css),
+ * an engraved label, so the shelf reads as not-yet rather than broken.
+ * The PixelForge plate and its artwork are untouched. */
+.cattipu-right-widget-stack__tool:disabled .cattipu-right-widget-stack__tool-label {
+  color: var(--cattipu-bevel-bottom);
+  text-shadow: 1px 1px 0 var(--cattipu-bevel-top);
+}
