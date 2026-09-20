@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 import {
   cattipuCssVariables,
@@ -61,6 +61,8 @@ export interface ProjectsWindowProps
   details?: ProjectDetails;
   selectedTreeId?: string;
   onTreeSelect?: (id: string) => void;
+  /** Supplied by the shell; the frozen window remains a data renderer. */
+  createProjectControl?: ReactNode;
 }
 
 export const CATTIPU_PROJECTS_TREE: readonly FolderTreeNode[] = [
@@ -152,6 +154,7 @@ export function ProjectsWindow({
   details = CATTIPU_PROJECTS_DETAILS,
   selectedTreeId = 'banking-platform',
   onTreeSelect,
+  createProjectControl,
   style,
   ...windowProps
 }: ProjectsWindowProps) {
@@ -187,6 +190,7 @@ export function ProjectsWindow({
 
         <div className="cattipu-projects-window__right">
           <div className="cattipu-projects-window__project-list">
+            {createProjectControl}
             {projects.map((project) => (
               <ProjectCard
                 key={project.id}

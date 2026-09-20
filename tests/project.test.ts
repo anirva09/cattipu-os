@@ -23,6 +23,8 @@ import {
 } from "@/lib/project/types";
 import { migrateProject, migrateProjects } from "@/lib/project/migrate";
 import type { GeneratedArchitecture } from "@/lib/ai/types";
+import { projectLifecycleService } from "@/lib/services/projects/projectLifecycleService";
+import { activeProject, toWindowProject } from "@/lib/os/projects";
 
 type Test = { name: string; run: () => void };
 const tests: Test[] = [];
@@ -110,6 +112,48 @@ test("createProject() produces a valid current-schema CattipuProject", () => {
   assert.equal(project.createdAt, project.updatedAt);
   // idea defaults to an empty prompt when none is supplied
   assert.deepEqual(project.idea, { prompt: "" });
+});
+
+// ── MVP-01 project lifecycle ──────────────────────────────────────────
+
+test("the lifecycle service creates a trimmed project with stable identity", () => {
+  const result = projectLifecycleService.createProject([], "  Payments Core  ");
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.project.name, "Payments Core");
+  assert.ok(result.project.id.startsWith("project-"));
+  assert.equal(result.project.createdAt, result.project.updatedAt);
+});
+
+test("the lifecycle service rejects empty and duplicate project identities", () => {
+  const existing = createProject({ name: "Payments Core" });
+  assert.deepEqual(
+    projectLifecycleService.createProject([existing], "   "),
+    { ok: false, reason: "empty-name" },
+  );
+  assert.deepEqual(
+    projectLifecycleService.createProject([existing], " payments core "),
+    { ok: false, reason: "duplicate-name" },
+  );
+});
+
+test("selecting a project makes it the one canonical active project", () => {
+  const first = createProject({ name: "First" });
+  const second = createProject({ name: "Second" });
+  const selected = projectLifecycleService.selectProject([first, second], second.id);
+  assert.equal(activeProject(selected)?.id, second.id);
+  assert.equal(selected[0].lastOpenedAt, null);
+  assert.ok(selected[1].lastOpenedAt);
+});
+
+test("the Projects window projection consumes a real created project", () => {
+  const result = projectLifecycleService.createProject([], "Window Project");
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  const card = toWindowProject(result.project);
+  assert.equal(card.id, result.project.id);
+  assert.equal(card.name, "Window Project");
+  assert.equal(card.progress, 0);
 });
 
 // ── 2. Loading/migrating an existing pre-M14 project ────────────────────
@@ -278,6 +322,48 @@ test("persisted project ids replace the seed verbatim — hydration never re-min
       else delete g[name];
     }
   }
+});
+
+test("store creation persists, restores, and makes the new project active", () => {
+  const data = new Map<string, string>();
+  const storage: Storage = {
+    get length() { return data.size; },
+    clear: () => data.clear(),
+    getItem: (key: string) => data.get(key) ?? null,
+    key: (index: number) => [...data.keys()][index] ?? null,
+    removeItem: (key: string) => void data.delete(key),
+    setItem: (key: string, value: string) => void data.set(key, String(value)),
+  };
+  const g = globalThis as Record<string, unknown>;
+  const had = { localStorage: Object.getOwnPropertyDescriptor(g, "localStorage"), window: Object.getOwnPropertyDescriptor(g, "window") };
+  Object.defineProperty(g, "localStorage", { value: storage, configurable: true, writable: true });
+  Object.defineProperty(g, "window", { value: globalThis, configurable: true, writable: true });
+  try {
+    const store = evaluateProjectStore(1_756_000_000_000, 0.5).useProjectStore;
+    const result = store.getState().createProject("Persistent Project");
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(activeProject(store.getState().projects)?.id, result.project.id);
+    assert.match(data.get("cattipu-projects") ?? "", /Persistent Project/);
+
+    const restored = evaluateProjectStore(1_756_000_000_100, 0.6).useProjectStore;
+    assert.equal(
+      restored.getState().projects.some((project) => project.id === result.project.id),
+      true,
+    );
+  } finally {
+    for (const [name, desc] of Object.entries(had)) {
+      if (desc) Object.defineProperty(g, name, desc);
+      else delete g[name];
+    }
+  }
+});
+
+test("malformed persisted project data falls back safely", () => {
+  assert.deepEqual(migrateProjects("not a project list"), []);
+  const migrated = migrateProjects([null, "broken", 42]);
+  assert.equal(migrated.length, 3);
+  assert.ok(migrated.every((project) => project.name === "Untitled Project"));
 });
 
 function isRecord(value: unknown): value is Record<string, unknown> {

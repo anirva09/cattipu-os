@@ -16,6 +16,8 @@ import { migrateProjects } from "@/lib/project/migrate";
 import { nextProjectName } from "@/lib/os/projects";
 import { getTemplate, type ProjectTemplateId } from "@/lib/os/templates";
 import { nextNumberedName } from "@/lib/os/filesystem";
+import type { CreateProjectResult } from "@/lib/contracts/projects";
+import { projectLifecycleService } from "@/lib/services/projects/projectLifecycleService";
 
 /**
  * Milestone 14A (Universal Project Artifact Foundation) — this store now
@@ -44,6 +46,8 @@ const ICON_COLOR: Record<ProjectIcon, string> = {
 
 interface ProjectState {
   projects: CattipuProject[];
+  /** The named project flow used by the Projects window. */
+  createProject: (name: string) => CreateProjectResult;
   /** `name` may be omitted — Milestone 19 numbers it from the names in
    *  use, so "New Project" needs no dialog to produce a sane name. */
   addProject: (name?: string) => CattipuProject;
@@ -141,6 +145,23 @@ export const useProjectStore = create<ProjectState>()(
   persist(
     (set, get) => ({
       projects: SEED_PROJECTS,
+
+      createProject: (name) => {
+        const projects = get().projects;
+        const result = projectLifecycleService.createProject(projects, name);
+        if (!result.ok) return result;
+
+        // Creation selects the project immediately. `lastOpenedAt` is the
+        // one canonical active-project signal used by the shell, Explorer,
+        // status bar and filesystem; do not add a second active-id field.
+        const selected = projectLifecycleService.selectProject(
+          [result.project, ...projects],
+          result.project.id,
+        );
+        const project = selected[0];
+        set({ projects: selected });
+        return { ok: true, project };
+      },
 
       addProject: (name) => {
         const projects = get().projects;
@@ -256,12 +277,7 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       openProject: (id) => {
-        const now = new Date().toISOString();
-        set((s) => ({
-          projects: s.projects.map((p) =>
-            p.id === id ? { ...p, lastOpenedAt: now } : p
-          ),
-        }));
+        set((s) => ({ projects: projectLifecycleService.selectProject(s.projects, id) }));
       },
 
       togglePinned: (id) => {

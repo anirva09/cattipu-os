@@ -54,6 +54,40 @@
   height: 100%;
   margin: 0;
   padding: var(--cattipu-projects-list-padding);
-  overflow: hidden;
+  overflow-y: auto;
   background: var(--cattipu-cream);
+}
+
+/* A narrow workstation command strip, supplied by the live shell. It uses
+   the existing field and bevel-button primitives; this file adds layout only. */
+.cattipu-projects-window__create-project {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 28px;
+  padding: 2px 0;
+}
+
+.cattipu-projects-window__create-project-label {
+  flex: 0 0 auto;
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-compact-size);
+  line-height: var(--cattipu-type-compact-line);
+}
+
+.cattipu-projects-window__create-project-field {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
+.cattipu-projects-window__create-project-error {
+  width: 100%;
+  color: var(--color-red);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-compact-size);
+  line-height: var(--cattipu-type-compact-line);
 }

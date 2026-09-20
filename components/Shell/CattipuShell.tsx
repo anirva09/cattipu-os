@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { InteractiveDesktop } from "@/components/InteractiveDesktop";
 import { ArchitectApp } from "@/components/Architect/ArchitectApp";
@@ -16,6 +16,9 @@ import { ShellIcon } from "@/components/PixelIcon";
 import type { ShellIconName } from "@/components/PixelIcon";
 import { PixelLogo } from "@/components/Boot/PixelLogo";
 import { ProjectsWindow } from "@/components/ProjectsWindow/ProjectsWindow";
+import { CattipuButton } from "@/components/UI/Button";
+import { Input } from "@/components/UI/Input";
+import { UtilityIcon } from "@/components/Icons/UtilityIcon";
 import { NotificationCenter } from "@/components/System/NotificationCenter";
 import {
   bottomStatusLines,
@@ -26,6 +29,7 @@ import { diagnosticsService } from "@/lib/services/diagnostics/diagnosticsServic
 import { useBootStore } from "@/store/useBootStore";
 import { unreadCount, useNotificationStore } from "@/store/useNotificationStore";
 import { useProjectStore } from "@/store/useProjectStore";
+import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import {
   documentTitle,
@@ -37,6 +41,7 @@ import {
   toWindowProject,
   workspaceTitle,
 } from "@/lib/os/projects";
+import { projectCreationMessage } from "@/lib/services/projects/projectLifecycleService";
 
 /**
  * The seam between this repository and the frozen v0.9 package.
@@ -212,8 +217,12 @@ function LiveProjectsWindow({ onMinimize, onMaximize, onClose }: {
   onClose: () => void;
 }) {
   const projects = useProjectStore((s) => s.projects);
+  const createProject = useProjectStore((s) => s.createProject);
+  const createProjectWorkspace = useFilesystemStore((s) => s.createProjectWorkspace);
   const openProject = useProjectStore((s) => s.openProject);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [projectName, setProjectName] = useState("");
+  const [creationError, setCreationError] = useState<string | null>(null);
 
   const ordered = useMemo(() => orderProjects(projects), [projects]);
   const selected =
@@ -233,6 +242,23 @@ function LiveProjectsWindow({ onMinimize, onMaximize, onClose }: {
     if (projects.some((p) => p.id === id)) openProject(id);
   };
 
+  const handleCreateProject = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const result = createProject(projectName);
+    if (!result.ok) {
+      setCreationError(projectCreationMessage(result.reason));
+      return;
+    }
+
+    setProjectName("");
+    setCreationError(null);
+    setSelectedId(result.project.id);
+    // The filesystem is its own persisted subsystem, but its workspace
+    // identifies the Project by id and resolves the name from that owner.
+    // A freeform project has no template sections to materialize yet.
+    createProjectWorkspace(result.project.id, result.project.name, []);
+  };
+
   return (
     <ProjectsWindow
       treeNodes={treeNodes}
@@ -240,6 +266,47 @@ function LiveProjectsWindow({ onMinimize, onMaximize, onClose }: {
       details={details}
       selectedTreeId={selected?.id}
       onTreeSelect={handleTreeSelect}
+      createProjectControl={
+        <form
+          className="cattipu-projects-window__create-project"
+          onSubmit={handleCreateProject}
+        >
+          <label
+            className="cattipu-projects-window__create-project-label"
+            htmlFor="cattipu-new-project-name"
+          >
+            NEW PROJECT
+          </label>
+          <Input
+            id="cattipu-new-project-name"
+            className="cattipu-projects-window__create-project-field h-7 py-1"
+            value={projectName}
+            onChange={(event) => {
+              setProjectName(event.target.value);
+              if (creationError) setCreationError(null);
+            }}
+            placeholder="Project name"
+            aria-describedby={creationError ? "cattipu-new-project-error" : undefined}
+          />
+          <CattipuButton
+            type="submit"
+            size="sm"
+            variant="primary"
+            icon={<UtilityIcon id="new" size={12} />}
+          >
+            Create
+          </CattipuButton>
+          {creationError && (
+            <span
+              id="cattipu-new-project-error"
+              className="cattipu-projects-window__create-project-error"
+              role="alert"
+            >
+              {creationError}
+            </span>
+          )}
+        </form>
+      }
       onMinimize={onMinimize}
       onMaximize={onMaximize}
       onClose={onClose}
