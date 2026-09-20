@@ -80,12 +80,8 @@ surface renders today. Volume VII lists every shipped mark and its status.
 - **No doubled masters.** The Settings-navigation and status 32s were 2× doublings of their
   16s, which gave them 2px highlights. They now have their own 32 drawings. This supersedes
   the v1.0.1 "16-first" exception.
-- **Architect.** A wide purple hub with an integrated gold core and cream centre. Three
-  dependent purple nodes sit off it on 2-row metal bus necks. Its black silhouette shows
-  core, links and nodes. It supersedes the v1.0.2 description.
-- **Memory.** A green store with two filed cream records, one gold record raised (recalled)
-  with its index line, and a gold index pull. It has no label plate and no nested frame.
-- **Canvas.** The gold selection handles now sit on the navy design plane's corners and stand past its edge, around one placed cream component. Filled black, it reads as a selected surface. Before, it was a plain square. This supersedes the v1.0.2 description.
+- **Architect, Canvas and Memory** were rebuilt again in revision note v1.0.4 below. The
+  v1.0.3 descriptions of those three are superseded.
 - **Home.** A navy System roof over a cream shell hall with one gold root doorway. The red
   roof and the suburban windows are gone. Red belongs to Projects.
 - **System utilities** now use palette colours only. Network, Volume and Calendar had used
@@ -97,6 +93,26 @@ surface renders today. Volume VII lists every shipped mark and its status.
 - **Settings/status 16s redrawn.** Dock, whose tiles floated, is now docked. Cursor was lit
   from the wrong side. Sound had floating 1px waves and is now a speaker cabinet. About was a
   near-duplicate of Info and is now a gold identification plate.
+
+## Revision note — Architect, Canvas, Memory (v1.0.4)
+
+Only these three marks changed. Each is one recognisable object with one CATTIPU cue, on
+the Search/Bell/Clock construction. Each keeps visible breathing room: 25–28px bounds with
+2–4px of clear canvas around the silhouette.
+
+- **Architect** (plan + tool). A purple system-plan folio. On it, two cream software blocks
+  are wired by 2px cream links into one gold core module. A separate metal planning stylus
+  with a navy cap stands beside the folio with a 2px gap. Its black silhouette reads as a
+  board plus a tool.
+- **Canvas** (pad + pencil). A cream layout pad with a navy binding strip, carrying one
+  placed navy component with two gold selection handles. One large diagonal pencil (red
+  eraser, metal ferrule, gold shaft, sharpened wood, dark lead) crosses to the pad. Its black
+  silhouette reads as a pad plus a diagonal.
+- **Memory** (box + raised record). A green index box holding two stored cream records.
+  A third record with a gold index tab is pulled upward, and a gold pull sits on the front.
+  Its black silhouette reads as a box plus a raised record.
+- Each has its own 16px drawing that keeps the same cue. None of the three renders at 16px
+  on a live surface today.
 
 > **Normative language:** **MUST**, **MUST NOT**, **SHOULD**, and **MAY** are requirements terms. An icon that violates a MUST/MUST NOT rule is not PixelForge-compliant.
 
@@ -755,10 +771,10 @@ Status: **PASS** means the mark was reviewed and already follows the constructio
 | CAT-SYS-002 | Clock | Local time (top bar) | ✓ | ✓ | PASS — reference |
 | CAT-SHELL-001 | Home | Shell root / desktop home | ✓ | ✓ | REBUILT v1.0.3 |
 | CAT-SHELL-002 | Projects | Project containers | ✓ | ✓ 16 live | PASS (rebuilt v1.0.2) |
-| CAT-SHELL-003 | Architect | System architecture workspace | ✓ | ✓ | REBUILT v1.0.3 |
-| CAT-SHELL-004 | Canvas | Visual-layout workspace | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-SHELL-003 | Architect | System architecture workspace | ✓ | ✓ | REBUILT v1.0.4 |
+| CAT-SHELL-004 | Canvas | Visual-layout workspace | ✓ | ✓ | REBUILT v1.0.4 |
 | CAT-SHELL-005 | Forge | Build / fabrication | ✓ | ✓ | PASS (rebuilt v1.0.2) |
-| CAT-SHELL-006 | Memory | Indexed project memory | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-SHELL-006 | Memory | Indexed project memory | ✓ | ✓ | REBUILT v1.0.4 |
 | CAT-FAMILY-launch | Launch | Deployment / release | ✓ | ✓ | PASS (rebuilt v1.0.2) |
 | CAT-SHELL-007 | Explorer | Filesystem browsing | ✓ | ✓ | PASS (rebuilt v1.0.2) |
 | CAT-SHELL-008 | Settings | System configuration | ✓ | ✓ | PASS (rebuilt v1.0.2) |
