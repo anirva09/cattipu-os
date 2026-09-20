@@ -82,8 +82,10 @@ surface renders today. Volume VII lists every shipped mark and its status.
   the v1.0.1 "16-first" exception.
 - **Architect, Canvas and Memory** were rebuilt again in revision note v1.0.4 below. The
   v1.0.3 descriptions of those three are superseded.
-- **Home.** A navy System roof over a cream shell hall with one gold root doorway. The red
-  roof and the suburban windows are gone. Red belongs to Projects.
+- **Home.** Superseded: the v1.0.3 navy-roofed Home was reverted by owner decision. The
+  shipped mark is the Sheet 01 original — a red roof over cream walls with a navy doorway
+  and two glass windows. It is a legacy precedent exception to the department colour rule
+  (Appendix A.4): CAT-SHELL owns Home, but its roof is Projects Red.
 - **System utilities** now use palette colours only. Network, Volume and Calendar had used
   `#456c39` and `#a8946f`, which were never in the palette. Network is three green link
   bars on a metal interface base. Volume is a metal cone with two navy output bars.
@@ -769,7 +771,7 @@ Status: **PASS** means the mark was reviewed and already follows the constructio
 | CAT-SHELL-009 | Search | Find across the workspace (top bar) | ✓ | ✓ 16 live | PASS — reference |
 | CAT-SHELL-010 | Bell | Notification Center (top bar) | ✓ | ✓ 16 live | PASS — reference |
 | CAT-SYS-002 | Clock | Local time (top bar) | ✓ | ✓ | PASS — reference |
-| CAT-SHELL-001 | Home | Shell root / desktop home | ✓ | ✓ | REBUILT v1.0.3 |
+| CAT-SHELL-001 | Home | Shell root / desktop home | ✓ | ✓ | PASS — Sheet 01 original |
 | CAT-SHELL-002 | Projects | Project containers | ✓ | ✓ 16 live | PASS (rebuilt v1.0.2) |
 | CAT-SHELL-003 | Architect | System architecture workspace | ✓ | ✓ | REBUILT v1.0.4 |
 | CAT-SHELL-004 | Canvas | Visual-layout workspace | ✓ | ✓ | REBUILT v1.0.4 |
