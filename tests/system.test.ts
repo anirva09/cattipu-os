@@ -315,13 +315,14 @@ test("a project just created is the most recent, before anything is opened", () 
   assert.deepEqual(recentProjectNames([older, fresh]), ["Web App", "Banking Platform"]);
 });
 
-test("opening an older project moves it above a newer one", () => {
+test("opening an older project does not move it above a newer one", () => {
+  // Newest first means most recently CREATED; a visit is not creation.
   const older = {
     ...project("Banking Platform", "2026-09-09T00:00:00.000Z"),
     createdAt: "2026-08-01T00:00:00.000Z",
   };
   const fresh = { ...project("Web App"), createdAt: "2026-09-08T00:00:00.000Z" };
-  assert.deepEqual(recentProjectNames([older, fresh]), ["Banking Platform", "Web App"]);
+  assert.deepEqual(recentProjectNames([older, fresh]), ["Web App", "Banking Platform"]);
 });
 
 test("an edit does not count as a visit", () => {
@@ -343,12 +344,13 @@ test("archived projects are not recent work", () => {
   assert.deepEqual(recentProjectNames([archived, live]), ["Web App"]);
 });
 
-test("the widget takes three, and says so by taking exactly three", () => {
-  const many = ["A", "B", "C", "D"].map((n, i) => ({
+test("the widget lists every live project, most recent first; a limit still caps it", () => {
+  const many = ["A", "B", "C", "D", "E"].map((n, i) => ({
     ...project(n),
     createdAt: `2026-09-0${i + 1}T00:00:00.000Z`,
   }));
-  assert.deepEqual(recentProjectNames(many), ["D", "C", "B"]);
+  assert.deepEqual(recentProjectNames(many), ["E", "D", "C", "B", "A"]);
+  assert.deepEqual(recentProjectNames(many, 3), ["E", "D", "C"]);
 });
 
 // ── Part D: the project identity ────────────────────────────────────────

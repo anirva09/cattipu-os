@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useArchitectStore } from "@/store/useArchitectStore";
+import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { useUiSound } from "@/hooks/useUiSound";
 
@@ -27,6 +28,8 @@ export function BuildPlayback() {
   const setPlaybackStage = useArchitectStore((s) => s.setPlaybackStage);
   const setLinkedProject = useArchitectStore((s) => s.setLinkedProject);
   const addProjectFromArchitecture = useProjectStore((s) => s.addProjectFromArchitecture);
+  const openProject = useProjectStore((s) => s.openProject);
+  const createProjectWorkspace = useFilesystemStore((s) => s.createProjectWorkspace);
   const playSound = useUiSound();
 
   useEffect(() => {
@@ -54,12 +57,16 @@ export function BuildPlayback() {
     at(7100, () => setPlaybackStage("ready")); // "System Ready." banner
     at(7800, () => {
       if (linkedProjectId) {
-        // reopened from Explorer/Projects — this is an edit session, not
-        // a fresh build. The project record is already live-synced by
-        // every store mutation; nothing new to create.
+        // MVP-03: generated inside the active project. generate() saved
+        // the architecture to it the moment it existed; nothing to create.
       } else {
+        // No project was open, so Architect creates one — with the same
+        // filesystem workspace every other creation path provisions — and
+        // opens it. Linking first makes the active-project sync a no-op.
         const project = addProjectFromArchitecture(data);
         setLinkedProject(project.id);
+        createProjectWorkspace(project.id, project.name, []);
+        openProject(project.id);
       }
       playSound("success");
       setActiveTab("architecture"); // rest on the hero view
@@ -77,6 +84,8 @@ export function BuildPlayback() {
     setPlaybackStage,
     setLinkedProject,
     addProjectFromArchitecture,
+    openProject,
+    createProjectWorkspace,
     playSound,
   ]);
 

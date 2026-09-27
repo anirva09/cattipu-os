@@ -17,7 +17,10 @@ import {
   Route,
   GitBranch,
 } from "lucide-react";
+import { useEffect, useMemo } from "react";
 import { useArchitectStore, type ArchitectTab } from "@/store/useArchitectStore";
+import { useProjectStore } from "@/store/useProjectStore";
+import { activeProject } from "@/lib/os/projects";
 import { CattipuSpinner } from "../System/CattipuSpinner";
 import { PromptBar } from "./PromptBar";
 import { BuildPlayback } from "./BuildPlayback";
@@ -59,7 +62,27 @@ function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-export function ArchitectApp() {
+export interface ArchitectAppProps {
+  /** MVP-03 — raises Canvas through the window manager. */
+  onOpenWindow?: (id: "canvas") => void;
+}
+
+/** Architect → Canvas. The Export button's own classes, no icon of its own. */
+function OpenCanvasButton({ onOpenWindow }: ArchitectAppProps) {
+  if (!onOpenWindow) return null;
+  return (
+    <button
+      type="button"
+      data-testid="architect-open-canvas"
+      onClick={() => onOpenWindow("canvas")}
+      className="cattipu-cursor-hand cattipu-press flex shrink-0 items-center gap-1.5 border-2 border-black/20 bg-navy px-2.5 py-1 font-pixel-ui text-[0.42rem] text-white"
+    >
+      Open Canvas
+    </button>
+  );
+}
+
+export function ArchitectApp({ onOpenWindow }: ArchitectAppProps = {}) {
   const status = useArchitectStore((s) => s.status);
   const data = useArchitectStore((s) => s.data);
   const activeTab = useArchitectStore((s) => s.activeTab);
@@ -67,6 +90,19 @@ export function ArchitectApp() {
   const error = useArchitectStore((s) => s.error);
   const playbackStage = useArchitectStore((s) => s.playbackStage);
   const setExportPanelOpen = useArchitectStore((s) => s.setExportPanelOpen);
+  const syncToProject = useArchitectStore((s) => s.syncToProject);
+  const linkedProjectId = useArchitectStore((s) => s.linkedProjectId);
+  const projects = useProjectStore((s) => s.projects);
+  const active = useMemo(() => activeProject(projects), [projects]);
+  const linkedProject = projects.find((p) => p.id === linkedProjectId) ?? null;
+
+  // MVP-03 — Architect works on the active project. Switching projects
+  // loads that project's architecture (or its empty state); staying on
+  // the same project is a no-op inside syncToProject, so edits written
+  // back to the project store do not reload the workspace under the user.
+  useEffect(() => {
+    syncToProject(active);
+  }, [active, syncToProject]);
 
   const tabsLocked = status === "playing"; // BuildPlayback drives the section during the reveal
   const hasWorkspace = !!data && status !== "generating";
@@ -109,10 +145,19 @@ export function ArchitectApp() {
           <span className="cattipu-recessed flex h-14 w-14 items-center justify-center bg-surface-solid">
             <Boxes className="h-7 w-7 text-ink-faint" strokeWidth={1.5} />
           </span>
-          <p className="max-w-xs text-[13px] leading-relaxed">
-            Describe the software you want, press Generate, and watch CATTIPU build the plan —
-            summary, features, architecture, data model, stack, and roadmap.
+          <p className="max-w-xs text-[13px] leading-relaxed" data-testid="architect-empty">
+            {linkedProject
+              ? `${linkedProject.name} has no architecture yet. Describe it, press Generate, and CATTIPU builds its plan — summary, features, architecture, data model, stack, and roadmap.`
+              : "No project is open. Describe the software you want, press Generate, and CATTIPU creates the project and builds the plan — summary, features, architecture, data model, stack, and roadmap."}
           </p>
+          {linkedProject && (
+            <>
+              <p className="max-w-xs text-[13px] leading-relaxed">
+                Or place its nodes by hand in Canvas.
+              </p>
+              <OpenCanvasButton onOpenWindow={onOpenWindow} />
+            </>
+          )}
         </div>
       )}
 
@@ -124,12 +169,17 @@ export function ArchitectApp() {
           <div className="flex shrink-0 items-center gap-2 border-b-2 border-border-strong bg-bg-dim px-3.5 py-2">
             <GitBranch className="h-3.5 w-3.5 text-navy" strokeWidth={2.5} />
             <p className="cattipu-emboss-text truncate font-pixel-ui text-[0.42rem] tracking-wide text-navy">
-              {data.projectName.toUpperCase()}
+              {(linkedProject?.name ?? data.projectName).toUpperCase()}
             </p>
+            {!tabsLocked && (
+              <span className="ml-auto">
+                <OpenCanvasButton onOpenWindow={onOpenWindow} />
+              </span>
+            )}
             {!tabsLocked && (
               <button
                 onClick={() => setExportPanelOpen(true)}
-                className="cattipu-cursor-hand cattipu-press ml-auto flex shrink-0 items-center gap-1.5 border-2 border-black/20 bg-navy px-2.5 py-1 font-pixel-ui text-[0.42rem] text-white"
+                className="cattipu-cursor-hand cattipu-press flex shrink-0 items-center gap-1.5 border-2 border-black/20 bg-navy px-2.5 py-1 font-pixel-ui text-[0.42rem] text-white"
               >
                 <Download className="h-3 w-3" strokeWidth={2.5} />
                 Export

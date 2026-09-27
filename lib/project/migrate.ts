@@ -59,7 +59,16 @@ function backfillMissingArtifacts(project: CattipuProject): CattipuProject {
   return {
     ...project,
     idea: project.idea ?? { prompt: project.architect.data?.prompt ?? "" },
-    canvas: project.canvas ?? createEmptyCanvasArtifacts(),
+    // MVP-03 (v5) adds `canvas.layout`. A v4 canvas keeps every slot it
+    // has and starts with no placements, which Canvas draws at their
+    // deterministic defaults.
+    canvas: isRecord(project.canvas)
+      ? {
+          ...createEmptyCanvasArtifacts(),
+          ...project.canvas,
+          layout: Array.isArray(project.canvas.layout) ? project.canvas.layout : [],
+        }
+      : createEmptyCanvasArtifacts(),
     forge: project.forge ?? createEmptyForgeArtifacts(),
     memory: project.memory ?? createEmptyMemoryArtifacts(),
     launch: project.launch ?? createEmptyLaunchArtifacts(),

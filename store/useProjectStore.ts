@@ -6,6 +6,7 @@ import {
   createProject,
   nextProjectId,
   type CanvasArtifacts,
+  type CanvasNodePlacement,
   type CattipuProject,
   type ForgeBuild,
   type LaunchRelease,
@@ -18,6 +19,7 @@ import { getTemplate, type ProjectTemplateId } from "@/lib/os/templates";
 import { nextNumberedName } from "@/lib/os/filesystem";
 import type { CreateProjectResult } from "@/lib/contracts/projects";
 import { projectLifecycleService } from "@/lib/services/projects/projectLifecycleService";
+import { canvasService } from "@/lib/services/canvas/canvasService";
 
 /**
  * Milestone 14A (Universal Project Artifact Foundation) — this store now
@@ -69,6 +71,14 @@ interface ProjectState {
   addForgeBuild: (id: string, build: ForgeBuild) => void;
   appendMemoryRecord: (id: string, record: MemoryRecord) => void;
   addLaunchRelease: (id: string, release: LaunchRelease) => void;
+
+  // ── MVP-03 (Architect → Canvas) ────────────────────────────────────
+  // Canvas's visual state lives in the project's `canvas` slot. The rules
+  // (grid snapping, placements only for real architecture nodes) belong
+  // to canvasService; these persist the result.
+  /** False when the project or the node does not exist: nothing moves. */
+  placeCanvasNode: (id: string, placement: CanvasNodePlacement) => boolean;
+  resetCanvasLayout: (id: string) => void;
 
   // ── Milestone 15 (Living Projects) ──────────────────────────────────
   // The verbs the Projects window offers. Every one goes through this
@@ -300,6 +310,26 @@ export const useProjectStore = create<ProjectState>()(
         set((s) => ({
           projects: s.projects.map((p) =>
             p.id === id ? { ...p, archived, ...touch() } : p
+          ),
+        }));
+      },
+
+      placeCanvasNode: (id, placement) => {
+        const project = get().projects.find((p) => p.id === id);
+        const architecture = project?.architect.data;
+        if (!project || !architecture) return false;
+        const canvas = canvasService.place(project.canvas, architecture, placement);
+        if (!canvas) return false;
+        set((s) => ({
+          projects: s.projects.map((p) => (p.id === id ? { ...p, canvas, ...touch() } : p)),
+        }));
+        return true;
+      },
+
+      resetCanvasLayout: (id) => {
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id === id ? { ...p, canvas: canvasService.resetLayout(p.canvas), ...touch() } : p
           ),
         }));
       },

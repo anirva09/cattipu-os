@@ -12,6 +12,7 @@ import {
 export const CATTIPU_WINDOW_IDS = [
   'projects',
   'architect',
+  'canvas',
   'memory',
   'explorer',
   'settings',
@@ -67,6 +68,8 @@ export const CATTIPU_DEFAULT_WINDOW_SIZE: WindowSize = {
  * - projects  480×280: the fixed 904×558 composition scrolls inside the
  *   window body; the folder tree plus a strip of the list stay in view.
  * - architect 400×240: reflows across; its panels scroll top to bottom.
+ * - canvas    400×240: the toolbar stays whole; the drawing surface
+ *   scrolls in both directions.
  * - memory    320×200: the placeholder fits whole.
  * - explorer  420×240: the narrowest width at which one 112px file tile
  *   still fits beside the 248px folder tree. Narrower, the files vanish.
@@ -78,6 +81,7 @@ export const CATTIPU_DEFAULT_WINDOW_SIZE: WindowSize = {
 export const CATTIPU_WINDOW_MIN_SIZE: Record<CattipuWindowId, WindowSize> = {
   projects: { width: 480, height: 280 },
   architect: { width: 400, height: 240 },
+  canvas: { width: 400, height: 240 },
   memory: { width: 320, height: 200 },
   explorer: { width: 420, height: 240 },
   settings: { width: 440, height: 240 },
@@ -139,6 +143,8 @@ export type WindowManagerAction =
 const DEFAULT_POSITIONS: Record<CattipuWindowId, WindowPosition> = {
   projects: { x: 232, y: 105 },
   architect: { x: 176, y: 72 },
+  // Next step of the same 24px cascade the other defaults follow.
+  canvas: { x: 272, y: 168 },
   memory: { x: 200, y: 96 },
   explorer: { x: 224, y: 120 },
   settings: { x: 248, y: 144 },
@@ -169,6 +175,7 @@ export function createInitialWindowManagerState(): WindowManagerState {
       memory: createWindowState('memory', false, 2),
       explorer: createWindowState('explorer', false, 3),
       settings: createWindowState('settings', false, 4),
+      canvas: createWindowState('canvas', false, 5),
     },
     activeWindowId: 'projects',
     nextZIndex: 11,
@@ -647,6 +654,14 @@ export function parseWindowManagerState(
       const candidate = (
         parsed.windows as Partial<Record<CattipuWindowId, unknown>>
       )[id];
+
+      // A window added after the session was saved (MVP-03 adds Canvas)
+      // is simply absent from it. It starts closed at its default rather
+      // than the whole saved session being discarded over it.
+      if (candidate === undefined) {
+        windows[id] = createWindowState(id, false, 0);
+        continue;
+      }
 
       if (!candidate || typeof candidate !== 'object') {
         return null;

@@ -216,6 +216,38 @@ export function isProjectLinked(object: OsObject): boolean {
   return Boolean(object.projectId);
 }
 
+/**
+ * The root folder that represents one Project's filesystem context.
+ *
+ * A workspace is a filesystem object, not project data: the project only
+ * names it by a stable id. Restricting this to a root folder distinguishes
+ * it from a shortcut to the same project nested inside that workspace.
+ */
+export function workspaceForProject(
+  objects: readonly OsObject[],
+  projectId: string | null | undefined,
+): OsObject | null {
+  if (!projectId) return null;
+  return objects.find(
+    (object) =>
+      object.kind === "folder" &&
+      object.parentId === null &&
+      object.projectId === projectId,
+  ) ?? null;
+}
+
+/** Whether an object is the workspace itself or lives somewhere under it. */
+export function isInWorkspace(
+  objects: readonly OsObject[],
+  objectId: string | null,
+  workspaceId: string | null,
+): boolean {
+  if (!objectId || !workspaceId) return false;
+  if (objectId === workspaceId) return true;
+  return folderPath(objects, objects.find((object) => object.id === objectId)?.parentId ?? null)
+    .some((folder) => folder.id === workspaceId);
+}
+
 export function objectLabel(
   object: OsObject,
   projects: readonly CattipuProject[],

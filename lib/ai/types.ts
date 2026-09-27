@@ -22,6 +22,9 @@ export interface ArchitectNode {
   dependencies: string[]; // labels of other nodes this one calls
   events: string[];
   tables: string[]; // related table names, if any
+  /** MVP-03 — what this piece of the system is for, in the author's words.
+   * Optional: generated plans and pre-MVP-03 records have none. */
+  description?: string;
   /** Baked in once at generation time (or on "New Service"); the graph is
    * editable, so position is data, not a render-time computation. */
   position?: NodePosition;

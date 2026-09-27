@@ -31,9 +31,11 @@ export const CATTIPU_TOP_BAR_REFERENCE = {
   height: 74,
   horizontalPadding: cattipuTokens.spacing[24],
   clusterGap: cattipuTokens.spacing[16],
-  // Search → Bell → Clock. Tighter than clusterGap, which still spaces the
-  // brand/title separator, so the three utility marks read as one group.
-  utilityGap: cattipuTokens.spacing[12],
+  // Search → Bell → Clock. The 16px spacing step: deliberate breathing room
+  // between three separate instruments without spreading them into a
+  // toolbar. Kept as its own value so it can move without the brand/title
+  // separator (clusterGap) moving with it.
+  utilityGap: cattipuTokens.spacing[16],
   inlineGap: cattipuTokens.spacing[8],
   controlSize: 32,
   iconSize: 32,

@@ -49,12 +49,12 @@
 }
 
 /* M21 — on a dark wallpaper (Blueprint Grid, CAD Dark) the label's dark
- * ink would sink into the surface, so it sits on a cream plate instead —
- * the same cream-and-ink pairing the rest of the shell uses. Declared
- * before the selection rule below so a selected label still turns navy. */
+ * ink would sink into the surface, so the ink turns cream instead. The
+ * label stays printed on the desktop itself — no plate, box or fill — so
+ * mark and name read as one object. Declared before the selection rule
+ * below so a selected label still turns navy. */
 .cattipu-desktop-objects[data-surface-tone='dark'] .cattipu-desktop-objects__label {
-  background: var(--cattipu-cream);
-  color: var(--cattipu-outer-frame);
+  color: var(--cattipu-cream);
 }
 
 /* Selection is a dotted marquee on the label plus a raised plate behind

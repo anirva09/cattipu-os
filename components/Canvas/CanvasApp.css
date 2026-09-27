@@ -1,0 +1,278 @@
+.cattipu-canvas,
+.cattipu-canvas *,
+.cattipu-canvas *::before,
+.cattipu-canvas *::after {
+  box-sizing: border-box;
+}
+
+/* Three rows, the same build as Explorer: a fixed toolbar, a body that
+ * takes what is left, and an instrumentation strip. `min-height: 0` lets
+ * the drawing surface scroll instead of growing the window. */
+.cattipu-canvas {
+  display: grid;
+  grid-template-rows: var(--cattipu-canvas-toolbar-height) 1fr var(--cattipu-canvas-status-height);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+}
+
+.cattipu-canvas[data-canvas-state="no-project"],
+.cattipu-canvas[data-canvas-state="no-architecture"] {
+  grid-template-rows: 1fr;
+}
+
+/* ── toolbar ──────────────────────────────────────────────────────────── */
+
+.cattipu-canvas__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--cattipu-canvas-gap);
+  min-width: 0;
+  padding: 0 var(--cattipu-canvas-pad);
+  background: var(--cattipu-cream);
+  border-bottom: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+}
+
+.cattipu-canvas__source {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cattipu-canvas__button {
+  flex: 0 0 auto;
+  height: 24px;
+  padding: 0 var(--cattipu-canvas-gap);
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+  cursor: default;
+}
+
+.cattipu-canvas__button:disabled {
+  color: var(--cattipu-bevel-bottom);
+}
+
+/* ── drawing surface ──────────────────────────────────────────────────── */
+
+/* Drawing surface and inspector side by side. */
+.cattipu-canvas__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--cattipu-canvas-inspector-width);
+  gap: var(--cattipu-canvas-gap);
+  min-width: 0;
+  min-height: 0;
+  padding: var(--cattipu-canvas-gap);
+}
+
+.cattipu-canvas__viewport {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-canvas__sheet {
+  position: relative;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.cattipu-canvas__edges {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* A node is a raised plate on the drawing: bevel from bevel.css, 0 radius,
+ * width and height on the 8px grid. It tracks the pointer directly — no
+ * transition, no lift, no scale. */
+.cattipu-canvas__node {
+  position: absolute;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: center;
+  width: var(--cattipu-canvas-node-width);
+  height: var(--cattipu-canvas-node-height);
+  padding: 0 var(--cattipu-canvas-gap);
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+  text-align: left;
+  cursor: default;
+  touch-action: none;
+  user-select: none;
+}
+
+.cattipu-canvas__node[data-selected="true"] {
+  outline: var(--cattipu-border-size) solid var(--cattipu-canvas-accent);
+  outline-offset: 0;
+}
+
+.cattipu-canvas__node[data-dragging="true"] {
+  border-top-color: var(--cattipu-bevel-right);
+  border-left-color: var(--cattipu-bevel-bottom);
+  border-bottom-color: var(--cattipu-bevel-top);
+  border-right-color: var(--cattipu-bevel-left);
+}
+
+.cattipu-canvas__node-kind {
+  color: var(--cattipu-canvas-accent);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+.cattipu-canvas__node-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ── inspector ────────────────────────────────────────────────────────── */
+
+.cattipu-canvas__inspector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cattipu-canvas-gap);
+  min-width: 0;
+  min-height: 0;
+  padding: var(--cattipu-canvas-gap);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-canvas__inspector-heading {
+  margin: 0;
+  color: var(--cattipu-canvas-accent);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+.cattipu-canvas__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cattipu-canvas-gap);
+}
+
+.cattipu-canvas__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cattipu-canvas__input {
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  margin: 0;
+  padding: 0 4px;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+  outline: none;
+}
+
+.cattipu-canvas__input:focus-visible {
+  outline: var(--cattipu-border-size) solid var(--cattipu-canvas-accent);
+  outline-offset: 0;
+}
+
+.cattipu-canvas__input--area {
+  height: auto;
+  padding: 4px;
+  resize: none;
+}
+
+.cattipu-canvas__readout,
+.cattipu-canvas__error,
+.cattipu-canvas__inspector-empty {
+  margin: 0;
+}
+
+.cattipu-canvas__readout {
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+.cattipu-canvas__error {
+  color: var(--cattipu-canvas-accent);
+}
+
+/* ── instrumentation strip ────────────────────────────────────────────── */
+
+.cattipu-canvas__status {
+  display: flex;
+  align-items: center;
+  gap: var(--cattipu-canvas-pad);
+  min-width: 0;
+  padding: 0 var(--cattipu-canvas-pad);
+  background: var(--cattipu-cream);
+  border-top: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  white-space: nowrap;
+}
+
+.cattipu-canvas__status-selection {
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── empty states ─────────────────────────────────────────────────────── */
+
+.cattipu-canvas__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cattipu-canvas-pad);
+  min-height: 0;
+  padding: var(--cattipu-canvas-pad);
+  text-align: center;
+}
+
+.cattipu-canvas__empty-plate {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-canvas__empty-text {
+  max-width: 320px;
+  margin: 0;
+  color: var(--cattipu-outer-frame);
+}
+
+.cattipu-canvas__empty-text--inline {
+  margin: var(--cattipu-canvas-pad);
+}

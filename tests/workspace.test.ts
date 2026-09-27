@@ -86,6 +86,7 @@ function allOpen(): WindowManagerState {
     { type: "launch", id: "memory" },
     { type: "launch", id: "explorer" },
     { type: "launch", id: "settings" },
+    { type: "launch", id: "canvas" },
   );
 }
 
@@ -759,8 +760,10 @@ test("a tile that fits is a real tile: inside the workspace, whole pixels, no ov
       }
     }
   }
-  // Tile has not quietly become Cascade: all but one of the 104 cases tile.
-  assert.equal(tiled, COMBINATIONS.length * Object.keys(WORKSPACES).length - 1);
+  // Tile has not quietly become Cascade. At 1366x768 (1020x644) at most
+  // four windows tile at their minimums, so the seven combinations of five
+  // or six windows there fall back to Cascade; every other case tiles.
+  assert.equal(tiled, COMBINATIONS.length * Object.keys(WORKSPACES).length - 7);
 });
 
 test("where the equal split already fits, Tile looks exactly as it always did", () => {
@@ -918,7 +921,7 @@ test("Cascade keeps every 24px step, stays inside the workspace and above every 
   }
 });
 
-test("1366x768: five cascaded windows no longer pile three onto one spot", () => {
+test("1366x768: every window cascaded no longer piles three onto one spot", () => {
   const box = WORKSPACES["1366x768"];
   // The old command, for the record: windows 3-5 all at (100,16).
   const old = cascadeLayout(5, box, CATTIPU_DEFAULT_WINDOW_SIZE);
@@ -932,7 +935,7 @@ test("1366x768: five cascaded windows no longer pile three onto one spot", () =>
     assert.equal(r.width, Math.min(CATTIPU_DEFAULT_WINDOW_SIZE.width, box.width - run));
     assert.equal(r.height, Math.min(CATTIPU_DEFAULT_WINDOW_SIZE.height, box.height - run));
   }
-  assert.equal(new Set(rects.map((r) => `${r.x},${r.y}`)).size, 5);
+  assert.equal(new Set(rects.map((r) => `${r.x},${r.y}`)).size, ids.length);
 });
 
 test("1366x768: three cascaded windows step apart instead of hiding Settings", () => {
@@ -950,7 +953,7 @@ test("where the reference size already fits, Cascade is exactly what it was", ()
     const box = WORKSPACES[viewport];
     const ids = [...CATTIPU_WINDOW_IDS];
     const { rects } = stack(reduce(openOnly(ids), { type: "arrange", layout: "cascade", bounds: box }), ids);
-    assert.deepEqual(rects, cascadeLayout(5, box, CATTIPU_DEFAULT_WINDOW_SIZE), viewport);
+    assert.deepEqual(rects, cascadeLayout(ids.length, box, CATTIPU_DEFAULT_WINDOW_SIZE), viewport);
   }
 });
 

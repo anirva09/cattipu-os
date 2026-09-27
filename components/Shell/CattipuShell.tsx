@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 
 import { InteractiveDesktop } from "@/components/InteractiveDesktop";
 import { ArchitectApp } from "@/components/Architect/ArchitectApp";
+import { CanvasApp } from "@/components/Canvas/CanvasApp";
 import { DesktopObjectLayer } from "@/components/DesktopObjects";
 import { DesktopWallpaper, useAppliedWallpaper } from "@/components/DesktopWallpaper";
 import { ExplorerApp } from "@/components/Explorer";
@@ -18,7 +19,6 @@ import { PixelLogo } from "@/components/Boot/PixelLogo";
 import { ProjectsWindow } from "@/components/ProjectsWindow/ProjectsWindow";
 import { CattipuButton } from "@/components/UI/Button";
 import { Input } from "@/components/UI/Input";
-import { UtilityIcon } from "@/components/Icons/UtilityIcon";
 import { NotificationCenter } from "@/components/System/NotificationCenter";
 import {
   bottomStatusLines,
@@ -187,7 +187,12 @@ function useDateTimeText(): string {
 const WINDOW_CONTENT: NonNullable<
   React.ComponentProps<typeof InteractiveDesktop>["windowContent"]
 > = {
-  architect: <ArchitectApp />,
+  // MVP-03 — a function so Architect can raise Canvas through the window
+  // manager ("Open Canvas"), the same way Explorer raises Projects.
+  architect: ({ openWindow }) => <ArchitectApp onOpenWindow={(id) => openWindow(id)} />,
+  // MVP-03 — Canvas draws the active project's architecture and raises
+  // Architect (or Projects) through the window manager when it has none.
+  canvas: ({ openWindow }) => <CanvasApp onOpenWindow={(id) => openWindow(id)} />,
   // Milestone 17 - Explorer is now the OS's real project browser and needs
   // the window manager to open a project, so it arrives as a function.
   // The other three are plain nodes, exactly as before.
@@ -292,7 +297,6 @@ function LiveProjectsWindow({ onMinimize, onMaximize, onClose }: {
             type="submit"
             size="sm"
             variant="primary"
-            icon={<UtilityIcon id="new" size={12} />}
           >
             Create
           </CattipuButton>

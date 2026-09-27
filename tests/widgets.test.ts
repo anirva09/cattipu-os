@@ -13,6 +13,10 @@
 import assert from "node:assert/strict";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { cattipuTokens } from "@/design-system/tokens";
 
 import {
   bottomStatusLines,
@@ -37,7 +41,10 @@ loaders[".svg"] = (m) => {
 
 type WidgetModule = typeof import("@/components/RightWidgetStack/RightWidgetStack");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { RightWidgetStack } = require("@/components/RightWidgetStack/RightWidgetStack") as WidgetModule;
+const { RightWidgetStack, CATTIPU_RIGHT_WIDGET_STACK_REFERENCE } = require("@/components/RightWidgetStack/RightWidgetStack") as WidgetModule;
+type TopBarModule = typeof import("@/components/TopBar/TopBar");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { CATTIPU_TOP_BAR_REFERENCE } = require("@/components/TopBar/TopBar") as TopBarModule;
 type StatusBarModule = typeof import("@/components/BottomStatusBar/BottomStatusBar");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { BottomStatusBar } = require("@/components/BottomStatusBar/BottomStatusBar") as StatusBarModule;
@@ -241,6 +248,56 @@ test("the bar's own defaults invent nothing either", () => {
     assert.doesNotMatch(s.text, FABRICATED, s.text);
     assert.equal(s.meter, false, s.text);
   }
+});
+
+// ── Recent Projects: fixed panel, scrolling list ──────────────────────
+
+test("Recent Projects lists every name it is given inside a fixed-height scroll region", () => {
+  const names = ["One", "Two", "Three", "Four", "Five", "Six"];
+  const html = render({ recentProjects: names });
+  const list = html.match(/<ul class="cattipu-right-widget-stack__recent-list">([\s\S]*?)<\/ul>/)?.[1] ?? "";
+  assert.deepEqual([...list.matchAll(/<li>([^<]+)<\/li>/g)].map((m) => m[1]), names);
+  assert.equal(CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.recentHeight, 138, "the panel height is fixed");
+  const css = readFileSync(join(process.cwd(), "components/RightWidgetStack/RightWidgetStack.css"), "utf8");
+  const rule = css.match(/\.cattipu-right-widget-stack__recent-list \{([^}]*)\}/)?.[1] ?? "";
+  assert.match(rule, /overflow-y: auto;/);
+  // The list stops above VIEW ALL, so a name never scrolls beneath it.
+  assert.match(rule, /bottom: calc\(var\(--cattipu-widget-view-all-height\) \+ var\(--cattipu-widget-recent-list-gap\)\);/);
+});
+
+// ── Top bar utility rhythm ─────────────────────────────────────────────
+
+test("Search, Bell and Clock sit 16px apart; the bar and its icons keep their size", () => {
+  assert.equal(CATTIPU_TOP_BAR_REFERENCE.utilityGap, cattipuTokens.spacing[16]);
+  assert.equal(CATTIPU_TOP_BAR_REFERENCE.height, 74);
+  assert.equal(CATTIPU_TOP_BAR_REFERENCE.controlSize, 32);
+  assert.equal(CATTIPU_TOP_BAR_REFERENCE.iconSize, 32);
+  assert.equal(CATTIPU_TOP_BAR_REFERENCE.inlineGap, 8, "the Clock-to-date gap is unchanged");
+});
+
+// ── Projects window Create action and the application rail ────────────
+
+test("the Projects window's Create button carries no icon, only its label", () => {
+  const shell = readFileSync(join(process.cwd(), "components/Shell/CattipuShell.tsx"), "utf8");
+  const button = shell.match(/<CattipuButton\s+type="submit"[\s\S]*?<\/CattipuButton>/)?.[0] ?? "";
+  assert.ok(button, "the Create button exists");
+  assert.doesNotMatch(button, /\bicon=/);
+  assert.match(button, />\s*Create\s*<\/CattipuButton>/);
+});
+
+test("the application rail scrolls without a bar that would crowd its full-size keys", () => {
+  const css = readFileSync(join(process.cwd(), "components/InteractiveDesktop/InteractiveDesktop.css"), "utf8");
+  const rule = css.match(/\.cattipu-interactive-desktop__sidebar \.cattipu-sidebar__navigation \{([^}]*)\}/)?.[1] ?? "";
+  assert.match(rule, /overflow-y: auto;/);
+  assert.match(rule, /scrollbar-width: none;/);
+  // Keys keep their natural size; the shortfall is scroll, not compression.
+  assert.match(css, /\.cattipu-interactive-desktop__sidebar \.cattipu-sidebar__navigation > \* \{\s*flex: 0 0 auto;/);
+});
+
+test("the Projects list keeps full-size cards and scrolls when projects overflow", () => {
+  const css = readFileSync(join(process.cwd(), "components/ProjectsWindow/ProjectsWindow.css"), "utf8");
+  assert.match(css, /\.cattipu-projects-window__project-list \{[^}]*overflow-y: auto;/);
+  assert.match(css, /\.cattipu-projects-window__project-list > \* \{\s*flex: 0 0 auto;/);
 });
 
 // ── runner ─────────────────────────────────────────────────────────────

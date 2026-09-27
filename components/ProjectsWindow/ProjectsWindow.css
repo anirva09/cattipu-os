@@ -58,6 +58,13 @@
   background: var(--cattipu-cream);
 }
 
+/* Cards and the create strip keep their natural height. Without this the
+   fixed-height column squeezed every 76px card to 20px once more projects
+   existed than fit, hiding their names; the shortfall is scroll instead. */
+.cattipu-projects-window__project-list > * {
+  flex: 0 0 auto;
+}
+
 /* A narrow workstation command strip, supplied by the live shell. It uses
    the existing field and bevel-button primitives; this file adds layout only. */
 .cattipu-projects-window__create-project {

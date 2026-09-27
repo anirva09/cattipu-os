@@ -299,3 +299,9 @@
   font-size: var(--cattipu-type-body-size);
   color: var(--cattipu-bevel-bottom);
 }
+
+/* The tree pane has no side padding of its own; its rows inset by the
+   tree's 8px root inset, and the no-workspace line matches them. */
+.cattipu-explorer__tree > .cattipu-explorer__empty {
+  margin: 0 var(--cattipu-explorer-gap);
+}

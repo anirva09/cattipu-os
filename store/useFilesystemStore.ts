@@ -8,6 +8,7 @@ import {
   removeSubtree,
   type OsObject,
 } from "@/lib/os/filesystem";
+import { projectWorkspaceService } from "@/lib/services/filesystem/projectWorkspaceService";
 
 /**
  * Milestone 16 (Living Desktop) / Milestone 17 (Real File Explorer) —
@@ -39,6 +40,11 @@ import {
 
 interface FilesystemState {
   objects: OsObject[];
+  /** One persisted selection for every filesystem consumer. Project
+   * context is derived from the active Project; the selected node remains
+   * filesystem state and is never copied into useProjectStore. */
+  selectedObjectId: string | null;
+  selectObject: (id: string | null) => void;
   createFolder: (parentId?: string | null) => OsObject;
   createProjectShortcut: (
     projectId: string,
@@ -56,6 +62,9 @@ interface FilesystemState {
    * artifact, not an artifact, so `projectProgress` still reads 0% on a
    * project that has only just been created — which is the same reason
    * the plan is never written into `canvas.screens`.
+   *
+   * A project has at most one workspace: calling this again for the same
+   * project returns the existing folder and writes nothing.
    */
   createProjectWorkspace: (
     projectId: string,
@@ -79,6 +88,12 @@ export const useFilesystemStore = create<FilesystemState>()(
   persist(
     (set, get) => ({
       objects: [],
+      selectedObjectId: null,
+
+      selectObject: (id) => {
+        const exists = id === null || get().objects.some((object) => object.id === id);
+        if (exists) set({ selectedObjectId: id });
+      },
 
       createFolder: (parentId = null) => {
         const objects = get().objects;
@@ -115,41 +130,20 @@ export const useFilesystemStore = create<FilesystemState>()(
 
       createProjectWorkspace: (projectId, fallbackLabel, sections) => {
         const objects = get().objects;
-        const createdAt = new Date().toISOString();
-        const root: OsObject = {
-          id: nextId(),
-          kind: "folder",
-          // Stored as the fallback only — `objectLabel` resolves the live
-          // name from the project, so renaming the project renames this
-          // folder and there is no second copy to go stale.
-          label: fallbackLabel,
-          projectId,
-          parentId: null,
-          position: nextFreeCell(objects),
-          createdAt,
-        };
-        const children: OsObject[] = sections.map((name, i) => ({
-          id: `${root.id}-s${i}`,
-          kind: "folder",
-          label: name,
-          parentId: root.id,
-          // Nested objects are laid out by Explorer's grid, which reads
-          // list order, not cells; the cell is stored for the day one of
-          // these is dragged onto the desktop.
-          position: { col: i, row: 0 },
-          createdAt,
-        }));
-        const shortcut: OsObject = {
-          id: `${root.id}-link`,
-          kind: "project-shortcut",
-          label: "",
-          projectId,
-          parentId: root.id,
-          position: { col: sections.length, row: 0 },
-          createdAt,
-        };
-        set({ objects: [...objects, root, ...children, shortcut] });
-        return root;
+        // The record shapes and the one-workspace-per-project rule live in
+        // projectWorkspaceService; this store supplies identity, clock and
+        // a free desktop cell, and persists the result.
+        const result = projectWorkspaceService.provision(
+          objects,
+          { projectId, fallbackLabel, sections },
+          {
+            id: nextId(),
+            createdAt: new Date().toISOString(),
+            position: nextFreeCell(objects),
+          },
+        );
+        if (result.created) set({ objects: result.objects });
+        return result.workspace;
       },
 
       renameObject: (id, label) => {
@@ -164,7 +158,15 @@ export const useFilesystemStore = create<FilesystemState>()(
        *  project is touched: a shortcut owns no project data, so there is
        *  nothing else it could remove. */
       removeObject: (id) => {
-        set((s) => ({ objects: removeSubtree(s.objects, id) }));
+        set((s) => {
+          const objects = removeSubtree(s.objects, id);
+          // A selection that pointed into the removed subtree would name
+          // nothing; it goes with it.
+          const selectedObjectId = objects.some((o) => o.id === s.selectedObjectId)
+            ? s.selectedObjectId
+            : null;
+          return { objects, selectedObjectId };
+        });
       },
 
       moveTo: (id, cell) => {
@@ -198,18 +200,28 @@ export const useFilesystemStore = create<FilesystemState>()(
       // wallpaper the whole time — so this field had two authors and zero
       // readers, which is the duplicate state the OS layer exists to
       // prevent. A record persisted by v2 simply drops the key.
-      version: 3,
+      // v4 adds `selectedObjectId`, the Explorer tree's selection. Older
+      // records start with no selection; one naming a missing object is
+      // dropped rather than restored as a dangling id.
+      version: 4,
       partialize: (state) => ({
         objects: state.objects,
+        selectedObjectId: state.selectedObjectId,
       }),
       migrate: (persisted, version) => {
         const state = (persisted ?? {}) as Partial<FilesystemState>;
-        const objects = state.objects ?? [];
-        if (version >= 2) return { objects };
+        const objects = Array.isArray(state.objects) ? state.objects : [];
+        const selectedObjectId =
+          typeof state.selectedObjectId === "string" &&
+          objects.some((object) => object.id === state.selectedObjectId)
+            ? state.selectedObjectId
+            : null;
+        if (version >= 2) return { objects, selectedObjectId };
         // M16 wrote a flat desktop. Every object it saved was on the
         // desktop by definition, so the root is where they belong.
         return {
           objects: objects.map((o) => ({ ...o, parentId: o.parentId ?? null })),
+          selectedObjectId,
         };
       },
     },

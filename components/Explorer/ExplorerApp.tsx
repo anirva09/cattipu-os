@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
@@ -22,12 +23,17 @@ import {
   explorerEntries,
   folderChildren,
   folderPath,
+  isInWorkspace,
+  objectLabel,
   resolveLocation,
   searchEverything,
   type ExplorerEntry,
   type OsObject,
 } from "@/lib/os/filesystem";
-import { orderProjects } from "@/lib/os/projects";
+import { activeProject, orderProjects } from "@/lib/os/projects";
+import type { ProjectWorkspaceState } from "@/lib/contracts/filesystem";
+import type { CattipuProject } from "@/lib/project/types";
+import { projectWorkspaceService } from "@/lib/services/filesystem/projectWorkspaceService";
 import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { useProjectStore } from "@/store/useProjectStore";
 
@@ -38,11 +44,18 @@ import "./ExplorerApp.css";
  * Milestone 17 (Real File Explorer).
  *
  * Explorer is now a VIEW of the OS state, not a window with a filesystem
- * of its own. It holds exactly three pieces of local state — where you
- * are standing, what you have typed in the search box, and which folders
- * are open in the tree — and every one of those is a property of this
- * window, not of the OS. Everything a person can see or change lives in
- * useFilesystemStore and useProjectStore.
+ * of its own. Where you are standing is the filesystem's selection
+ * (useFilesystemStore `selectedObjectId`), so it survives a reload; what
+ * you have typed in the search box and which folders are open in the tree
+ * are properties of this window. Everything a person can see or change
+ * lives in useFilesystemStore and useProjectStore.
+ *
+ * MVP-02 — the tree shows the ACTIVE PROJECT's workspace. The project
+ * store says which project is active; the filesystem says what its
+ * workspace holds (projectWorkspaceService). With nothing opened yet the
+ * tree shows the whole OS, as before. The grid and breadcrumbs still
+ * reach the OS root, so no folder outside the workspace becomes
+ * unreachable.
  *
  * That is what makes "the grid must automatically refresh whenever the OS
  * state changes" true without a refresh mechanism: there is nothing
@@ -85,6 +98,74 @@ function iconFor(kind: ExplorerEntry["kind"]): ShellIconName {
   return "projects";
 }
 
+const EXPLORER_ROOT_ID = "__root__";
+
+/**
+ * MVP-02 — what the tree shows, as a pure function of the two owners.
+ *
+ * A ready workspace is the tree's root, labelled with its project's live
+ * name. A missing one yields no nodes (the view states why). With no
+ * project opened the tree is the whole OS, as it was before MVP-02.
+ */
+export function explorerTreeNodes(
+  workspace: ProjectWorkspaceState,
+  objects: readonly OsObject[],
+  projects: readonly CattipuProject[],
+  openIds: ReadonlySet<string>,
+): FolderTreeNode[] {
+  const build = (parentId: string | null): FolderTreeNode[] =>
+    folderChildren(objects, parentId).map((folder) => {
+      const children = build(folder.id);
+      return {
+        id: folder.id,
+        // A workspace folder takes its project's live name.
+        label: objectLabel(folder, projects),
+        kind: "folder" as const,
+        expanded: openIds.has(folder.id),
+        children: children.length ? children : undefined,
+      };
+    });
+
+  if (workspace.kind === "missing") return [];
+  if (workspace.kind === "ready") {
+    const children = build(workspace.workspace.id);
+    return [
+      {
+        id: workspace.workspace.id,
+        label: objectLabel(workspace.workspace, projects),
+        kind: "folder",
+        expanded: true,
+        children: children.length ? children : undefined,
+      },
+    ];
+  }
+  return [
+    {
+      id: EXPLORER_ROOT_ID,
+      label: CATTIPU_EXPLORER_REFERENCE.rootLabel,
+      kind: "folder",
+      expanded: true,
+      children: build(null),
+    },
+  ];
+}
+
+/** The row the tree highlights for where you are standing. Outside the
+ *  active workspace nothing is highlighted, rather than a row that is not
+ *  where the grid is. */
+export function explorerTreeSelection(
+  workspace: ProjectWorkspaceState,
+  objects: readonly OsObject[],
+  location: string | null,
+): string | undefined {
+  if (workspace.kind === "ready") {
+    return isInWorkspace(objects, location, workspace.workspace.id)
+      ? (location as string)
+      : undefined;
+  }
+  return location ?? EXPLORER_ROOT_ID;
+}
+
 export interface ExplorerAppProps {
   /** Raises (and if needed launches) another shell window. Explorer opens
    *  projects through the OS rather than rendering its own copy of one. */
@@ -97,6 +178,8 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
   const renameObject = useFilesystemStore((s) => s.renameObject);
   const removeObject = useFilesystemStore((s) => s.removeObject);
   const moveIntoFolder = useFilesystemStore((s) => s.moveIntoFolder);
+  const selectedObjectId = useFilesystemStore((s) => s.selectedObjectId);
+  const selectObject = useFilesystemStore((s) => s.selectObject);
 
   const projects = useProjectStore((s) => s.projects);
   const openProject = useProjectStore((s) => s.openProject);
@@ -104,7 +187,6 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
   const duplicateProject = useProjectStore((s) => s.duplicateProject);
   const removeProject = useProjectStore((s) => s.removeProject);
 
-  const [locationId, setLocationId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -114,10 +196,31 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
   // A folder deleted in another window (or on the desktop) must not leave
   // this one pointing at nothing. Resolving every render means the
   // fallback is structural rather than an effect that has to fire.
-  const location = resolveLocation(objects, locationId);
+  const location = resolveLocation(objects, selectedObjectId);
   useEffect(() => {
-    if (location !== locationId) setLocationId(location);
-  }, [location, locationId]);
+    if (location !== selectedObjectId) selectObject(location);
+  }, [location, selectedObjectId, selectObject]);
+
+  const active = useMemo(() => activeProject(projects), [projects]);
+  const workspace = useMemo(
+    () => projectWorkspaceService.resolve(objects, active),
+    [objects, active],
+  );
+  // Switching projects moves Explorer into the new project's workspace.
+  // Keyed on the project context alone, so navigating out to the OS root
+  // by breadcrumb is not undone on the next render — only a project
+  // switch (or opening Explorer) re-enters the workspace.
+  const contextKey =
+    workspace.kind === "no-project"
+      ? "none"
+      : `${workspace.project.id}:${workspace.kind === "ready" ? workspace.workspace.id : ""}`;
+  const workspaceRef = useRef(workspace);
+  workspaceRef.current = workspace;
+  useEffect(() => {
+    const { objects: current, selectedObjectId: selected } = useFilesystemStore.getState();
+    const next = projectWorkspaceService.reconcileSelection(current, selected, workspaceRef.current);
+    if (next !== selected) useFilesystemStore.getState().selectObject(next);
+  }, [contextKey]);
 
   const ordered = useMemo(() => orderProjects(projects), [projects]);
   const searching = query.trim().length > 0;
@@ -143,33 +246,13 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
     return set;
   }, [expanded, trail]);
 
-  const buildNodes = useCallback(
-    (parentId: string | null): FolderTreeNode[] =>
-      folderChildren(objects, parentId).map((folder) => {
-        const children = buildNodes(folder.id);
-        return {
-          id: folder.id,
-          label: folder.label,
-          kind: "folder" as const,
-          expanded: openIds.has(folder.id),
-          children: children.length ? children : undefined,
-        };
-      }),
-    [objects, openIds],
+  const treeNodes = useMemo(
+    () => explorerTreeNodes(workspace, objects, projects, openIds),
+    [workspace, objects, projects, openIds],
   );
-
-  const treeNodes = useMemo<FolderTreeNode[]>(
-    () => [
-      {
-        id: "__root__",
-        label: CATTIPU_EXPLORER_REFERENCE.rootLabel,
-        kind: "folder",
-        expanded: true,
-        children: buildNodes(null),
-      },
-    ],
-    [buildNodes],
-  );
+  const treeSelectedId = searching
+    ? undefined
+    : explorerTreeSelection(workspace, objects, location);
 
   /**
    * One gesture, because the frozen FolderTreeItem has no disclosure
@@ -181,8 +264,8 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
    */
   const handleTreeSelect = (id: string) => {
     setQuery("");
-    if (id === "__root__") {
-      setLocationId(null);
+    if (id === EXPLORER_ROOT_ID) {
+      selectObject(null);
       return;
     }
     if (id === location) {
@@ -194,7 +277,7 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
       });
       return;
     }
-    setLocationId(id);
+    selectObject(id);
     setExpanded((prev) => new Set(prev).add(id));
   };
 
@@ -204,7 +287,7 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
     (entry: ExplorerEntry) => {
       if (entry.kind === "folder") {
         setQuery("");
-        setLocationId(entry.id);
+        selectObject(entry.id);
         setExpanded((prev) => new Set(prev).add(entry.id));
         return;
       }
@@ -214,7 +297,7 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
       if (entry.projectId) openProject(entry.projectId);
       onOpenWindow?.("projects");
     },
-    [onOpenWindow, openProject],
+    [onOpenWindow, openProject, selectObject],
   );
 
   // ── renaming ──────────────────────────────────────────────────────────
@@ -381,7 +464,7 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
 
   const crumbs = [
     { id: null as string | null, label: CATTIPU_EXPLORER_REFERENCE.rootLabel },
-    ...trail.map((f) => ({ id: f.id as string | null, label: f.label })),
+    ...trail.map((f) => ({ id: f.id as string | null, label: objectLabel(f, projects) })),
   ];
 
   return (
@@ -393,7 +476,7 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
           aria-label="Up one folder"
           data-testid="explorer-up"
           disabled={searching || location === null}
-          onClick={() => setLocationId(trail[trail.length - 2]?.id ?? null)}
+          onClick={() => selectObject(trail[trail.length - 2]?.id ?? null)}
         >
           <span className="cattipu-explorer__up-arrow" aria-hidden="true" />
         </button>
@@ -424,7 +507,7 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
                   className="cattipu-explorer__crumb"
                   data-testid="explorer-crumb"
                   data-current={index === crumbs.length - 1 ? "true" : undefined}
-                  onClick={() => setLocationId(crumb.id)}
+                  onClick={() => selectObject(crumb.id)}
                 >
                   {crumb.label}
                 </button>
@@ -462,12 +545,20 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
 
       <div className="cattipu-explorer__body">
         <div className="cattipu-explorer__tree">
-          <FolderTree
-            nodes={treeNodes}
-            selectedId={searching ? undefined : location ?? "__root__"}
-            onSelect={handleTreeSelect}
-            aria-label="Folders"
-          />
+          {workspace.kind === "missing" ? (
+            // Stated, not papered over: selecting a project never writes
+            // filesystem objects, and the grid still browses the OS root.
+            <p className="cattipu-explorer__empty" data-testid="explorer-tree-empty">
+              {`${workspace.project.name} has no workspace.`}
+            </p>
+          ) : (
+            <FolderTree
+              nodes={treeNodes}
+              selectedId={treeSelectedId}
+              onSelect={handleTreeSelect}
+              aria-label={workspace.kind === "ready" ? "Project folders" : "Folders"}
+            />
+          )}
         </div>
 
         <DividerGroove orientation="vertical" />

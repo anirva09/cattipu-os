@@ -298,29 +298,24 @@ export function documentTitle(projects: readonly CattipuProject[]): string {
 /**
  * Milestone 19 (Part E) — what the RECENT PROJECTS widget lists.
  *
- * Recency is `lastOpenedAt` when the project has been opened and
- * `createdAt` when it has not, so a project just created appears at the
- * top the moment it exists — which is what "creating a project should
- * immediately update Recent Projects" asks for — and then moves on merit
- * once things start being opened.
+ * Newest first by CREATION: the most recently created project is at the
+ * top and older ones follow downward, so a project appears there the
+ * moment it exists. Opening or editing a project does not reorder the
+ * list — `lastOpenedAt` and `updatedAt` are ignored here on purpose, so
+ * the order a person sees is the order they made things in. Archived
+ * projects are excluded; the widget is a way back into live work.
  *
- * `updatedAt` is deliberately NOT the fallback, even though
- * `orderProjects` uses it: editing a project's architecture is not the
- * same as visiting it, and a background write would otherwise reshuffle
- * a list labelled "recent". Archived projects are excluded; the widget
- * is a way back into live work.
+ * Every live project by default: the widget keeps a fixed height and
+ * scrolls its list, so it no longer needs a cap. `limit` remains for
+ * callers that want the top few.
  */
 export function recentProjectNames(
   projects: readonly CattipuProject[],
-  limit = 3,
+  limit = Number.POSITIVE_INFINITY,
 ): string[] {
   return [...projects]
     .filter((p) => !p.archived)
-    .sort(
-      (a, b) =>
-        Date.parse(b.lastOpenedAt ?? b.createdAt) -
-        Date.parse(a.lastOpenedAt ?? a.createdAt),
-    )
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
     .slice(0, limit)
     .map((p) => p.name);
 }

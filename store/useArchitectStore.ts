@@ -7,8 +7,8 @@ import type {
 } from "@/lib/ai/types";
 import { generateArchitecture } from "@/lib/ai/generateArchitecture";
 import { layoutAppNodes, layoutInfraNodes, nextAppNodePosition } from "@/lib/ai/layout";
-import { useProjectStore } from "@/store/useProjectStore";
 import type { CattipuProject } from "@/lib/project/types";
+import { projectArchitectureRepository } from "@/lib/services/architect/architectService";
 
 export type ArchitectStatus = "idle" | "generating" | "playing" | "ready" | "error";
 // Milestone 11 (Architect Retro Workstation Identity) — "planner" (which
@@ -97,6 +97,13 @@ interface ArchitectState {
 
   // Feature 10 — project memory
   loadFromProject: (project: CattipuProject) => void;
+  /**
+   * MVP-03 — follow the active project. Loads its architecture, or clears
+   * to the empty state when it has none, and cancels any generation
+   * started for a different project. On the same project it only adopts
+   * an architecture edited elsewhere (Canvas).
+   */
+  syncToProject: (project: CattipuProject | null) => void;
 }
 
 const initialFields = {
@@ -125,7 +132,7 @@ export const useArchitectStore = create<ArchitectState>((set, get) => {
     set({ data });
     const { linkedProjectId } = get();
     if (linkedProjectId) {
-      useProjectStore.getState().updateProjectArchitecture(linkedProjectId, data);
+      projectArchitectureRepository.save(linkedProjectId, data);
     }
   }
 
@@ -151,7 +158,9 @@ export const useArchitectStore = create<ArchitectState>((set, get) => {
         graphView: "application",
         playbackStage: "planner",
         roadmapCollapsed: {},
-        linkedProjectId: null,
+        // MVP-03: the linked project is kept. Generating inside the active
+        // project writes that project's architecture; with no project
+        // linked, BuildPlayback creates one when the reveal finishes.
       });
 
       try {
@@ -164,6 +173,10 @@ export const useArchitectStore = create<ArchitectState>((set, get) => {
           infraNodes: layoutInfraNodes(raw.infraNodes),
         };
         set({ data, status: "playing" });
+        // Saved the moment it exists, not when the reveal ends: closing
+        // the window mid-playback must not lose the project's architecture.
+        const { linkedProjectId } = get();
+        if (linkedProjectId) projectArchitectureRepository.save(linkedProjectId, data);
       } catch (err) {
         if (get().runId !== runId) return;
         set({ status: "error", error: err instanceof Error ? err.message : "Generation failed" });
@@ -350,6 +363,32 @@ export const useArchitectStore = create<ArchitectState>((set, get) => {
       set({ activeTab: "architecture", graphView: "application", selectedNodeId: nodeId }),
 
     // ── Feature 10 — project memory ─────────────────────────────────────
+    syncToProject: (project) => {
+      const id = project?.id ?? null;
+      if (id === get().linkedProjectId) {
+        // Same project, but its architecture may have been edited from
+        // another surface (Canvas). The project's copy is the truth: take
+        // it, keeping this window's tab and selection. Never mid-generation
+        // — that result is about to be saved over it anyway.
+        const external = project?.architect.data ?? null;
+        const { data, status, selectedNodeId } = get();
+        if (external && external !== data && status !== "generating" && status !== "playing") {
+          set({
+            data: external,
+            prompt: external.prompt,
+            status: "ready",
+            selectedNodeId: external.nodes.some((n) => n.id === selectedNodeId) ? selectedNodeId : null,
+          });
+        }
+        return;
+      }
+      // A new runId drops any generate() still in flight for the project
+      // being left, so its result cannot land in this one.
+      const runId = get().runId + 1;
+      set({ ...initialFields, runId, linkedProjectId: id });
+      if (project?.architect.data) get().loadFromProject(project);
+    },
+
     loadFromProject: (project) => {
       if (!project.architect.data) return;
       set({

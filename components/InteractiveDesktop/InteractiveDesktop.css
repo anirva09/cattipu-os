@@ -86,7 +86,17 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
+  /* Scrollable, but with no native bar. The rail's inner width is 82px and
+   * each key is 80px: even a thin scrollbar (~10px) took the column to 72px,
+   * pushing every key 4px out on the left and painting the bar over its
+   * right edge. Keys keep their full size; the wheel, touch and keyboard
+   * focus still scroll the column, and the key cut off at the fold shows
+   * there is more below. */
+  scrollbar-width: none;
+}
+
+.cattipu-interactive-desktop__sidebar .cattipu-sidebar__navigation::-webkit-scrollbar {
+  display: none;
 }
 
 /* The buttons must not pay for the shrink. Without this the column takes

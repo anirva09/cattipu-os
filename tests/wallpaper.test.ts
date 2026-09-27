@@ -113,11 +113,25 @@ test("no surface references a remote asset; local assets exist on disk", () => {
   }
 });
 
-test("dark tones are the two dark surfaces, so labels get their plate there only", () => {
+test("dark tones are the two dark surfaces, so labels switch to cream ink there only", () => {
   assert.deepEqual(
     WALLPAPERS.filter((w) => w.tone === "dark").map((w) => w.id),
     ["blueprint-grid", "cad-dark"],
   );
+});
+
+test("desktop labels sit on the surface: no plate in any tone, cream ink on dark", () => {
+  const css = read("components/DesktopObjects/DesktopObjectLayer.css").replace(/\/\*[\s\S]*?\*\//g, "");
+  const rules = (selector: RegExp) =>
+    [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => selector.test(m[1].trim())).map((m) => m[2]);
+  const unselected = rules(/^(\.cattipu-desktop-objects\[data-surface-tone='dark'\] )?\.cattipu-desktop-objects__label$/);
+  assert.equal(unselected.length, 2, "base and dark-tone label rules");
+  for (const body of unselected) {
+    assert.doesNotMatch(body, /background|border|box-shadow/, "an unselected label has no box");
+  }
+  assert.match(unselected[0] + unselected[1], /color: var\(--cattipu-cream\);/);
+  // The existing selected treatment is kept.
+  assert.match(css, /\[data-selected='true'\] \.cattipu-desktop-objects__label \{\s*background: var\(--cattipu-menu-highlight\);/);
 });
 
 // ── resolution and migration ───────────────────────────────────────────

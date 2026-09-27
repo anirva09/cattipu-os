@@ -95,6 +95,12 @@ const SHELL_WINDOWS: readonly ShellWindowDefinition[] = [
     status: 'ARCHITECT WORKSPACE READY',
   },
   {
+    id: 'canvas',
+    title: 'Canvas',
+    tone: 'system',
+    status: 'CANVAS WORKSPACE READY',
+  },
+  {
     id: 'memory',
     title: 'Memory',
     tone: 'system',

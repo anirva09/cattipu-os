@@ -31,6 +31,8 @@ export const CATTIPU_RIGHT_WIDGET_STACK_REFERENCE = {
   toolboxHeight: 176,
   viewAllWidth: 72,
   viewAllHeight: 28,
+  /** Between the scrolling list and the VIEW ALL strip beneath it. */
+  recentListGap: cattipuTokens.spacing[4],
   toolboxIconSize: 38,
   toolboxColumnWidth: 47,
 } as const;
@@ -230,6 +232,7 @@ export function RightWidgetStack({
     '--cattipu-widget-body-padding': `${CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.bodyPadding}px`,
     '--cattipu-widget-view-all-width': `${CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.viewAllWidth}px`,
     '--cattipu-widget-view-all-height': `${CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.viewAllHeight}px`,
+    '--cattipu-widget-recent-list-gap': `${CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.recentListGap}px`,
     '--cattipu-toolbox-icon-size': `${CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.toolboxIconSize}px`,
     '--cattipu-toolbox-column-width': `${CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.toolboxColumnWidth}px`,
     '--cattipu-widget-gold': cattipuTokens.colors.welcome,
@@ -268,7 +271,10 @@ export function RightWidgetStack({
       >
         <div className="cattipu-right-widget-stack__recent">
           <ul className="cattipu-right-widget-stack__recent-list">
-            {recentProjects.slice(0, 3).map((project) => (
+            {/* Every project it is given. The panel keeps its fixed height
+                and the list scrolls inside it, so a long history never
+                pushes the widgets below it down the desktop. */}
+            {recentProjects.map((project) => (
               <li key={project}>{project}</li>
             ))}
           </ul>

@@ -22,7 +22,7 @@ import type { ProjectTemplateId } from "@/lib/os/templates";
 
 /** Bump this — and add a branch in migrate.ts — whenever CattipuProject's
  * shape changes in a way old persisted projects can't just be read as. */
-export const PROJECT_SCHEMA_VERSION = 4;
+export const PROJECT_SCHEMA_VERSION = 5;
 
 /** Shown as the owner of anything created locally. A single constant so
  *  the Projects list, the details panel and Explorer cannot disagree. */
@@ -150,11 +150,25 @@ export interface CanvasUiState {
   screenId?: string;
 }
 
+/**
+ * MVP-03 (v5) — where Canvas draws one architecture node. Visual state
+ * only: it names the ArchitectNode by id and never copies its label, kind
+ * or edges, so Architect stays the one owner of what the system is.
+ */
+export interface CanvasNodePlacement {
+  nodeId: string;
+  x: number;
+  y: number;
+}
+
 export interface CanvasArtifacts {
   screens: CanvasScreen[];
   components: CanvasComponent[];
   assets: CanvasAsset[];
   uiStates: CanvasUiState[];
+  /** Placements the person has made. A node without one is drawn at its
+   *  deterministic default (lib/services/canvas/canvasService.ts). */
+  layout: CanvasNodePlacement[];
 }
 
 // ---------------------------------------------------------------------
@@ -370,7 +384,7 @@ export interface CattipuProject {
 // ---------------------------------------------------------------------
 
 export function createEmptyCanvasArtifacts(): CanvasArtifacts {
-  return { screens: [], components: [], assets: [], uiStates: [] };
+  return { screens: [], components: [], assets: [], uiStates: [], layout: [] };
 }
 
 export function createEmptyForgeArtifacts(): ForgeArtifacts {
