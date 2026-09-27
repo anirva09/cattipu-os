@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
 import { useArchitectStore } from "@/store/useArchitectStore";
 import { useBusyStore } from "@/store/useBusyStore";
 import { CattipuSpinner } from "../System/CattipuSpinner";
@@ -63,7 +62,6 @@ export function PromptBar() {
         ARCHITECT · PROMPT
       </p>
       <div className="cattipu-emboss-text mt-1 flex items-center gap-2 font-pixel-ui text-[0.55rem] tracking-wide text-navy">
-        <Sparkles className="h-3.5 w-3.5 text-navy" strokeWidth={2.5} />
         What are we building?
       </div>
 

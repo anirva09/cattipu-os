@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Lightbulb, ArrowRight } from "lucide-react";
 import { useArchitectStore } from "@/store/useArchitectStore";
 
 const container = {
@@ -23,7 +22,6 @@ export function RecommendationsPanel() {
   return (
     <div className="h-full overflow-auto bg-bg-dim px-6 py-5">
       <div className="mb-1 flex items-center gap-2">
-        <Lightbulb className="h-4 w-4 text-navy" strokeWidth={2.5} />
         <h3 className="cattipu-emboss-text font-pixel-ui text-[0.5rem] tracking-wide text-navy">
           Smart recommendations
         </h3>
@@ -44,13 +42,11 @@ export function RecommendationsPanel() {
               className="cattipu-cursor-hand cattipu-raised group flex items-start gap-3 bg-surface-solid px-3.5 py-3 text-left"
             >
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[3px] border border-black/10 bg-gold/25 text-gold">
-                <Lightbulb className="h-3.5 w-3.5" strokeWidth={2.5} />
               </span>
               <span className="min-w-0 flex-1">
                 <p className="text-[13px] text-ink">{rec.text}</p>
                 <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-navy group-hover:underline">
                   {nodeLabel(rec.targetNodeId)}
-                  <ArrowRight className="h-3 w-3" strokeWidth={2.5} />
                 </span>
               </span>
             </motion.button>

@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Network, ArrowRight } from "lucide-react";
 import { useArchitectStore } from "@/store/useArchitectStore";
 import type { HttpMethod } from "@/lib/ai/types";
 
@@ -32,7 +31,6 @@ export function ApiCatalogPanel() {
   return (
     <div className="h-full overflow-auto bg-bg-dim px-6 py-5">
       <div className="mb-4 flex items-center gap-2">
-        <Network className="h-4 w-4 text-navy" strokeWidth={2.5} />
         <h3 className="cattipu-emboss-text font-pixel-ui text-[0.5rem] tracking-wide text-navy">
           API catalog
         </h3>
@@ -59,7 +57,6 @@ export function ApiCatalogPanel() {
                 <span className="min-w-0 flex-1 truncate font-mono text-[14px] text-ink">{api.route}</span>
                 <span className="flex shrink-0 items-center gap-1 text-[11px] text-ink-faint group-hover:text-navy">
                   {nodeLabel(api.nodeId)}
-                  <ArrowRight className="h-3 w-3" strokeWidth={2.5} />
                 </span>
               </div>
               <div className="grid grid-cols-1 gap-x-4 gap-y-1 pl-[4.6rem] text-[11.5px] text-ink-dim sm:grid-cols-2">

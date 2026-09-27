@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { MousePointerClick, ListChecks, Link2, Radio, Table2, Route, Server, Copy, Trash2 } from "lucide-react";
+import { ShellIcon } from "../PixelIcon";
 import { useArchitectStore } from "@/store/useArchitectStore";
 
 /**
@@ -57,7 +57,6 @@ export function NodeInspector() {
                     title="Duplicate"
                     className="cattipu-cursor-hand cattipu-raised flex h-6 items-center gap-1 bg-surface-solid px-2 text-[11px] text-ink-dim hover:text-navy"
                   >
-                    <Copy className="h-3 w-3" strokeWidth={2.5} />
                     Duplicate
                   </button>
                   <button
@@ -66,22 +65,20 @@ export function NodeInspector() {
                     title="Delete"
                     className="cattipu-cursor-hand cattipu-raised flex h-6 items-center gap-1 bg-surface-solid px-2 text-[11px] text-ink-dim hover:text-red"
                   >
-                    <Trash2 className="h-3 w-3" strokeWidth={2.5} />
                     Delete
                   </button>
                 </div>
-                <InspectorSection icon={ListChecks} title="Responsibilities" items={appNode.responsibilities} />
-                <InspectorSection icon={Route} title="Endpoints" items={appNode.endpoints} mono />
-                <InspectorSection icon={Link2} title="Dependencies" items={appNode.dependencies} />
-                <InspectorSection icon={Radio} title="Events" items={appNode.events} mono />
-                <InspectorSection icon={Table2} title="Tables" items={appNode.tables} mono />
+                <InspectorSection title="Responsibilities" items={appNode.responsibilities} />
+                <InspectorSection title="Endpoints" items={appNode.endpoints} mono />
+                <InspectorSection title="Dependencies" items={appNode.dependencies} />
+                <InspectorSection title="Events" items={appNode.events} mono />
+                <InspectorSection title="Tables" items={appNode.tables} mono />
               </>
             )}
             {infraNode && (
               <>
-                <InspectorSection icon={ListChecks} title="Responsibilities" items={infraNode.responsibilities} />
+                <InspectorSection title="Responsibilities" items={infraNode.responsibilities} />
                 <InspectorSection
-                  icon={Server}
                   title="Used by"
                   items={infraNode.usedBy.map((id) => data.nodes.find((n) => n.id === id)?.label ?? id)}
                 />
@@ -98,7 +95,7 @@ export function NodeInspector() {
             className="flex flex-1 flex-col items-center justify-center gap-2.5 px-5 text-center"
           >
             <span className="cattipu-recessed flex h-9 w-9 items-center justify-center bg-surface-solid">
-              <MousePointerClick className="h-4 w-4 text-ink-faint" strokeWidth={1.75} />
+              <ShellIcon name="cursor" size={32} />
             </span>
             <p className="text-[12px] leading-relaxed text-ink-faint">
               Click a node on the diagram to inspect its detail.
@@ -111,12 +108,10 @@ export function NodeInspector() {
 }
 
 function InspectorSection({
-  icon: Icon,
   title,
   items,
   mono,
 }: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;
   items: string[];
   mono?: boolean;
@@ -125,7 +120,6 @@ function InspectorSection({
   return (
     <div className="mb-4">
       <div className="mb-1.5 flex items-center gap-1.5">
-        <Icon className="h-3 w-3 text-ink-faint" strokeWidth={2.5} />
         <p className="cattipu-emboss-text text-[10px] font-semibold uppercase tracking-wider text-ink-faint">
           {title}
         </p>

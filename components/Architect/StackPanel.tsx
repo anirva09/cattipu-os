@@ -1,6 +1,5 @@
 "use client";
 
-import { Layers } from "lucide-react";
 import { useArchitectStore } from "@/store/useArchitectStore";
 import type { StackItem } from "@/lib/ai/types";
 
@@ -42,7 +41,6 @@ export function StackPanel() {
   return (
     <div className="h-full overflow-auto bg-bg-dim px-6 py-5">
       <div className="mb-4 flex items-center gap-2">
-        <Layers className="h-4 w-4 text-navy" strokeWidth={2.5} />
         <h3 className="cattipu-emboss-text font-pixel-ui text-[0.5rem] tracking-wide text-navy">
           Recommended stack
         </h3>

@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Download, FileText, FileJson, Database, GitBranch, Braces, Printer } from "lucide-react";
 import { useArchitectStore } from "@/store/useArchitectStore";
 import {
   downloadFile,
@@ -17,14 +16,13 @@ const FORMATS: {
   id: string;
   label: string;
   hint: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
 }[] = [
-  { id: "markdown", label: "Markdown", hint: ".md — full write-up", icon: FileText },
-  { id: "json", label: "JSON", hint: ".json — raw architecture", icon: FileJson },
-  { id: "sql", label: "SQL", hint: ".sql — CREATE TABLE statements", icon: Database },
-  { id: "dbdiagram", label: "dbdiagram", hint: ".dbml — paste into dbdiagram.io", icon: GitBranch },
-  { id: "openapi", label: "OpenAPI", hint: ".json — 3.0 spec", icon: Braces },
-  { id: "pdf", label: "PDF report", hint: "print-ready architecture report", icon: Printer },
+  { id: "markdown", label: "Markdown", hint: ".md — full write-up" },
+  { id: "json", label: "JSON", hint: ".json — raw architecture" },
+  { id: "sql", label: "SQL", hint: ".sql — CREATE TABLE statements" },
+  { id: "dbdiagram", label: "dbdiagram", hint: ".dbml — paste into dbdiagram.io" },
+  { id: "openapi", label: "OpenAPI", hint: ".json — 3.0 spec" },
+  { id: "pdf", label: "PDF report", hint: "print-ready architecture report" },
 ];
 
 export function ExportCenter() {
@@ -80,7 +78,6 @@ export function ExportCenter() {
           >
             <div className="flex items-center justify-between border-b-2 border-border-strong bg-surface px-4 py-3">
               <div className="flex items-center gap-2">
-                <Download className="h-4 w-4 text-navy" strokeWidth={2.5} />
                 <p className="cattipu-emboss-text font-pixel-ui text-[0.5rem] tracking-wide text-navy">
                   Export project
                 </p>
@@ -90,22 +87,18 @@ export function ExportCenter() {
                 aria-label="Close export center"
                 className="cattipu-cursor-hand flex h-6 w-6 items-center justify-center rounded-[3px] text-ink-dim hover:bg-navy/10 hover:text-navy"
               >
-                <X className="h-4 w-4" strokeWidth={2.5} />
+                ×
               </button>
             </div>
 
             <div className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2">
               {FORMATS.map((f) => {
-                const Icon = f.icon;
                 return (
                   <button
                     key={f.id}
                     onClick={() => run(f.id)}
                     className="cattipu-cursor-hand cattipu-raised cattipu-press flex items-start gap-2.5 bg-surface-solid px-3 py-2.5 text-left"
                   >
-                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[3px] border border-black/10 bg-navy/10 text-navy">
-                      <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
-                    </span>
                     <span className="min-w-0">
                       <p className="text-[13px] font-semibold text-ink">{f.label}</p>
                       <p className="text-[11px] text-ink-dim">{f.hint}</p>

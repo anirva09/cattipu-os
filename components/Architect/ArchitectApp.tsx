@@ -1,28 +1,14 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  FileText,
-  CheckSquare,
-  Waypoints,
-  Database,
-  Layers,
-  Network,
-  Lightbulb,
-  Milestone,
-  Boxes,
-  Download,
-  Server,
-  Table2,
-  Route,
-  GitBranch,
-} from "lucide-react";
+import { ShellIcon } from "../PixelIcon";
 import { useEffect, useMemo } from "react";
 import { useArchitectStore, type ArchitectTab } from "@/store/useArchitectStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { activeProject } from "@/lib/os/projects";
 import { CattipuSpinner } from "../System/CattipuSpinner";
 import { PromptBar } from "./PromptBar";
+import "./ArchitectApp.css";
 import { BuildPlayback } from "./BuildPlayback";
 import { SummaryPanel } from "./SummaryPanel";
 import { FeaturesPanel } from "./FeaturesPanel";
@@ -43,19 +29,19 @@ import { ExportCenter } from "./ExportCenter";
 // Recommended Stack, Build Roadmap) with the two bonus sections from
 // the earlier uncommitted sprint (APIs, Ideas) folded in between Stack
 // and Roadmap rather than dropped — nothing already built is removed.
-const SECTIONS: {
-  id: ArchitectTab;
-  label: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-}[] = [
-  { id: "summary", label: "Summary", icon: FileText },
-  { id: "features", label: "Features", icon: CheckSquare },
-  { id: "architecture", label: "Architecture", icon: Waypoints },
-  { id: "database", label: "Data Model", icon: Database },
-  { id: "stack", label: "Stack", icon: Layers },
-  { id: "apis", label: "APIs", icon: Network },
-  { id: "recommendations", label: "Ideas", icon: Lightbulb },
-  { id: "roadmap", label: "Roadmap", icon: Milestone },
+//
+// The outline is text only: PixelForge has marks for three of these eight
+// sections (Summary, Architecture, APIs) and none for the other five, and a
+// list where some rows have a mark and some have a hole reads as broken.
+const SECTIONS: { id: ArchitectTab; label: string }[] = [
+  { id: "summary", label: "Summary" },
+  { id: "features", label: "Features" },
+  { id: "architecture", label: "Architecture" },
+  { id: "database", label: "Data Model" },
+  { id: "stack", label: "Stack" },
+  { id: "apis", label: "APIs" },
+  { id: "recommendations", label: "Ideas" },
+  { id: "roadmap", label: "Roadmap" },
 ];
 
 function pad2(n: number): string {
@@ -112,7 +98,7 @@ export function ArchitectApp({ onOpenWindow }: ArchitectAppProps = {}) {
   const serviceCount = data ? data.nodes.filter((n) => n.kind === "service").length : 0;
 
   return (
-    <div className="relative flex h-full flex-col bg-surface-solid">
+    <div className="cattipu-architect relative flex h-full flex-col bg-surface-solid">
       <span className="cattipu-screw z-20" style={{ top: 6, left: 6 }} aria-hidden />
       <span className="cattipu-screw z-20" style={{ top: 6, right: 6 }} aria-hidden />
       <BuildPlayback />
@@ -143,7 +129,7 @@ export function ArchitectApp({ onOpenWindow }: ArchitectAppProps = {}) {
            otherwise untouched from Milestone 9's pass. */
         <div className="cattipu-drafting-paper flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center text-ink-dim">
           <span className="cattipu-recessed flex h-14 w-14 items-center justify-center bg-surface-solid">
-            <Boxes className="h-7 w-7 text-ink-faint" strokeWidth={1.5} />
+            <ShellIcon name="architect" size={32} />
           </span>
           <p className="max-w-xs text-[13px] leading-relaxed" data-testid="architect-empty">
             {linkedProject
@@ -167,7 +153,7 @@ export function ArchitectApp({ onOpenWindow }: ArchitectAppProps = {}) {
               tab-row's trailing Export button now that section
               switching lives in the left outline below. */}
           <div className="flex shrink-0 items-center gap-2 border-b-2 border-border-strong bg-bg-dim px-3.5 py-2">
-            <GitBranch className="h-3.5 w-3.5 text-navy" strokeWidth={2.5} />
+            <ShellIcon name="projects" size={16} />
             <p className="cattipu-emboss-text truncate font-pixel-ui text-[0.42rem] tracking-wide text-navy">
               {(linkedProject?.name ?? data.projectName).toUpperCase()}
             </p>
@@ -181,7 +167,6 @@ export function ArchitectApp({ onOpenWindow }: ArchitectAppProps = {}) {
                 onClick={() => setExportPanelOpen(true)}
                 className="cattipu-cursor-hand cattipu-press flex shrink-0 items-center gap-1.5 border-2 border-black/20 bg-navy px-2.5 py-1 font-pixel-ui text-[0.42rem] text-white"
               >
-                <Download className="h-3 w-3" strokeWidth={2.5} />
                 Export
               </button>
             )}
@@ -198,7 +183,6 @@ export function ArchitectApp({ onOpenWindow }: ArchitectAppProps = {}) {
             <nav className="flex w-[152px] shrink-0 flex-col overflow-y-auto border-r-2 border-border-strong bg-bg-dim">
               {SECTIONS.map((s) => {
                 const active = s.id === activeTab;
-                const Icon = s.icon;
                 return (
                   <button
                     key={s.id}
@@ -207,9 +191,6 @@ export function ArchitectApp({ onOpenWindow }: ArchitectAppProps = {}) {
                     data-active={active || undefined}
                     className="cattipu-cursor-hand cattipu-outline-item font-pixel-ui text-[0.4rem] tracking-wide text-ink-dim"
                   >
-                    <span className="cattipu-icon-tile">
-                      <Icon className="h-2.5 w-2.5" strokeWidth={2.5} />
-                    </span>
                     {s.label.toUpperCase()}
                   </button>
                 );
@@ -280,10 +261,10 @@ export function ArchitectApp({ onOpenWindow }: ArchitectAppProps = {}) {
           {/* Bottom status strip — persistent project metadata, visible
               regardless of which outline section is open. */}
           <div className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-1 border-t-2 border-border-strong bg-surface-solid px-3.5 py-1.5">
-            <StatusField icon={Server} label="SERVICES" value={pad2(serviceCount)} />
-            <StatusField icon={Table2} label="TABLES" value={pad2(data.tables.length)} />
-            <StatusField icon={Route} label="ENDPOINTS" value={pad2(data.apis.length)} />
-            <StatusField icon={Milestone} label="PHASES" value={pad2(data.roadmap.length)} />
+            <StatusField label="SERVICES" value={pad2(serviceCount)} />
+            <StatusField label="TABLES" value={pad2(data.tables.length)} />
+            <StatusField label="ENDPOINTS" value={pad2(data.apis.length)} />
+            <StatusField label="PHASES" value={pad2(data.roadmap.length)} />
             <span className="ml-auto flex items-center gap-1.5">
               <span className="cattipu-led" aria-hidden />
               <span className="cattipu-emboss-text font-pixel-ui text-[0.35rem] tracking-wide text-navy">
@@ -299,18 +280,11 @@ export function ArchitectApp({ onOpenWindow }: ArchitectAppProps = {}) {
   );
 }
 
-function StatusField({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-  label: string;
-  value: string;
-}) {
+/** Instrumentation readout: a value and its label, no glyph (the four
+ *  quantities have no PixelForge marks). */
+function StatusField({ label, value }: { label: string; value: string }) {
   return (
     <span className="flex items-center gap-1.5">
-      <Icon className="h-3 w-3 text-ink-faint" strokeWidth={2.5} />
       <span className="font-mono text-[12px] font-semibold tabular-nums text-ink">{value}</span>
       <span className="cattipu-emboss-text font-pixel-ui text-[0.32rem] tracking-wide text-ink-faint">
         {label}

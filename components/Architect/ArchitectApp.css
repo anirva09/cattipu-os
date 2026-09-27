@@ -1,0 +1,125 @@
+/* Architect on the shell's type roles.
+ *
+ * Architect predates the Golden Master type system: its markup chose faces
+ * with Tailwind utilities that still point at the pre-token fonts —
+ * `font-pixel-ui` (Press Start 2P), `font-mono`/`font-code` (VT323) and a
+ * VT323 ambient body — at fractional rem sizes with synthetic bold. Every
+ * other window draws with the three token faces at their whole-pixel role
+ * sizes, so Architect read as a different machine.
+ *
+ * Rather than re-plumb every element's classes, this maps those utilities
+ * onto the shell's roles inside Architect only. It is unlayered CSS, so it
+ * takes precedence over Tailwind's utility layer here and nowhere else;
+ * layout utilities are untouched.
+ *
+ *   body   GUI face       13/16  (--cattipu-font-ui)       default, 12.5–15px, mid labels
+ *   status compact face   11/12  (--cattipu-font-compact)  10–12px, the smallest labels
+ *   title  display face   15/16  (--cattipu-font-family)   headings, Generate, SYSTEM READY
+ */
+
+.cattipu-architect {
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+  font-weight: var(--cattipu-type-weight);
+}
+
+/* Weight and spacing belong to the faces, not to the markup: a bitmap face
+   has one weight, and the tracking was tuned for Press Start 2P. */
+.cattipu-architect .font-semibold,
+.cattipu-architect .font-medium,
+.cattipu-architect .font-bold {
+  font-weight: var(--cattipu-type-weight);
+}
+
+.cattipu-architect [class*="tracking-"] {
+  letter-spacing: 0;
+}
+
+/* ── body role ─────────────────────────────────────────────────────────── */
+
+.cattipu-architect .font-pixel-ui,
+.cattipu-architect .font-mono,
+.cattipu-architect .font-code,
+.cattipu-architect .text-\[12\.5px\],
+.cattipu-architect .text-\[13px\],
+.cattipu-architect .text-\[13\.5px\],
+.cattipu-architect .text-\[14px\],
+.cattipu-architect .text-\[15px\],
+.cattipu-architect .text-sm,
+.cattipu-architect .font-pixel-ui.text-\[0\.38rem\],
+.cattipu-architect .font-pixel-ui.text-\[0\.4rem\],
+.cattipu-architect .font-pixel-ui.text-\[0\.42rem\],
+.cattipu-architect .font-pixel-ui.text-\[0\.45rem\] {
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+}
+
+/* ── status role ───────────────────────────────────────────────────────── */
+
+.cattipu-architect .text-\[10px\],
+.cattipu-architect .text-\[11px\],
+.cattipu-architect .text-\[11\.5px\],
+.cattipu-architect .text-\[12px\],
+.cattipu-architect .font-pixel-ui.text-\[0\.3rem\],
+.cattipu-architect .font-pixel-ui.text-\[0\.32rem\],
+.cattipu-architect .font-pixel-ui.text-\[0\.35rem\] {
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+/* ── title role ────────────────────────────────────────────────────────── */
+
+.cattipu-architect .font-pixel-ui.text-\[0\.5rem\],
+.cattipu-architect .font-pixel-ui.text-\[0\.55rem\],
+.cattipu-architect .font-pixel-ui.text-\[0\.7rem\] {
+  font-family: var(--cattipu-font-family);
+  font-size: var(--cattipu-type-widget-header-size);
+  line-height: var(--cattipu-type-widget-header-line);
+}
+
+/* ── PixelForge marks and drawn glyphs ─────────────────────────────────── */
+
+/* A node's kind mark: the 32px Toolbox/shell master at exactly 32px. */
+.cattipu-architect__kind-mark {
+  display: grid;
+  flex: 0 0 32px;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+}
+
+/* The node's Duplicate / Delete keys, labelled in the status role. */
+.cattipu-architect__node-key {
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+/* Roadmap phase bullet: a 4px square on the pixel grid. */
+.cattipu-architect__bullet {
+  display: block;
+  width: 4px;
+  height: 4px;
+  background: var(--cattipu-navy);
+}
+
+/* Roadmap disclosure: a drawn triangle, the same construction as Explorer's
+   up arrow. Points right when collapsed, down when open. No easing. */
+.cattipu-architect__disclosure {
+  flex: 0 0 auto;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid var(--cattipu-bevel-bottom);
+}
+
+.cattipu-architect__disclosure[data-open="true"] {
+  border-top: 6px solid var(--cattipu-bevel-bottom);
+  border-right: 5px solid transparent;
+  border-bottom: 0;
+  border-left: 5px solid transparent;
+}

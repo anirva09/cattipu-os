@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, { Background, BackgroundVariant, Handle, Position, type Edge, type Node } from "reactflow";
-import { Database, Table2, Plus, X, Link2 } from "lucide-react";
 import { useArchitectStore } from "@/store/useArchitectStore";
 import type { SqlTable } from "@/lib/ai/types";
 
@@ -29,7 +28,6 @@ function ErTableNode({ data }: { data: { table: SqlTable } }) {
       <Handle type="target" position={Position.Left} />
       <Handle type="source" position={Position.Right} />
       <div className="flex items-center gap-1.5 border-b-2 border-border-strong bg-bg-dim px-2.5 py-1.5">
-        <Table2 className="h-3 w-3 shrink-0 text-navy" strokeWidth={2.5} />
         {editingTitle ? (
           <input
             autoFocus
@@ -69,7 +67,7 @@ function ErTableNode({ data }: { data: { table: SqlTable } }) {
               aria-label={`Delete column ${c.name}`}
               className="cattipu-cursor-hand flex h-4 w-4 shrink-0 items-center justify-center rounded-[2px] text-ink-faint opacity-0 hover:bg-red/10 hover:text-red group-hover:opacity-100"
             >
-              <X className="h-2.5 w-2.5" strokeWidth={3} />
+              ×
             </button>
           </li>
         ))}
@@ -78,7 +76,6 @@ function ErTableNode({ data }: { data: { table: SqlTable } }) {
         onClick={() => addColumn(table.name)}
         className="nodrag cattipu-cursor-hand flex w-full items-center gap-1 border-t border-border px-2.5 py-1 text-[11px] text-ink-faint hover:bg-navy/[0.06] hover:text-navy"
       >
-        <Plus className="h-2.5 w-2.5" strokeWidth={3} />
         Add column
       </button>
     </div>
@@ -168,7 +165,6 @@ export function DatabasePanel() {
       {/* SQL viewer */}
       <div className="flex min-h-0 flex-1 flex-col border-b-2 border-border-strong sm:w-1/2 sm:border-b-0 sm:border-r-2">
         <div className="flex shrink-0 items-center gap-2 border-b-2 border-border-strong bg-surface px-4 py-2.5">
-          <Database className="h-3.5 w-3.5 text-navy" strokeWidth={2.5} />
           <p className="cattipu-emboss-text font-pixel-ui text-[0.45rem] tracking-wide text-navy">
             Schema
           </p>
@@ -231,7 +227,6 @@ export function DatabasePanel() {
           </ul>
 
           <div className="cattipu-raised flex flex-wrap items-center gap-1.5 rounded-[4px] bg-surface-solid px-2 py-1.5">
-            <Link2 className="h-3 w-3 shrink-0 text-ink-faint" strokeWidth={2.5} />
             <select
               value={relFrom}
               onChange={(e) => setRelFrom(e.target.value)}

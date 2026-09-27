@@ -15,46 +15,44 @@ import ReactFlow, {
   type Connection,
 } from "reactflow";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Globe2,
-  Waypoints,
-  Server,
-  Database,
-  Radio,
-  Copy,
-  Trash2,
-  Plus,
-  Container,
-  Boxes,
-  Zap,
-  Archive,
-} from "lucide-react";
+import { PixelIcon, ShellIcon, type PixelIconName, type ShellIconName } from "../PixelIcon";
 import { useArchitectStore } from "@/store/useArchitectStore";
 import type { ArchitectNode, ArchitectNodeKind, InfraNode, InfraNodeKind } from "@/lib/ai/types";
 
-const KIND_META: Record<
-  ArchitectNodeKind,
-  { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; accent: string }
-> = {
-  client: { icon: Globe2, accent: "var(--color-purple)" },
-  gateway: { icon: Waypoints, accent: "var(--color-navy)" },
-  service: { icon: Server, accent: "var(--color-blue)" },
-  queue: { icon: Radio, accent: "var(--color-gold)" },
-  datastore: { icon: Database, accent: "var(--color-green)" },
+/**
+ * Kind marks are PixelForge only. The Toolbox marks exist as 32px masters
+ * and are drawn at exactly 32 — never scaled — so a node's mark slot is
+ * 32px. A kind with no PixelForge equivalent (infra "cache") shows no mark
+ * rather than a borrowed one; its kind is still printed under the name.
+ */
+type KindMark = { set: "toolbox"; name: PixelIconName } | { set: "shell"; name: ShellIconName } | null;
+
+const KIND_META: Record<ArchitectNodeKind, { mark: KindMark; accent: string }> = {
+  client: { mark: { set: "toolbox", name: "screen" }, accent: "var(--color-purple)" },
+  gateway: { mark: { set: "toolbox", name: "api" }, accent: "var(--color-navy)" },
+  service: { mark: { set: "toolbox", name: "service" }, accent: "var(--color-blue)" },
+  queue: { mark: { set: "toolbox", name: "flow" }, accent: "var(--color-gold)" },
+  datastore: { mark: { set: "toolbox", name: "entity" }, accent: "var(--color-green)" },
 };
 
-const INFRA_KIND_META: Record<
-  InfraNodeKind,
-  { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; accent: string }
-> = {
-  gateway: { icon: Waypoints, accent: "var(--color-navy)" },
-  orchestration: { icon: Boxes, accent: "var(--color-blue)" },
-  compute: { icon: Container, accent: "var(--color-purple)" },
-  database: { icon: Database, accent: "var(--color-green)" },
-  cache: { icon: Zap, accent: "var(--color-gold)" },
-  queue: { icon: Radio, accent: "var(--color-gold)" },
-  storage: { icon: Archive, accent: "var(--color-red)" },
+const INFRA_KIND_META: Record<InfraNodeKind, { mark: KindMark; accent: string }> = {
+  gateway: { mark: { set: "toolbox", name: "api" }, accent: "var(--color-navy)" },
+  orchestration: { mark: { set: "toolbox", name: "config" }, accent: "var(--color-blue)" },
+  compute: { mark: { set: "toolbox", name: "service" }, accent: "var(--color-purple)" },
+  database: { mark: { set: "toolbox", name: "entity" }, accent: "var(--color-green)" },
+  cache: { mark: null, accent: "var(--color-gold)" },
+  queue: { mark: { set: "toolbox", name: "flow" }, accent: "var(--color-gold)" },
+  storage: { mark: { set: "shell", name: "archive" }, accent: "var(--color-red)" },
 };
+
+function KindMarkView({ mark }: { mark: KindMark }) {
+  if (!mark) return null;
+  return (
+    <span className="cattipu-architect__kind-mark" aria-hidden>
+      {mark.set === "toolbox" ? <PixelIcon name={mark.name} size={32} /> : <ShellIcon name={mark.name} size={32} />}
+    </span>
+  );
+}
 
 // stage ordering — used to decide what's "revealed" yet during a live
 // Build Playback run. Once status isn't "playing" (fresh open, reopened
@@ -73,7 +71,6 @@ function revealThreshold(kind: ArchitectNodeKind): string {
 function ArchNodeCard({ data, selected }: NodeProps<{ node: ArchitectNode; revealed: boolean }>) {
   const { node, revealed } = data;
   const meta = KIND_META[node.kind];
-  const Icon = meta.icon;
   const renameNode = useArchitectStore((s) => s.renameNode);
   const duplicateNode = useArchitectStore((s) => s.duplicateNode);
   const deleteNode = useArchitectStore((s) => s.deleteNode);
@@ -108,9 +105,9 @@ function ArchNodeCard({ data, selected }: NodeProps<{ node: ArchitectNode; revea
           }}
           title="Duplicate"
           aria-label="Duplicate node"
-          className="cattipu-cursor-hand cattipu-press flex h-5 w-5 items-center justify-center rounded-[3px] border-2 border-black/25 bg-blue text-white shadow-[0_1px_0_rgba(0,0,0,0.25)]"
+          className="cattipu-cursor-hand cattipu-press cattipu-architect__node-key flex h-5 items-center justify-center border-2 border-black/25 bg-blue px-1 text-white"
         >
-          <Copy className="h-2.5 w-2.5" strokeWidth={3} />
+          DUP
         </button>
         <button
           onClick={(e) => {
@@ -119,18 +116,13 @@ function ArchNodeCard({ data, selected }: NodeProps<{ node: ArchitectNode; revea
           }}
           title="Delete"
           aria-label="Delete node"
-          className="cattipu-cursor-hand cattipu-press flex h-5 w-5 items-center justify-center rounded-[3px] border-2 border-black/25 bg-red text-white shadow-[0_1px_0_rgba(0,0,0,0.25)]"
+          className="cattipu-cursor-hand cattipu-press cattipu-architect__node-key flex h-5 items-center justify-center border-2 border-black/25 bg-red px-1 text-white"
         >
-          <Trash2 className="h-2.5 w-2.5" strokeWidth={3} />
+          DEL
         </button>
       </div>
 
-      <span
-        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[3px] border border-black/10"
-        style={{ background: `color-mix(in srgb, ${meta.accent} 16%, white)`, color: meta.accent }}
-      >
-        <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
-      </span>
+      <KindMarkView mark={meta.mark} />
       <span className="min-w-0 flex-1">
         {editing ? (
           <input
@@ -171,7 +163,6 @@ function ArchNodeCard({ data, selected }: NodeProps<{ node: ArchitectNode; revea
 function InfraNodeCardView({ data }: NodeProps<{ node: InfraNode }>) {
   const { node } = data;
   const meta = INFRA_KIND_META[node.kind];
-  const Icon = meta.icon;
   return (
     <div
       className="cattipu-cursor-hand cattipu-raised flex w-[176px] items-start gap-2.5 bg-surface-solid px-3 py-2.5"
@@ -179,12 +170,7 @@ function InfraNodeCardView({ data }: NodeProps<{ node: InfraNode }>) {
     >
       <Handle type="target" position={Position.Left} />
       <Handle type="source" position={Position.Right} />
-      <span
-        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[3px] border border-black/10"
-        style={{ background: `color-mix(in srgb, ${meta.accent} 16%, white)`, color: meta.accent }}
-      >
-        <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
-      </span>
+      <KindMarkView mark={meta.mark} />
       <span className="min-w-0 flex-1">
         <p className="truncate text-[12.5px] font-semibold text-ink">{node.label}</p>
         <p className="cattipu-emboss-text truncate font-pixel-ui text-[0.4rem] tracking-wide text-ink-faint">
@@ -334,9 +320,9 @@ export function ArchitectureCanvas() {
 
         {graphView === "application" && (
           <div className="ml-auto flex items-center gap-1.5">
-            <ToolbarAddButton label="Service" onClick={() => addNode("service")} icon={Server} />
-            <ToolbarAddButton label="Database" onClick={() => addNode("datastore")} icon={Database} />
-            <ToolbarAddButton label="Queue" onClick={() => addNode("queue")} icon={Radio} />
+            <ToolbarAddButton label="Add Service" onClick={() => addNode("service")} />
+            <ToolbarAddButton label="Add Database" onClick={() => addNode("datastore")} />
+            <ToolbarAddButton label="Add Queue" onClick={() => addNode("queue")} />
           </div>
         )}
       </div>
@@ -428,22 +414,13 @@ export function ArchitectureCanvas() {
   );
 }
 
-function ToolbarAddButton({
-  label,
-  icon: Icon,
-  onClick,
-}: {
-  label: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-  onClick: () => void;
-}) {
+/** Text only: PixelForge has no 16px add/service/database/queue marks. */
+function ToolbarAddButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="cattipu-cursor-hand cattipu-press cattipu-raised flex items-center gap-1 rounded-[4px] bg-surface-solid px-2 py-1 text-[11px] font-medium text-ink-dim hover:text-navy"
+      className="cattipu-cursor-hand cattipu-press cattipu-raised flex items-center bg-surface-solid px-2 py-1 text-[11px] text-ink-dim hover:text-navy"
     >
-      <Plus className="h-3 w-3" strokeWidth={3} />
-      <Icon className="h-3 w-3" strokeWidth={2.5} />
       {label}
     </button>
   );

@@ -172,6 +172,16 @@ test("surfaces that render PixelForge marks import no Lucide glyphs and no legac
   }
 });
 
+test("Architect draws only PixelForge marks: no Lucide and no legacy icon set in any Architect file", () => {
+  const files = readdirSync(join(ROOT, "components/Architect")).filter((f) => /\.tsx?$/.test(f));
+  assert.ok(files.length >= 12, `only ${files.length} Architect files found`);
+  for (const file of files) {
+    const src = read(`components/Architect/${file}`);
+    assert.doesNotMatch(src, /from ["']lucide-react["']/, `${file} imports Lucide`);
+    assert.doesNotMatch(src, /from ["'][^"']*components\/Icons["']/, `${file} imports the legacy M13 icon set`);
+  }
+});
+
 // ── run ────────────────────────────────────────────────────────────────
 
 async function run() {

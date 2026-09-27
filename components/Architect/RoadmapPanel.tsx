@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Milestone, Circle, ChevronDown } from "lucide-react";
 import { useArchitectStore } from "@/store/useArchitectStore";
 
 const container = {
@@ -22,7 +21,6 @@ export function RoadmapPanel() {
   return (
     <div className="h-full overflow-auto bg-bg-dim px-6 py-5">
       <div className="mb-4 flex items-center gap-2">
-        <Milestone className="h-4 w-4 text-navy" strokeWidth={2.5} />
         <h3 className="cattipu-emboss-text font-pixel-ui text-[0.5rem] tracking-wide text-navy">
           Implementation roadmap
         </h3>
@@ -36,7 +34,7 @@ export function RoadmapPanel() {
             return (
               <motion.div key={p.id} variants={item} className="relative">
                 <span className="cattipu-badge absolute -left-[21px] top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full">
-                  <Circle className="h-1.5 w-1.5 fill-navy text-navy" />
+                  <span className="cattipu-architect__bullet" aria-hidden />
                 </span>
                 <div className="cattipu-raised overflow-hidden bg-surface-solid">
                   <button
@@ -49,9 +47,12 @@ export function RoadmapPanel() {
                       </p>
                       <p className="mt-1 text-[13.5px] font-semibold text-ink">{p.title}</p>
                     </span>
-                    <ChevronDown
-                      className={["h-4 w-4 shrink-0 text-ink-faint transition-transform", collapsed ? "-rotate-90" : ""].join(" ")}
-                      strokeWidth={2.5}
+                    {/* A drawn disclosure triangle, like Explorer's up arrow:
+                        points down when open, right when collapsed. */}
+                    <span
+                      className="cattipu-architect__disclosure"
+                      data-open={collapsed ? undefined : "true"}
+                      aria-hidden
                     />
                   </button>
                   {!collapsed && (
