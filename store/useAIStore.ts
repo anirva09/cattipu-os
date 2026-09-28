@@ -1,27 +1,39 @@
 import { create } from "zustand";
 
 import type { AIError, AIMessage, AIService } from "@/lib/contracts/ai";
+import type { CattipuProject } from "@/lib/project/types";
 import { aiService } from "@/lib/services/ai/aiService";
+import { memoryService } from "@/lib/services/memory/memoryService";
+import { useProjectStore } from "@/store/useProjectStore";
 
 /**
- * MVP-04 — the AI console's conversations, one per project.
+ * The AI console's in-flight state, one entry per project.
  *
- * Keyed by project id, so there is no global conversation to leak: a reply
- * is filed under the project that asked, even if the person has switched
- * projects while it was in flight.
+ * MVP-04 kept whole conversations here, in memory. MVP-05 moves them to
+ * their owner: every turn is filed in the project's memory
+ * (`project.memory.conversations`, persisted with the project), so a reload
+ * restores it and another project never sees it. What stays here is only
+ * what must NOT survive a reload — whether a request is in flight and the
+ * last error — so this store is still not persisted.
  *
- * Deliberately NOT persisted. Long-lived AI context belongs to Project
- * Memory (PROJECT_CONSTITUTION §14, MVP-05); storing transcripts here would
- * create a second owner for it. A reload starts each console empty.
+ * Keyed by project id: a reply is filed under the project (and the
+ * conversation) that asked, even if the person has switched projects while
+ * it was in flight.
  */
 
 export type AIConversationStatus = "idle" | "sending";
 
-export interface AIConversation {
-  messages: AIMessage[];
+export interface AISession {
   status: AIConversationStatus;
   error: AIError | null;
 }
+
+/** What the console renders: the persisted turns plus the live state. */
+export interface AIConversation extends AISession {
+  messages: AIMessage[];
+}
+
+export const IDLE_SESSION: AISession = Object.freeze({ status: "idle", error: null }) as AISession;
 
 export const EMPTY_CONVERSATION: AIConversation = Object.freeze({
   messages: [],
@@ -29,70 +41,76 @@ export const EMPTY_CONVERSATION: AIConversation = Object.freeze({
   error: null,
 }) as AIConversation;
 
+/** The console's conversation for a project: its persisted turns and its
+ *  session. Messages are never shared between projects — they are read
+ *  from the project in hand only. */
+export function conversationFor(project: CattipuProject, session: AISession | undefined): AIConversation {
+  const conversation = memoryService.activeConversation(project);
+  return { ...(session ?? IDLE_SESSION), messages: conversation?.messages ?? [] };
+}
+
 interface AIState {
-  conversations: Record<string, AIConversation>;
-  send: (project: { id: string; name: string }, text: string, service?: AIService) => Promise<void>;
+  sessions: Record<string, AISession>;
+  send: (projectId: string, text: string, service?: AIService) => Promise<void>;
   clear: (projectId: string) => void;
 }
 
 let seq = 0;
-const nextId = () => `ai-${Date.now().toString(36)}-${(seq += 1)}`;
+const nextId = () => `message-${Date.now().toString(36)}-${(seq += 1)}-${Math.random().toString(36).slice(2, 8)}`;
 
 export const useAIStore = create<AIState>()((set, get) => {
-  const update = (projectId: string, patch: (c: AIConversation) => AIConversation) =>
-    set((s) => ({
-      conversations: {
-        ...s.conversations,
-        [projectId]: patch(s.conversations[projectId] ?? EMPTY_CONVERSATION),
-      },
-    }));
+  const setSession = (projectId: string, session: AISession) =>
+    set((s) => ({ sessions: { ...s.sessions, [projectId]: session } }));
 
   return {
-    conversations: {},
+    sessions: {},
 
-    send: async (project, text, service = aiService) => {
+    send: async (projectId, text, service = aiService) => {
       const prompt = text.trim();
-      const current = get().conversations[project.id] ?? EMPTY_CONVERSATION;
-      if (!prompt || current.status === "sending") return;
+      if (!prompt || get().sessions[projectId]?.status === "sending") return;
 
+      const projects = useProjectStore.getState();
       const userTurn: AIMessage = { id: nextId(), role: "user", text: prompt, createdAt: new Date().toISOString() };
-      const history = [...current.messages, userTurn];
-      update(project.id, (c) => ({ ...c, messages: [...c.messages, userTurn], status: "sending", error: null }));
+      const filed = projects.appendConversationMessage(projectId, userTurn);
+      if (!filed.ok) return;
+      const project = useProjectStore.getState().projects.find((p) => p.id === projectId);
+      if (!project) return;
+      setSession(projectId, { status: "sending", error: null });
 
+      // The turns and the memory are data. The server turns the memory into
+      // provider context; nothing here writes a system prompt.
       const result = await service.send({
-        projectId: project.id,
+        projectId,
         projectName: project.name,
-        messages: history.map(({ role, text: body }) => ({ role, text: body })),
+        messages: memoryService.history(filed.value),
+        memory: memoryService.contextFor(project),
       });
 
-      update(project.id, (c) =>
-        result.ok
-          ? {
-              ...c,
-              status: "idle",
-              error: null,
-              messages: [
-                ...c.messages,
-                {
-                  id: nextId(),
-                  role: "assistant",
-                  text: result.response.text,
-                  createdAt: new Date().toISOString(),
-                  providerId: result.response.providerId,
-                  model: result.response.model,
-                },
-              ],
-            }
-          : { ...c, status: "idle", error: result.error },
-      );
+      if (result.ok) {
+        useProjectStore.getState().appendConversationMessage(
+          projectId,
+          {
+            id: nextId(),
+            role: "assistant",
+            text: result.response.text,
+            createdAt: new Date().toISOString(),
+            providerId: result.response.providerId,
+            model: result.response.model,
+          },
+          filed.value.id,
+        );
+      }
+      setSession(projectId, { status: "idle", error: result.ok ? null : result.error });
     },
 
-    clear: (projectId) =>
+    clear: (projectId) => {
+      if (get().sessions[projectId]?.status === "sending") return;
+      useProjectStore.getState().clearConversation(projectId);
       set((s) => {
-        if (s.conversations[projectId]?.status === "sending") return s;
-        const next = { ...s.conversations };
+        const next = { ...s.sessions };
         delete next[projectId];
-        return { conversations: next };
-      }),
+        return { sessions: next };
+      });
+    },
   };
 });

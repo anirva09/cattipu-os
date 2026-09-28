@@ -6,7 +6,8 @@ import { cattipuCssVariables, cattipuTokens } from "../../design-system/tokens";
 import type { AIError, AIProviderStatus } from "@/lib/contracts/ai";
 import { activeProject } from "@/lib/os/projects";
 import { aiService } from "@/lib/services/ai/aiService";
-import { EMPTY_CONVERSATION, useAIStore, type AIConversation } from "@/store/useAIStore";
+import { promptService } from "@/lib/services/memory/promptService";
+import { EMPTY_CONVERSATION, conversationFor, useAIStore, type AIConversation } from "@/store/useAIStore";
 import { useProjectStore } from "@/store/useProjectStore";
 
 import "../../design-system/bevel.css";
@@ -19,6 +20,11 @@ import "./AIConsole.css";
  * an inset well, the way a terminal shows a session. The console depends on
  * the AIService contract only; it has no idea which provider answers, and
  * no credential ever reaches it.
+ *
+ * MVP-05: the conversation is the project's own, read from and saved to
+ * Project Memory, so it survives a reload and stays with its project. The
+ * status strip says what memory travels with the next prompt; the server,
+ * not this component, turns that memory into provider context.
  */
 
 export const CATTIPU_AI_CONSOLE_REFERENCE = {
@@ -63,10 +69,20 @@ function providerLine(provider: ConsoleProviderState): string {
   return configured ? `${label.toUpperCase()} · ${model}` : `${label.toUpperCase()} · NOT CONFIGURED`;
 }
 
+/** MVP-05 — what the project's memory contributes to the next prompt. */
+export interface ConsoleMemory {
+  records: number;
+  /** The active prompt's name, or null when none is chosen. */
+  prompt: string | null;
+}
+
+const NO_MEMORY: ConsoleMemory = { records: 0, prompt: null };
+
 export interface AIConsoleViewProps {
   project: { id: string; name: string } | null;
   provider: ConsoleProviderState;
   conversation: AIConversation;
+  memory?: ConsoleMemory;
   draft: string;
   onDraftChange: (value: string) => void;
   onSend: () => void;
@@ -78,6 +94,7 @@ export function AIConsoleView({
   project,
   provider,
   conversation,
+  memory = NO_MEMORY,
   draft,
   onDraftChange,
   onSend,
@@ -133,7 +150,7 @@ export function AIConsoleView({
           <p className="cattipu-ai__notice">
             {notConfigured
               ? `${provider.status.label} is not configured on this server. ${provider.status.setupHint} Sending now returns the configuration error.`
-              : `Ask about ${project.name}. Nothing is sent until you press Send. This conversation belongs to this project only.`}
+              : `Ask about ${project.name}. Nothing is sent until you press Send. This conversation belongs to this project only and is saved with it.`}
           </p>
         )}
 
@@ -196,6 +213,9 @@ export function AIConsoleView({
 
       <div className="cattipu-ai__status" data-testid="ai-status">
         <span>{`MESSAGES ${String(conversation.messages.length).padStart(2, "0")}`}</span>
+        <span className="cattipu-ai__status-memory" data-testid="ai-memory">
+          {`MEMORY ${String(memory.records).padStart(2, "0")} · PROMPT ${memory.prompt ?? "NONE"}`}
+        </span>
         <span className="cattipu-ai__status-state">{state.toUpperCase()}</span>
       </div>
     </div>
@@ -206,7 +226,18 @@ export function AIConsoleView({
 export function AIConsole() {
   const projects = useProjectStore((s) => s.projects);
   const project = useMemo(() => activeProject(projects), [projects]);
-  const conversation = useAIStore((s) => (project ? s.conversations[project.id] : undefined)) ?? EMPTY_CONVERSATION;
+  const session = useAIStore((s) => (project ? s.sessions[project.id] : undefined));
+  const conversation = useMemo(
+    () => (project ? conversationFor(project, session) : EMPTY_CONVERSATION),
+    [project, session],
+  );
+  const memory = useMemo<ConsoleMemory>(
+    () =>
+      project
+        ? { records: project.memory.records.length, prompt: promptService.active(project)?.name ?? null }
+        : NO_MEMORY,
+    [project],
+  );
   const send = useAIStore((s) => s.send);
   const clear = useAIStore((s) => s.clear);
   const [provider, setProvider] = useState<ConsoleProviderState>({ kind: "checking" });
@@ -231,13 +262,14 @@ export function AIConsole() {
       project={project ? { id: project.id, name: project.name } : null}
       provider={provider}
       conversation={conversation}
+      memory={memory}
       draft={draft}
       onDraftChange={(value) => project && setDrafts((d) => ({ ...d, [project.id]: value }))}
       onSend={() => {
         if (!project || !draft.trim()) return;
         const text = draft;
         setDrafts((d) => ({ ...d, [project.id]: "" }));
-        void send({ id: project.id, name: project.name }, text);
+        void send(project.id, text);
       }}
       onClear={() => project && clear(project.id)}
     />

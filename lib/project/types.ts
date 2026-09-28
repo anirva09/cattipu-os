@@ -1,4 +1,6 @@
 import type { GeneratedArchitecture } from "@/lib/ai/types";
+import type { AIMessage } from "@/lib/contracts/ai";
+import type { MemoryRecordKind } from "@/lib/contracts/memory";
 import type { ProjectTemplateId } from "@/lib/os/templates";
 
 /**
@@ -22,7 +24,7 @@ import type { ProjectTemplateId } from "@/lib/os/templates";
 
 /** Bump this — and add a branch in migrate.ts — whenever CattipuProject's
  * shape changes in a way old persisted projects can't just be read as. */
-export const PROJECT_SCHEMA_VERSION = 5;
+export const PROJECT_SCHEMA_VERSION = 6;
 
 /** Shown as the owner of anything created locally. A single constant so
  *  the Projects list, the details panel and Explorer cannot disagree. */
@@ -213,14 +215,48 @@ export interface ForgeArtifacts {
 }
 
 // ---------------------------------------------------------------------
-// Memory — future: records, decisions, relationships, conflicts/staleness
+// Memory — records, prompts and AI conversations (MVP-05, v6);
+// future: decisions, relationships, conflicts/staleness
 // ---------------------------------------------------------------------
 
 export interface MemoryRecord {
   id: string;
+  /** MVP-05 (v6). What the record is about. Older records are "context". */
+  kind: MemoryRecordKind;
   text: string;
   createdAt: string;
+  /** MVP-05 (v6). Older records carry their createdAt. */
+  updatedAt: string;
   refs: ArtifactRef[];
+}
+
+/**
+ * MVP-05 (v6) — a named instruction the project owner keeps for the AI.
+ * `projectId` repeats the owning project so a prompt can prove where it
+ * belongs once it leaves the project (an AI request); on load it is
+ * re-stamped from the project that contains it.
+ */
+export interface ProjectPrompt {
+  id: string;
+  projectId: string;
+  name: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * MVP-05 (v6) — one AI conversation, owned by exactly one project. Turns are
+ * the person's prompts and the assistant's answers. System context is not a
+ * turn: the server assembles it for every request from the project's
+ * memory, so it is never stored here and never goes stale.
+ */
+export interface ProjectConversation {
+  id: string;
+  projectId: string;
+  messages: AIMessage[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface MemoryDecision {
@@ -254,6 +290,12 @@ export interface MemoryArtifacts {
   decisions: MemoryDecision[];
   relationships: MemoryRelationship[];
   conflicts: MemoryConflict[];
+  /** MVP-05 (v6). */
+  prompts: ProjectPrompt[];
+  /** MVP-05 (v6). The prompt sent with AI requests; null sends none. */
+  activePromptId: string | null;
+  /** MVP-05 (v6). Oldest first; the last one is the console's. */
+  conversations: ProjectConversation[];
 }
 
 // ---------------------------------------------------------------------
@@ -392,7 +434,15 @@ export function createEmptyForgeArtifacts(): ForgeArtifacts {
 }
 
 export function createEmptyMemoryArtifacts(): MemoryArtifacts {
-  return { records: [], decisions: [], relationships: [], conflicts: [] };
+  return {
+    records: [],
+    decisions: [],
+    relationships: [],
+    conflicts: [],
+    prompts: [],
+    activePromptId: null,
+    conversations: [],
+  };
 }
 
 export function createEmptyLaunchArtifacts(): LaunchArtifacts {

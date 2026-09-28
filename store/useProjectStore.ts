@@ -11,7 +11,9 @@ import {
   type ForgeBuild,
   type LaunchRelease,
   type MemoryRecord,
+  type ProjectConversation,
   type ProjectIcon,
+  type ProjectPrompt,
 } from "@/lib/project/types";
 import { migrateProjects } from "@/lib/project/migrate";
 import { nextProjectName } from "@/lib/os/projects";
@@ -20,6 +22,15 @@ import { nextNumberedName } from "@/lib/os/filesystem";
 import type { CreateProjectResult } from "@/lib/contracts/projects";
 import { projectLifecycleService } from "@/lib/services/projects/projectLifecycleService";
 import { canvasService } from "@/lib/services/canvas/canvasService";
+import type { AIMessage } from "@/lib/contracts/ai";
+import type {
+  MemoryChange,
+  MemoryRecordDraft,
+  MemoryStamp,
+  PromptDraft,
+} from "@/lib/contracts/memory";
+import { memoryService } from "@/lib/services/memory/memoryService";
+import { promptService } from "@/lib/services/memory/promptService";
 
 /**
  * Milestone 14A (Universal Project Artifact Foundation) — this store now
@@ -80,6 +91,26 @@ interface ProjectState {
   placeCanvasNode: (id: string, placement: CanvasNodePlacement) => boolean;
   resetCanvasLayout: (id: string) => void;
 
+  // ── MVP-05 (Project Memory) ────────────────────────────────────────
+  // Memory lives in the project's `memory` slot and persists with it. The
+  // rules belong to memoryService and promptService; these apply the
+  // result to the one project named, and to no other. A project that does
+  // not exist is "not-found" and nothing changes.
+  addMemoryRecord: (id: string, draft: MemoryRecordDraft) => MemoryChange<MemoryRecord>;
+  updateMemoryRecord: (id: string, recordId: string, patch: Partial<MemoryRecordDraft>) => MemoryChange<MemoryRecord>;
+  removeMemoryRecord: (id: string, recordId: string) => MemoryChange<null>;
+  savePrompt: (id: string, draft: PromptDraft) => MemoryChange<ProjectPrompt>;
+  removePrompt: (id: string, promptId: string) => MemoryChange<null>;
+  setActivePrompt: (id: string, promptId: string | null) => MemoryChange<ProjectPrompt | null>;
+  /** Files one AI turn in the project's conversation (see
+   *  memoryService.appendMessage for which one). */
+  appendConversationMessage: (
+    id: string,
+    message: AIMessage,
+    conversationId?: string,
+  ) => MemoryChange<ProjectConversation>;
+  clearConversation: (id: string) => void;
+
   // ── Milestone 15 (Living Projects) ──────────────────────────────────
   // The verbs the Projects window offers. Every one goes through this
   // store, so a rename in Projects is a rename in Explorer, on the
@@ -102,6 +133,39 @@ interface ProjectState {
 
 function touch(): Pick<CattipuProject, "updatedAt"> {
   return { updatedAt: new Date().toISOString() };
+}
+
+/**
+ * MVP-05. Reads the one project, asks a memory rule for the change, and
+ * writes only that project's memory — in one synchronous step, so a reply
+ * arriving late cannot overwrite a newer edit.
+ */
+function changeMemory<T>(
+  get: () => ProjectState,
+  set: (update: (s: ProjectState) => Pick<ProjectState, "projects">) => void,
+  id: string,
+  change: (project: CattipuProject) => MemoryChange<T>,
+): MemoryChange<T> {
+  const project = get().projects.find((p) => p.id === id);
+  if (!project) return { ok: false, reason: "not-found" };
+  const result = change(project);
+  if (result.ok) {
+    set((s) => ({
+      projects: s.projects.map((p) => (p.id === id ? { ...p, memory: result.memory, ...touch() } : p)),
+    }));
+  }
+  return result;
+}
+
+let memorySeq = 0;
+/** Id and time for a new memory entry. Time + random, like nextProjectId,
+ *  so ids restored from storage are never minted again. */
+function memoryStamp(kind: "memory" | "prompt" | "conversation" | "message"): MemoryStamp {
+  memorySeq += 1;
+  return {
+    id: `${kind}-${Date.now().toString(36)}-${memorySeq}-${Math.random().toString(36).slice(2, 8)}`,
+    at: new Date().toISOString(),
+  };
 }
 
 /**
@@ -250,6 +314,36 @@ export const useProjectStore = create<ProjectState>()(
         }));
       },
 
+      addMemoryRecord: (id, draft) =>
+        changeMemory(get, set, id, (p) => memoryService.addRecord(p.memory, draft, memoryStamp("memory"))),
+
+      updateMemoryRecord: (id, recordId, patch) =>
+        changeMemory(get, set, id, (p) => memoryService.updateRecord(p.memory, recordId, patch, new Date().toISOString())),
+
+      removeMemoryRecord: (id, recordId) =>
+        changeMemory(get, set, id, (p) => memoryService.removeRecord(p.memory, recordId)),
+
+      savePrompt: (id, draft) =>
+        changeMemory(get, set, id, (p) => promptService.save(p.memory, p.id, draft, memoryStamp("prompt"))),
+
+      removePrompt: (id, promptId) =>
+        changeMemory(get, set, id, (p) => promptService.remove(p.memory, promptId)),
+
+      setActivePrompt: (id, promptId) =>
+        changeMemory(get, set, id, (p) => promptService.setActive(p.memory, promptId)),
+
+      appendConversationMessage: (id, message, conversationId) =>
+        changeMemory(get, set, id, (p) =>
+          memoryService.appendMessage(p.memory, p.id, message, {
+            conversationId,
+            stamp: memoryStamp("conversation"),
+          }),
+        ),
+
+      clearConversation: (id) => {
+        changeMemory(get, set, id, (p) => ({ ok: true, value: null, memory: memoryService.clearConversation(p.memory) }));
+      },
+
       renameProject: (id, name) => {
         const next = name.trim();
         if (!next) return;              // a blank name is not a rename
@@ -267,9 +361,13 @@ export const useProjectStore = create<ProjectState>()(
         // timestamps, never opened. Cloning createdAt would make the
         // duplicate claim an age it does not have, and cloning the id
         // would make two projects the same project.
+        const copyId = nextProjectId();
         const copy: CattipuProject = {
           ...structuredClone(source),
-          id: nextProjectId(),
+          id: copyId,
+          // MVP-05: the copy's memory is its own — notes and prompts
+          // re-owned by the copy, no conversations (they are history).
+          memory: memoryService.forDuplicate(source.memory, copyId),
           name: `${source.name} copy`,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),

@@ -5,13 +5,15 @@ import type {
   AIRequest,
   AIResult,
 } from "@/lib/contracts/ai";
+import { assembleContext, parseMemoryContext } from "./contextAssembly";
 import type { ProviderRegistry } from "./providerRegistry";
 
 /**
  * The AI Gateway: the one server-side entry point for AI requests.
  *
  * It validates the request, resolves the provider through the registry,
- * refuses early when that provider has no credentials, and guarantees the
+ * refuses early when that provider has no credentials, assembles the
+ * provider context from the project's memory (MVP-05), and guarantees the
  * caller always receives a normalised `AIResult` — never a raw provider
  * error and never an exception.
  */
@@ -38,7 +40,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /** Narrows untrusted JSON to an `AIRequest`, or says what is wrong. */
 export function parseAIRequest(input: unknown): { ok: true; request: AIRequest } | { ok: false; result: AIResult } {
   if (!isRecord(input)) return { ok: false, result: invalid("The request body must be a JSON object.") };
-  const { projectId, projectName, providerId, messages } = input;
+  const { projectId, projectName, providerId, messages, memory } = input;
   if (typeof projectId !== "string" || !projectId.trim()) {
     return { ok: false, result: invalid("An AI request must name the project it belongs to.") };
   }
@@ -67,9 +69,17 @@ export function parseAIRequest(input: unknown): { ok: true; request: AIRequest }
   if (last.role !== "user" || !last.text.trim()) {
     return { ok: false, result: invalid("Enter a prompt before sending.") };
   }
+  const parsedMemory = parseMemoryContext(memory, projectId);
+  if (!parsedMemory.ok) return { ok: false, result: invalid(parsedMemory.message) };
   return {
     ok: true,
-    request: { projectId, projectName, providerId: providerId as string | undefined, messages: turns },
+    request: {
+      projectId,
+      projectName,
+      providerId: providerId as string | undefined,
+      messages: turns,
+      ...(parsedMemory.memory ? { memory: parsedMemory.memory } : {}),
+    },
   };
 }
 
@@ -120,7 +130,7 @@ export function createAIGateway(registry: ProviderRegistry, options: AIGatewayOp
         };
       }
       try {
-        const result = await provider.generate({ ...request, providerId });
+        const result = await provider.generate({ ...request, providerId, context: assembleContext(request) });
         // An adapter answers for its own project only.
         if (result.ok && result.response.projectId !== request.projectId) {
           return {

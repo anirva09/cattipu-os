@@ -8,8 +8,13 @@ import {
   createEmptyLaunchArtifacts,
   createEmptyMemoryArtifacts,
   type CattipuProject,
+  type MemoryArtifacts,
+  type MemoryRecord,
+  type ProjectConversation,
   type ProjectIcon,
+  type ProjectPrompt,
 } from "./types";
+import { isMemoryRecordKind } from "@/lib/contracts/memory";
 
 /**
  * Milestone 14A — deterministic, pure migration from whatever shape a
@@ -51,6 +56,74 @@ function isCurrentShape(value: Record<string, unknown>): value is Record<string,
   return typeof value.version === "number" && isRecord(value.architect);
 }
 
+/**
+ * MVP-05 (v6) memory. A v5 record has records with no kind or updatedAt and
+ * none of prompts, activePromptId or conversations. Every existing record is
+ * kept: its kind becomes "context" (the only kind anything could have meant
+ * before kinds existed) and its updatedAt its createdAt. Prompts and
+ * conversations are re-stamped with the project that contains them, so a
+ * stored entry can never claim another project. Entries too malformed to
+ * show are dropped rather than rendered as blanks.
+ */
+function migrateMemory(raw: unknown, projectId: string): MemoryArtifacts {
+  const empty = createEmptyMemoryArtifacts();
+  if (!isRecord(raw)) return empty;
+  const list = (value: unknown): Record<string, unknown>[] =>
+    Array.isArray(value) ? value.filter(isRecord) : [];
+  const text = (value: unknown): value is string => typeof value === "string";
+
+  const records = list(raw.records).flatMap((r): MemoryRecord[] => {
+    if (!text(r.id) || !text(r.text)) return [];
+    const createdAt = text(r.createdAt) ? r.createdAt : "";
+    return [{
+      ...(r as unknown as MemoryRecord),
+      kind: isMemoryRecordKind(r.kind) ? r.kind : "context",
+      createdAt,
+      updatedAt: text(r.updatedAt) ? r.updatedAt : createdAt,
+      refs: Array.isArray(r.refs) ? (r.refs as MemoryRecord["refs"]) : [],
+    }];
+  });
+  const prompts = list(raw.prompts).flatMap((p): ProjectPrompt[] =>
+    text(p.id) && text(p.name) && text(p.content)
+      ? [{
+          id: p.id,
+          projectId,
+          name: p.name,
+          content: p.content,
+          createdAt: text(p.createdAt) ? p.createdAt : "",
+          updatedAt: text(p.updatedAt) ? p.updatedAt : text(p.createdAt) ? p.createdAt : "",
+        }]
+      : [],
+  );
+  const conversations = list(raw.conversations).flatMap((c): ProjectConversation[] =>
+    text(c.id)
+      ? [{
+          id: c.id,
+          projectId,
+          messages: list(c.messages).filter(
+            (m) => text(m.id) && text(m.text) && (m.role === "user" || m.role === "assistant"),
+          ) as unknown as ProjectConversation["messages"],
+          createdAt: text(c.createdAt) ? c.createdAt : "",
+          updatedAt: text(c.updatedAt) ? c.updatedAt : text(c.createdAt) ? c.createdAt : "",
+        }]
+      : [],
+  );
+  const activePromptId =
+    text(raw.activePromptId) && prompts.some((p) => p.id === raw.activePromptId) ? raw.activePromptId : null;
+
+  return {
+    ...empty,
+    ...(raw as Partial<MemoryArtifacts>),
+    decisions: Array.isArray(raw.decisions) ? (raw.decisions as MemoryArtifacts["decisions"]) : [],
+    relationships: Array.isArray(raw.relationships) ? (raw.relationships as MemoryArtifacts["relationships"]) : [],
+    conflicts: Array.isArray(raw.conflicts) ? (raw.conflicts as MemoryArtifacts["conflicts"]) : [],
+    records,
+    prompts,
+    activePromptId,
+    conversations,
+  };
+}
+
 /** Fills in any artifact slot a not-quite-current record is missing
  * (e.g. a record written by a future version bump this file doesn't
  * know about yet, or a hand-built fixture) — defensive, not a silent
@@ -70,7 +143,7 @@ function backfillMissingArtifacts(project: CattipuProject): CattipuProject {
         }
       : createEmptyCanvasArtifacts(),
     forge: project.forge ?? createEmptyForgeArtifacts(),
-    memory: project.memory ?? createEmptyMemoryArtifacts(),
+    memory: migrateMemory(project.memory, project.id),
     launch: project.launch ?? createEmptyLaunchArtifacts(),
     // Milestone 15 fields. A v1 record predates all of them, so every one
     // is filled from something the record already carries rather than

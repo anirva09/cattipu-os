@@ -72,7 +72,8 @@ export const CATTIPU_DEFAULT_WINDOW_SIZE: WindowSize = {
  * - canvas    400×240: the toolbar stays whole; the drawing surface
  *   scrolls in both directions.
  * - ai        400×240: the prompt row stays whole; the session scrolls.
- * - memory    320×200: the placeholder fits whole.
+ * - memory    320×200: the toolbar and status strip stay whole; entries and
+ *   editors scroll inside the well (MVP-05).
  * - explorer  420×240: the narrowest width at which one 112px file tile
  *   still fits beside the 248px folder tree. Narrower, the files vanish.
  * - settings  440×240: Wallpaper Studio names keep ≥100px before their

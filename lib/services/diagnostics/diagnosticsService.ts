@@ -422,8 +422,12 @@ const NOT_IMPLEMENTED_MESSAGES: Record<
   // browser-side snapshot cannot observe, and Architect generation is still
   // seeded rather than routed through the gateway.
   ai: "the AI Gateway exists (/api/ai, Claude and Ollama adapters) but Diagnostics does not observe it yet — provider readiness is reported by the AI Console; Architect generation remains seeded",
+  // MVP-05 made CattipuProject.memory live (records, prompts and AI
+  // conversations, written by the Memory window and the AI Console). The
+  // row stays not-implemented: M24's Project Memory Core (decisions,
+  // relationships, staleness, provider-shared memory) is still to come.
   memory:
-    "no Project Memory system exists yet; CattipuProject.memory.records is the only storage today, written by nothing live",
+    "project memory records, prompts and AI conversations are stored per project (CattipuProject.memory, MVP-05); the M24 Project Memory Core (decisions, relationships, staleness) is not built",
   forge:
     "no Forge implementation exists; CattipuProject.forge and the WorkspaceGenerator contract (lib/os/extensions.ts) are the prepared seam",
   live: "no Live Runtime implementation exists, and no seam has been prepared for it yet",

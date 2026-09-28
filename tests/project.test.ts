@@ -104,7 +104,9 @@ test("createProject() produces a valid current-schema CattipuProject", () => {
   assert.equal(project.architect.data, null);
   assert.deepEqual(project.canvas, { screens: [], components: [], assets: [], uiStates: [], layout: [] });
   assert.deepEqual(project.forge, { sourceFiles: [], builds: [], tests: [], diagnostics: [] });
-  assert.deepEqual(project.memory, { records: [], decisions: [], relationships: [], conflicts: [] });
+  assert.deepEqual(project.memory, {
+    records: [], decisions: [], relationships: [], conflicts: [], prompts: [], activePromptId: null, conversations: [],
+  });
   assert.deepEqual(project.launch, { releases: [], environments: [], preflightChecks: [], deployments: [] });
   assert.equal(typeof project.id, "string");
   assert.ok(project.id.length > 0);
@@ -170,7 +172,9 @@ test("migrateProject() converts a legacy pre-M14A record without architecture", 
   // every artifact slot exists and is empty, not missing
   assert.deepEqual(migrated.canvas, { screens: [], components: [], assets: [], uiStates: [], layout: [] });
   assert.deepEqual(migrated.forge, { sourceFiles: [], builds: [], tests: [], diagnostics: [] });
-  assert.deepEqual(migrated.memory, { records: [], decisions: [], relationships: [], conflicts: [] });
+  assert.deepEqual(migrated.memory, {
+    records: [], decisions: [], relationships: [], conflicts: [], prompts: [], activePromptId: null, conversations: [],
+  });
   assert.deepEqual(migrated.launch, { releases: [], environments: [], preflightChecks: [], deployments: [] });
 });
 

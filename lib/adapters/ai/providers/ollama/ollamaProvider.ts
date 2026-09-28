@@ -1,5 +1,4 @@
 import type { AIError, AIProvider, AIProviderRequest, AIResult } from "@/lib/contracts/ai";
-import { systemPrompt } from "@/lib/services/ai/systemPrompt";
 
 /**
  * The Ollama adapter — a local model server on this machine.
@@ -84,8 +83,11 @@ export function createOllamaProvider(options: OllamaProviderOptions = {}): AIPro
             model,
             stream: false,
             options: { num_predict: MAX_OUTPUT_TOKENS, ...(numGpu === undefined ? {} : { num_gpu: numGpu }) },
+            // One system message per context block (system, project prompt,
+            // project memory), in the gateway's order; Ollama's chat
+            // template combines them for the model.
             messages: [
-              { role: "system", content: systemPrompt(request.projectName) },
+              ...request.context.map((block) => ({ role: "system", content: block.text })),
               ...request.messages.map((message) => ({ role: message.role, content: message.text })),
             ],
           }),

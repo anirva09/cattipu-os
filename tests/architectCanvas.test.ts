@@ -345,7 +345,8 @@ test("H: a v4 project record loads with an empty Canvas layout", () => {
     assert.deepEqual(loaded.canvas.layout, []);
     assert.deepEqual(loaded.architect.data?.nodes.map((n) => n.id), ARCH_A.nodes.map((n) => n.id));
   });
-  assert.equal(PROJECT_SCHEMA_VERSION, 5);
+  // v6 (MVP-05) added project memory; the v4 → current path still applies.
+  assert.ok(PROJECT_SCHEMA_VERSION >= 5);
 });
 
 // ── I / J. empty states ────────────────────────────────────────────────

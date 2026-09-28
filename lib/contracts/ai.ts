@@ -7,12 +7,20 @@
  *                                              ↓
  *                                       AIProvider adapter ─→ provider API
  *
+ * MVP-05 adds Project Memory to the request. The browser sends the project's
+ * memory as structured data (`memory`); the gateway validates it against
+ * the request's project and assembles the provider context — system prompt,
+ * project prompt, project memory — as separate blocks (`AIContextBlock`).
+ * The browser never writes provider context itself.
+ *
  * Everything in this file is provider-neutral and framework-free: no React,
  * no Next, no provider SDK. The UI and the gateway speak these shapes; only
  * an adapter knows what a provider's wire format looks like. Credentials
  * never cross this boundary — they live in the server environment and are
  * read by the adapter alone.
  */
+
+import type { ProjectMemoryContext } from "./memory";
 
 /** A stable provider identifier, as registered by an adapter. The registry
  *  decides which exist; which one answers by default is server
@@ -44,6 +52,26 @@ export interface AIRequest {
   providerId?: AIProviderId;
   /** The conversation so far, oldest first, ending with the new user turn. */
   messages: ReadonlyArray<Pick<AIMessage, "role" | "text">>;
+  /** MVP-05. This project's memory, as data. Optional: a request without
+   *  it is answered with the system context alone. */
+  memory?: ProjectMemoryContext;
+}
+
+/**
+ * MVP-05 — where a block of provider context came from. The three are kept
+ * apart all the way to the adapter, which sends each as its own system
+ * block; none is ever merged into a user message.
+ *
+ *   system          CATTIPU's own instructions (lib/services/ai/systemPrompt.ts)
+ *   project-prompt  the project's active prompt, written by its owner
+ *   project-memory  the project's memory records
+ */
+export type AIContextSource = "system" | "project-prompt" | "project-memory";
+
+/** One block of system-role context, rendered by the server. */
+export interface AIContextBlock {
+  source: AIContextSource;
+  text: string;
 }
 
 /** A normalised provider answer. */
@@ -103,9 +131,11 @@ export interface AIProviderStatus {
   setupHint: string;
 }
 
-/** What an adapter receives: the request, already validated by the gateway. */
+/** What an adapter receives: the request, already validated by the gateway,
+ *  and the context the gateway assembled for it — system first. */
 export interface AIProviderRequest extends AIRequest {
   providerId: AIProviderId;
+  context: readonly AIContextBlock[];
 }
 
 /**

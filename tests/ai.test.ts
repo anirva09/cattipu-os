@@ -26,6 +26,7 @@ import type {
   AIService,
 } from "@/lib/contracts/ai";
 import { createAIGateway, parseAIRequest } from "@/lib/services/ai/aiGateway";
+import { assembleContext } from "@/lib/services/ai/contextAssembly";
 import { createProviderRegistry, type ProviderRegistry } from "@/lib/services/ai/providerRegistry";
 import { selectDefaultProvider } from "@/lib/services/ai/providerSelection";
 import { createAIService } from "@/lib/services/ai/aiService";
@@ -35,7 +36,9 @@ import {
   DEFAULT_OLLAMA_BASE_URL,
   DEFAULT_OLLAMA_MODEL,
 } from "@/lib/adapters/ai/providers/ollama/ollamaProvider";
-import { EMPTY_CONVERSATION, useAIStore } from "@/store/useAIStore";
+import { createProject } from "@/lib/project/types";
+import { EMPTY_CONVERSATION, conversationFor, useAIStore } from "@/store/useAIStore";
+import { useProjectStore } from "@/store/useProjectStore";
 
 (globalThis as Record<string, unknown>).React = React;
 const loaders = require.extensions as unknown as Record<string, (m: { exports: unknown }) => void>;
@@ -208,16 +211,24 @@ function fakeClaude(respond: (args: CreateArgs) => unknown) {
   return { client, calls };
 }
 
-const providerRequest = (): AIProviderRequest => ({
-  projectId: "pa",
-  projectName: "Alpha",
-  providerId: "claude",
-  messages: [
-    { role: "user", text: "What is this project?" },
-    { role: "assistant", text: "An app." },
-    { role: "user", text: "Tell me more." },
-  ],
+/** What the gateway hands an adapter: the request plus the context it
+ *  assembled (MVP-05). With no memory that is the system block alone. */
+const withContext = (req: Omit<AIProviderRequest, "context">): AIProviderRequest => ({
+  ...req,
+  context: assembleContext(req),
 });
+
+const providerRequest = (): AIProviderRequest =>
+  withContext({
+    projectId: "pa",
+    projectName: "Alpha",
+    providerId: "claude",
+    messages: [
+      { role: "user", text: "What is this project?" },
+      { role: "assistant", text: "An app." },
+      { role: "user", text: "Tell me more." },
+    ],
+  });
 
 test("claude: configuration comes from the server environment only", () => {
   assert.equal(createClaudeProvider({ env: {} }).isConfigured(), false);
@@ -247,7 +258,8 @@ test("claude: builds the Messages request and normalises the answer", async () =
   assert.equal(sent.model, DEFAULT_CLAUDE_MODEL);
   assert.equal(sent.fallbacks, "default");
   assert.deepEqual(sent.betas, ["server-side-fallback-2026-07-01"]);
-  assert.match(String(sent.system), /"Alpha"/, "the provider knows which project it is helping with");
+  assert.ok(Array.isArray(sent.system), "system context arrives as separate blocks");
+  assert.match(JSON.stringify(sent.system), /\\"Alpha\\"/, "the provider knows which project it is helping with");
   assert.deepEqual(sent.messages, [
     { role: "user", content: "What is this project?" },
     { role: "assistant", content: "An app." },
@@ -332,16 +344,17 @@ function fakeOllama(respond: (call: Call) => Response | Promise<Response>) {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-const ollamaRequest = (): AIProviderRequest => ({
-  projectId: "pa",
-  projectName: "Alpha",
-  providerId: "ollama",
-  messages: [
-    { role: "user", text: "What is this project?" },
-    { role: "assistant", text: "An app." },
-    { role: "user", text: "Tell me more." },
-  ],
-});
+const ollamaRequest = (): AIProviderRequest =>
+  withContext({
+    projectId: "pa",
+    projectName: "Alpha",
+    providerId: "ollama",
+    messages: [
+      { role: "user", text: "What is this project?" },
+      { role: "assistant", text: "An app." },
+      { role: "user", text: "Tell me more." },
+    ],
+  });
 
 test("ollama: configuration defaults to the local server and the documented model; env overrides both", () => {
   const plain = createOllamaProvider({ env: {} });
@@ -564,24 +577,44 @@ const answer = (projectId: string, text: string): AIResult => ({
   response: { projectId, providerId: "claude", model: "claude-opus-5", text, stopReason: "end_turn" },
 });
 
+/** MVP-05: conversations live in each project's memory, so the store tests
+ *  run over two real projects in the real project store. */
+function twoProjects() {
+  useAIStore.setState({ sessions: {} });
+  useProjectStore.setState({
+    projects: [
+      { ...createProject({ name: "Alpha" }), id: "pa" },
+      { ...createProject({ name: "Beta" }), id: "pb" },
+    ],
+  });
+}
+
+/** What the console shows for a project: its persisted turns + its session. */
+const convo = (id: string) => {
+  const project = useProjectStore.getState().projects.find((p) => p.id === id);
+  assert.ok(project, `project ${id} exists`);
+  return conversationFor(project, useAIStore.getState().sessions[id]);
+};
+
 test("isolation: each project has its own conversation; a late reply lands in the project that asked", async () => {
-  useAIStore.setState({ conversations: {} });
+  twoProjects();
   const a = deferredService();
-  const pending = useAIStore.getState().send({ id: "pa", name: "Alpha" }, "About Alpha?", a.service);
+  const pending = useAIStore.getState().send("pa", "About Alpha?", a.service);
   // Loading state, for A only.
-  assert.equal(useAIStore.getState().conversations.pa.status, "sending");
-  assert.equal(useAIStore.getState().conversations.pb, undefined, "B has no conversation at all");
+  assert.equal(convo("pa").status, "sending");
+  assert.deepEqual([convo("pb").status, convo("pb").messages.length], ["idle", 0], "B has no conversation at all");
   // A second send in A is ignored while A is waiting.
-  await useAIStore.getState().send({ id: "pa", name: "Alpha" }, "again", a.service);
+  await useAIStore.getState().send("pa", "again", a.service);
   assert.equal(a.requests.length, 1);
   // B can talk meanwhile, independently.
   const b = deferredService();
-  const pendingB = useAIStore.getState().send({ id: "pb", name: "Beta" }, "About Beta?", b.service);
+  const pendingB = useAIStore.getState().send("pb", "About Beta?", b.service);
   b.release(answer("pb", "Beta answer"));
   await pendingB;
   a.release(answer("pa", "Alpha answer"));
   await pending;
-  const { pa, pb } = useAIStore.getState().conversations;
+  const pa = convo("pa");
+  const pb = convo("pb");
   assert.deepEqual(pa.messages.map((m) => [m.role, m.text]), [["user", "About Alpha?"], ["assistant", "Alpha answer"]]);
   assert.deepEqual(pb.messages.map((m) => [m.role, m.text]), [["user", "About Beta?"], ["assistant", "Beta answer"]]);
   assert.equal(a.requests[0].projectId, "pa");
@@ -590,12 +623,12 @@ test("isolation: each project has its own conversation; a late reply lands in th
 });
 
 test("history: the next request carries only this project's earlier turns", async () => {
-  useAIStore.setState({ conversations: {} });
+  twoProjects();
   const s = deferredService();
-  const first = useAIStore.getState().send({ id: "pa", name: "Alpha" }, "one", s.service);
+  const first = useAIStore.getState().send("pa", "one", s.service);
   s.release(answer("pa", "reply one"));
   await first;
-  const second = useAIStore.getState().send({ id: "pa", name: "Alpha" }, "two", s.service);
+  const second = useAIStore.getState().send("pa", "two", s.service);
   s.release(answer("pa", "reply two"));
   await second;
   assert.deepEqual(s.requests[1].messages, [
@@ -606,23 +639,25 @@ test("history: the next request carries only this project's earlier turns", asyn
 });
 
 test("error state: a failed request keeps the prompt, records the error, and clears on the next send", async () => {
-  useAIStore.setState({ conversations: {} });
+  twoProjects();
   const s = deferredService();
-  const failing = useAIStore.getState().send({ id: "pa", name: "Alpha" }, "hello", s.service);
+  const failing = useAIStore.getState().send("pa", "hello", s.service);
   s.release({ ok: false, error: { code: "not-configured", message: "Claude is not configured.", retryable: false, providerId: "claude" } });
   await failing;
-  const c = useAIStore.getState().conversations.pa;
+  const c = convo("pa");
   assert.deepEqual([c.status, c.error?.code, c.messages.length], ["idle", "not-configured", 1]);
-  const retry = useAIStore.getState().send({ id: "pa", name: "Alpha" }, "again", s.service);
-  assert.equal(useAIStore.getState().conversations.pa.error, null);
+  const retry = useAIStore.getState().send("pa", "again", s.service);
+  assert.equal(convo("pa").error, null);
   s.release(answer("pa", "ok"));
   await retry;
   useAIStore.getState().clear("pa");
-  assert.equal(useAIStore.getState().conversations.pa, undefined);
+  assert.deepEqual([convo("pa").messages.length, useAIStore.getState().sessions.pa], [0, undefined]);
 });
 
-test("persistence boundary: conversations are not written to storage (Project Memory owns that)", () => {
-  assert.doesNotMatch(read("store/useAIStore.ts"), /persist\(|localStorage/);
+test("persistence boundary: the AI store is never persisted; turns go to Project Memory, which is", () => {
+  const source = read("store/useAIStore.ts");
+  assert.doesNotMatch(source, /persist\(|localStorage/);
+  assert.match(source, /appendConversationMessage/, "turns are filed through the project store");
 });
 
 // ── UI states ──────────────────────────────────────────────────────────

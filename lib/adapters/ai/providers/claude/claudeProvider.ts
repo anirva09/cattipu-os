@@ -1,7 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 import type { AIError, AIProvider, AIProviderRequest, AIResult } from "@/lib/contracts/ai";
-import { systemPrompt } from "@/lib/services/ai/systemPrompt";
 
 /**
  * The Claude adapter — the only module that knows the Anthropic API.
@@ -91,7 +90,9 @@ export function createClaudeProvider(options: ClaudeProviderOptions = {}): AIPro
         const response = await createClient().beta.messages.create({
           model,
           max_tokens: MAX_TOKENS,
-          system: systemPrompt(request.projectName),
+          // The gateway's context blocks (system, project prompt, project
+          // memory) as separate system text blocks, in order.
+          system: request.context.map((block) => ({ type: "text" as const, text: block.text })),
           messages: request.messages.map((message) => ({ role: message.role, content: message.text })),
           // A classifier decline is re-run server-side on Anthropic's
           // recommended model for that category instead of ending the turn.

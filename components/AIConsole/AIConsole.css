@@ -175,6 +175,14 @@
   white-space: nowrap;
 }
 
+/* MVP-05: what memory travels with the next prompt. Truncates first, so
+ * the message count and the state always stay readable. */
+.cattipu-ai__status-memory {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .cattipu-ai__status-state {
   margin-left: auto;
 }

@@ -42,6 +42,7 @@ const MIGRATED_CSS = [
   "components/Explorer/ExplorerApp.css",
   "components/FolderTreeItem/FolderTreeItem.css",
   "components/InteractiveDesktop/InteractiveDesktop.css",
+  "components/Memory/MemoryApp.css",
   "components/ProjectCard/ProjectCard.css",
   "components/RightWidgetStack/RightWidgetStack.css",
   "components/Sidebar/Sidebar.css",

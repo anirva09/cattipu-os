@@ -10,8 +10,7 @@ import { DesktopObjectLayer } from "@/components/DesktopObjects";
 import { DesktopWallpaper, useAppliedWallpaper } from "@/components/DesktopWallpaper";
 import { ExplorerApp } from "@/components/Explorer";
 import { SettingsApp } from "@/components/Window/SettingsApp";
-import { PlaceholderApp } from "@/components/Window/PlaceholderApp";
-import { APP_MAP } from "@/lib/apps";
+import { MemoryApp } from "@/components/Memory/MemoryApp";
 import type { CattipuSidebarIcons } from "@/components/Sidebar/Sidebar";
 import { CATTIPU_SIDEBAR_ITEMS } from "@/components/Sidebar/Sidebar";
 import { ShellIcon } from "@/components/PixelIcon";
@@ -181,9 +180,8 @@ function useDateTimeText(): string {
  * deliberately: the package's own ProjectsWindow is the signed-off design
  * for that window and already reads the same project set.
  *
- * `memory` has no dedicated app in this repository; the legacy shell fell
- * through to PlaceholderApp for it and so does this, rather than inventing
- * a Memory feature during an integration sprint.
+ * `memory` fell through to PlaceholderApp until MVP-05, which filled this
+ * same window with the project's memory and prompts (MemoryApp).
  */
 const WINDOW_CONTENT: NonNullable<
   React.ComponentProps<typeof InteractiveDesktop>["windowContent"]
@@ -206,7 +204,9 @@ const WINDOW_CONTENT: NonNullable<
     />
   ),
   settings: <SettingsApp />,
-  memory: <PlaceholderApp app={APP_MAP.memory} />,
+  // MVP-05 — the active project's memory records and prompts, read and
+  // written through the project store.
+  memory: <MemoryApp />,
 };
 
 /**
