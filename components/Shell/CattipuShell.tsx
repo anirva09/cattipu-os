@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { InteractiveDesktop } from "@/components/InteractiveDesktop";
 import { ArchitectApp } from "@/components/Architect/ArchitectApp";
 import { CanvasApp } from "@/components/Canvas/CanvasApp";
+import { AIConsole } from "@/components/AIConsole/AIConsole";
 import { DesktopObjectLayer } from "@/components/DesktopObjects";
 import { DesktopWallpaper, useAppliedWallpaper } from "@/components/DesktopWallpaper";
 import { ExplorerApp } from "@/components/Explorer";
@@ -193,6 +194,9 @@ const WINDOW_CONTENT: NonNullable<
   // MVP-03 — Canvas draws the active project's architecture and raises
   // Architect (or Projects) through the window manager when it has none.
   canvas: ({ openWindow }) => <CanvasApp onOpenWindow={(id) => openWindow(id)} />,
+  // MVP-04 — the AI Console. It talks to the AI Gateway through the client
+  // AIService only; no provider or credential is reachable from here.
+  ai: <AIConsole />,
   // Milestone 17 - Explorer is now the OS's real project browser and needs
   // the window manager to open a project, so it arrives as a function.
   // The other three are plain nodes, exactly as before.

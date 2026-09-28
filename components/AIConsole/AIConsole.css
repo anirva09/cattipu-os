@@ -1,0 +1,180 @@
+.cattipu-ai,
+.cattipu-ai *,
+.cattipu-ai *::before,
+.cattipu-ai *::after {
+  box-sizing: border-box;
+}
+
+/* Four rows, the Explorer/Canvas build: toolbar, the session well, the
+ * prompt row, and the instrumentation strip. `min-height: 0` lets the well
+ * scroll instead of growing the window. */
+.cattipu-ai {
+  display: grid;
+  grid-template-rows: var(--cattipu-ai-toolbar-height) minmax(0, 1fr) auto var(--cattipu-ai-status-height);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+}
+
+.cattipu-ai--empty {
+  display: grid;
+  grid-template-rows: 1fr;
+  place-items: center;
+  padding: var(--cattipu-ai-pad);
+}
+
+/* ── toolbar ──────────────────────────────────────────────────────────── */
+
+.cattipu-ai__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--cattipu-ai-gap);
+  min-width: 0;
+  padding: 0 var(--cattipu-ai-pad);
+  border-bottom: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+}
+
+.cattipu-ai__source {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cattipu-ai__button {
+  flex: 0 0 auto;
+  height: 24px;
+  padding: 0 var(--cattipu-ai-gap);
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+  cursor: default;
+}
+
+.cattipu-ai__button:disabled {
+  color: var(--cattipu-bevel-bottom);
+}
+
+/* ── session well ─────────────────────────────────────────────────────── */
+
+.cattipu-ai__transcript {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cattipu-ai-pad);
+  min-height: 0;
+  margin: var(--cattipu-ai-gap) var(--cattipu-ai-gap) 0;
+  padding: var(--cattipu-ai-gap);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-ai__notice {
+  max-width: 480px;
+  margin: 0;
+}
+
+/* A turn is a labelled block of text, like a session log — no bubble,
+ * no card, no fill. The divider under each label is the only rule. */
+.cattipu-ai__turn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.cattipu-ai__turn-label {
+  margin: 0;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--cattipu-dark-cream);
+  color: var(--cattipu-navy);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+.cattipu-ai__turn[data-role="user"] .cattipu-ai__turn-label {
+  color: var(--cattipu-outer-frame);
+}
+
+.cattipu-ai__turn[data-role="error"] .cattipu-ai__turn-label {
+  color: var(--cattipu-outer-frame);
+  border-bottom-color: var(--cattipu-outer-frame);
+}
+
+.cattipu-ai__turn-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.cattipu-ai__turn-text--pending {
+  color: var(--cattipu-bevel-bottom);
+}
+
+/* ── prompt row ───────────────────────────────────────────────────────── */
+
+.cattipu-ai__input {
+  display: flex;
+  align-items: stretch;
+  gap: var(--cattipu-ai-gap);
+  min-width: 0;
+  margin: 0;
+  padding: var(--cattipu-ai-gap);
+}
+
+.cattipu-ai__field {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 4px;
+  resize: none;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+  outline: none;
+}
+
+.cattipu-ai__field:focus-visible {
+  outline: var(--cattipu-border-size) solid var(--cattipu-navy);
+  outline-offset: 0;
+}
+
+.cattipu-ai__send {
+  align-self: flex-end;
+  min-width: 72px;
+}
+
+/* ── instrumentation strip ────────────────────────────────────────────── */
+
+.cattipu-ai__status {
+  display: flex;
+  align-items: center;
+  gap: var(--cattipu-ai-pad);
+  min-width: 0;
+  padding: 0 var(--cattipu-ai-pad);
+  border-top: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  white-space: nowrap;
+}
+
+.cattipu-ai__status-state {
+  margin-left: auto;
+}

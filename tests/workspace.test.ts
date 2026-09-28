@@ -87,6 +87,7 @@ function allOpen(): WindowManagerState {
     { type: "launch", id: "explorer" },
     { type: "launch", id: "settings" },
     { type: "launch", id: "canvas" },
+    { type: "launch", id: "ai" },
   );
 }
 
@@ -399,12 +400,14 @@ test("restore with nothing to restore changes nothing", () => {
 });
 
 test("tiling gives every visible window a distinct, non-overlapping place", () => {
-  const state = reduce(allOpen(), {
+  // Six windows: at this box (1600x900) all seven at their minimums cannot
+  // tile and correctly fall back to Cascade (see the tile-that-fits case).
+  const state = reduce(allOpen(), { type: "close", id: "ai" }, {
     type: "arrange",
     layout: "tile",
     bounds: BOX,
   });
-  const rects = (["projects", "architect", "memory", "explorer", "settings"] as const)
+  const rects = (["projects", "architect", "canvas", "memory", "explorer", "settings"] as const)
     .map((id) => windowRect(state.windows[id], BOX));
   for (let i = 0; i < rects.length; i += 1) {
     for (let j = i + 1; j < rects.length; j += 1) {
@@ -761,9 +764,10 @@ test("a tile that fits is a real tile: inside the workspace, whole pixels, no ov
     }
   }
   // Tile has not quietly become Cascade. At 1366x768 (1020x644) at most
-  // four windows tile at their minimums, so the seven combinations of five
-  // or six windows there fall back to Cascade; every other case tiles.
-  assert.equal(tiled, COMBINATIONS.length * Object.keys(WORKSPACES).length - 7);
+  // four windows tile at their minimums, so the 29 combinations of five,
+  // six or seven windows there fall back to Cascade; at 1440x900 and
+  // 1600x900 only all seven together do. Every other case tiles.
+  assert.equal(tiled, COMBINATIONS.length * Object.keys(WORKSPACES).length - 31);
 });
 
 test("where the equal split already fits, Tile looks exactly as it always did", () => {

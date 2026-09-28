@@ -31,6 +31,7 @@ const read = (path: string) => readFileSync(join(ROOT, path), "utf8");
 
 /** Shell stylesheets this pass moved onto the role tokens. */
 const MIGRATED_CSS = [
+  "components/AIConsole/AIConsole.css",
   "components/Architect/ArchitectApp.css",
   "components/BottomStatusBar/BottomStatusBar.css",
   "components/Canvas/CanvasApp.css",

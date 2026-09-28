@@ -416,7 +416,12 @@ const NOT_IMPLEMENTED_MESSAGES: Record<
   "ai" | "memory" | "forge" | "live" | "launch",
   string
 > = {
-  ai: "no connected AI provider exists — no provider SDK, fetch call, or API route is present anywhere in the tree",
+  // MVP-04 built the AI Gateway (/api/ai: registry + Claude and Ollama
+  // adapters). This row stays not-implemented until Diagnostics probes it:
+  // provider credentials and the local runtime are server-side facts the
+  // browser-side snapshot cannot observe, and Architect generation is still
+  // seeded rather than routed through the gateway.
+  ai: "the AI Gateway exists (/api/ai, Claude and Ollama adapters) but Diagnostics does not observe it yet — provider readiness is reported by the AI Console; Architect generation remains seeded",
   memory:
     "no Project Memory system exists yet; CattipuProject.memory.records is the only storage today, written by nothing live",
   forge:

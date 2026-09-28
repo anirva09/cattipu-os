@@ -28,6 +28,7 @@ import {
   type SystemStatusRow,
 } from '../RightWidgetStack/RightWidgetStack';
 import {
+  CATTIPU_SIDEBAR_ITEMS,
   Sidebar,
   type CattipuSidebarIcons,
   type CattipuSidebarItemId,
@@ -99,6 +100,12 @@ const SHELL_WINDOWS: readonly ShellWindowDefinition[] = [
     title: 'Canvas',
     tone: 'system',
     status: 'CANVAS WORKSPACE READY',
+  },
+  {
+    id: 'ai',
+    title: 'AI Console',
+    tone: 'system',
+    status: 'AI CONSOLE READY',
   },
   {
     id: 'memory',
@@ -254,8 +261,15 @@ type InteractiveDesktopStyle = CSSProperties &
 
 function isLaunchableSidebarItem(
   item: CattipuSidebarItemId,
-): item is CattipuWindowId {
+): item is Extract<CattipuSidebarItemId, CattipuWindowId> {
   return (CATTIPU_WINDOW_IDS as readonly string[]).includes(item);
+}
+
+/** Not every window has a rail key (MVP-04's AI Console is opened from
+ *  Architect). Such a window leaves the rail on Home, exactly as the rail
+ *  reads when no window is active. */
+function isSidebarItemId(id: string): id is CattipuSidebarItemId {
+  return CATTIPU_SIDEBAR_ITEMS.some((item) => item.id === id);
 }
 
 /** A window body is either a node or a function that wants the window
@@ -404,7 +418,8 @@ export function InteractiveDesktop({
   }, [arrangeWindows, restoreAllWindows, windowBounds]);
 
   const activeSidebarItem = useMemo<CattipuSidebarItemId>(() => {
-    return state.activeWindowId ?? 'home';
+    const id = state.activeWindowId;
+    return id && isSidebarItemId(id) ? id : 'home';
   }, [state.activeWindowId]);
 
   const desktopStyle: InteractiveDesktopStyle = {

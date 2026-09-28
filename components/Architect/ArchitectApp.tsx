@@ -49,21 +49,26 @@ function pad2(n: number): string {
 }
 
 export interface ArchitectAppProps {
-  /** MVP-03 — raises Canvas through the window manager. */
-  onOpenWindow?: (id: "canvas") => void;
+  /** MVP-03 raises Canvas; MVP-04 raises the AI Console. */
+  onOpenWindow?: (id: "canvas" | "ai") => void;
 }
 
-/** Architect → Canvas. The Export button's own classes, no icon of its own. */
-function OpenCanvasButton({ onOpenWindow }: ArchitectAppProps) {
+/** Architect → another tool window. The Export button's own classes, no
+ *  icon of its own. */
+function OpenWindowButton({
+  onOpenWindow,
+  target,
+  label,
+}: ArchitectAppProps & { target: "canvas" | "ai"; label: string }) {
   if (!onOpenWindow) return null;
   return (
     <button
       type="button"
-      data-testid="architect-open-canvas"
-      onClick={() => onOpenWindow("canvas")}
+      data-testid={`architect-open-${target}`}
+      onClick={() => onOpenWindow(target)}
       className="cattipu-cursor-hand cattipu-press flex shrink-0 items-center gap-1.5 border-2 border-black/20 bg-navy px-2.5 py-1 font-pixel-ui text-[0.42rem] text-white"
     >
-      Open Canvas
+      {label}
     </button>
   );
 }
@@ -141,7 +146,10 @@ export function ArchitectApp({ onOpenWindow }: ArchitectAppProps = {}) {
               <p className="max-w-xs text-[13px] leading-relaxed">
                 Or place its nodes by hand in Canvas.
               </p>
-              <OpenCanvasButton onOpenWindow={onOpenWindow} />
+              <span className="flex gap-2">
+                <OpenWindowButton onOpenWindow={onOpenWindow} target="canvas" label="Open Canvas" />
+                <OpenWindowButton onOpenWindow={onOpenWindow} target="ai" label="Ask AI" />
+              </span>
             </>
           )}
         </div>
@@ -158,8 +166,9 @@ export function ArchitectApp({ onOpenWindow }: ArchitectAppProps = {}) {
               {(linkedProject?.name ?? data.projectName).toUpperCase()}
             </p>
             {!tabsLocked && (
-              <span className="ml-auto">
-                <OpenCanvasButton onOpenWindow={onOpenWindow} />
+              <span className="ml-auto flex gap-2">
+                <OpenWindowButton onOpenWindow={onOpenWindow} target="ai" label="Ask AI" />
+                <OpenWindowButton onOpenWindow={onOpenWindow} target="canvas" label="Open Canvas" />
               </span>
             )}
             {!tabsLocked && (

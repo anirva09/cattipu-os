@@ -13,6 +13,7 @@ export const CATTIPU_WINDOW_IDS = [
   'projects',
   'architect',
   'canvas',
+  'ai',
   'memory',
   'explorer',
   'settings',
@@ -70,6 +71,7 @@ export const CATTIPU_DEFAULT_WINDOW_SIZE: WindowSize = {
  * - architect 400×240: reflows across; its panels scroll top to bottom.
  * - canvas    400×240: the toolbar stays whole; the drawing surface
  *   scrolls in both directions.
+ * - ai        400×240: the prompt row stays whole; the session scrolls.
  * - memory    320×200: the placeholder fits whole.
  * - explorer  420×240: the narrowest width at which one 112px file tile
  *   still fits beside the 248px folder tree. Narrower, the files vanish.
@@ -82,6 +84,7 @@ export const CATTIPU_WINDOW_MIN_SIZE: Record<CattipuWindowId, WindowSize> = {
   projects: { width: 480, height: 280 },
   architect: { width: 400, height: 240 },
   canvas: { width: 400, height: 240 },
+  ai: { width: 400, height: 240 },
   memory: { width: 320, height: 200 },
   explorer: { width: 420, height: 240 },
   settings: { width: 440, height: 240 },
@@ -145,6 +148,7 @@ const DEFAULT_POSITIONS: Record<CattipuWindowId, WindowPosition> = {
   architect: { x: 176, y: 72 },
   // Next step of the same 24px cascade the other defaults follow.
   canvas: { x: 272, y: 168 },
+  ai: { x: 296, y: 192 },
   memory: { x: 200, y: 96 },
   explorer: { x: 224, y: 120 },
   settings: { x: 248, y: 144 },
@@ -176,6 +180,7 @@ export function createInitialWindowManagerState(): WindowManagerState {
       explorer: createWindowState('explorer', false, 3),
       settings: createWindowState('settings', false, 4),
       canvas: createWindowState('canvas', false, 5),
+      ai: createWindowState('ai', false, 6),
     },
     activeWindowId: 'projects',
     nextZIndex: 11,
