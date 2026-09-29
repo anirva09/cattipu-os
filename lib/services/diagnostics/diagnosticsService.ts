@@ -42,6 +42,7 @@ import { unreadCount, useNotificationStore } from "@/store/useNotificationStore"
 import { useBootStore } from "@/store/useBootStore";
 import { useBusyStore } from "@/store/useBusyStore";
 import { useArchitectStore } from "@/store/useArchitectStore";
+import { useLaunchStore } from "@/store/useLaunchStore";
 import { PROJECT_SCHEMA_VERSION } from "@/lib/project/types";
 import { visibleObjects } from "@/lib/os/filesystem";
 import {
@@ -409,11 +410,101 @@ function buildArchitectHealth(observedAt: string): ServiceHealth {
 }
 
 // ---------------------------------------------------------------------
-// ai / memory / forge / live / launch — planned, not built
+// launch — MVP-08
+// ---------------------------------------------------------------------
+
+/**
+ * MVP-08 made local launch real: LaunchService runs a successful Forge
+ * build's artifact on 127.0.0.1 (/api/launch). Whether anything is running
+ * is a fact about processes on the server, so this reads only what the
+ * server last reported to useLaunchStore (the Launch window asks it on
+ * open and every few seconds while open) — never a project's stored
+ * launch history, which cannot say "running". Nothing observed yet is
+ * "unknown", exactly as the window manager reports an unobserved session.
+ * Deployment (M28, One-Click Ship) is still not built and says so.
+ */
+function buildLaunchHealth(observedAt: string): ServiceHealth {
+  const name = registryEntry("launch").name;
+  const { server, sessions } = useLaunchStore.getState();
+  const { projects } = useProjectStore.getState();
+  const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? id;
+
+  const deployment: DiagnosticCheck = {
+    id: "launch.deployment",
+    label: "Deployment",
+    category: "launch",
+    status: "not-implemented",
+    message: "deployment (M28 One-Click Ship) is not built; MVP-08 runs builds on this machine only",
+    checkedAt: observedAt,
+  };
+
+  let runtime: DiagnosticCheck;
+  if (server.kind === "unknown") {
+    runtime = {
+      id: "launch.runtime",
+      label: "Local runtime",
+      category: "launch",
+      status: "unknown",
+      message: "LAUNCH: not observed — nothing has asked CATTIPU's server what is running in this session (open the Launch window)",
+      checkedAt: observedAt,
+    };
+  } else if (server.kind === "unavailable") {
+    runtime = {
+      id: "launch.runtime",
+      label: "Local runtime",
+      category: "launch",
+      status: "offline",
+      message: `LAUNCH: unreachable — ${server.error.message}`,
+      checkedAt: observedAt,
+    };
+  } else if (!server.status.enabled) {
+    runtime = {
+      id: "launch.runtime",
+      label: "Local runtime",
+      category: "launch",
+      status: "degraded",
+      message: `LAUNCH: unavailable — ${server.status.reason ?? "launching is switched off on this server"}`,
+      checkedAt: observedAt,
+    };
+  } else {
+    const reported = Object.values(sessions).flatMap((s) => (s.runtime ? [s.runtime] : []));
+    const running = reported.filter((r) => r.status === "running");
+    const failed = reported.filter((r) => r.status === "failed");
+    runtime = {
+      id: "launch.runtime",
+      label: "Local runtime",
+      category: "launch",
+      status: running.length === 0 && failed.length > 0 ? "degraded" : "ready",
+      message:
+        running.length > 0
+          ? `LAUNCH: RUNNING ${running.map((r) => `${projectName(r.projectId)} :${r.port}`).join(", ")}`
+          : failed.length > 0
+            ? `LAUNCH: FAILED — ${projectName(failed[0].projectId)}: ${failed[0].reason ?? "the application did not run"}`
+            : "LAUNCH: STOPPED — no application running",
+      detail: {
+        running: running.map((r) => `${r.projectId} ${r.buildId} :${r.port}`),
+        failed: failed.length,
+        serverObservedAt: server.observedAt,
+      },
+      checkedAt: observedAt,
+    };
+  }
+
+  return {
+    id: "launch",
+    name,
+    category: "launch",
+    status: runtime.status,
+    checks: [runtime, deployment],
+  };
+}
+
+// ---------------------------------------------------------------------
+// ai / memory / forge / live — planned, not built
 // ---------------------------------------------------------------------
 
 const NOT_IMPLEMENTED_MESSAGES: Record<
-  "ai" | "memory" | "forge" | "live" | "launch",
+  "ai" | "memory" | "forge" | "live",
   string
 > = {
   // MVP-04 built the AI Gateway (/api/ai: registry + Claude and Ollama
@@ -436,12 +527,10 @@ const NOT_IMPLEMENTED_MESSAGES: Record<
   forge:
     "Forge builds the active project's workspace as a web application (/api/forge, MVP-07) and records builds per project; Diagnostics does not observe the build toolchain yet — the Forge window reports it",
   live: "no Live Runtime implementation exists, and no seam has been prepared for it yet",
-  launch:
-    "no Launch implementation exists; CattipuProject.launch and the DeploymentProvider contract (lib/os/extensions.ts) are the prepared seam",
 };
 
 function buildNotImplementedHealth(
-  id: "ai" | "memory" | "forge" | "live" | "launch",
+  id: "ai" | "memory" | "forge" | "live",
   observedAt: string,
 ): ServiceHealth {
   const entry = registryEntry(id);
@@ -514,7 +603,7 @@ export function deriveDiagnosticsStatus(
 // Snapshot aggregation
 // ---------------------------------------------------------------------
 
-const NOT_IMPLEMENTED_IDS = ["ai", "memory", "forge", "live", "launch"] as const;
+const NOT_IMPLEMENTED_IDS = ["ai", "memory", "forge", "live"] as const;
 
 export const diagnosticsService: DiagnosticsService = {
   async getSnapshot(): Promise<DiagnosticsSnapshot> {
@@ -532,6 +621,7 @@ export const diagnosticsService: DiagnosticsService = {
       buildNotificationsHealth(observedAt),
       buildArchitectHealth(observedAt),
       ...NOT_IMPLEMENTED_IDS.map((id) => buildNotImplementedHealth(id, observedAt)),
+      buildLaunchHealth(observedAt),
     ];
 
     const checks: DiagnosticCheck[] = staticDriftChecks().map((check) => ({

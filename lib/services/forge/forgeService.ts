@@ -60,6 +60,14 @@ export interface ForgeService {
   status(): ForgeStatus;
   build(input: unknown): Promise<ForgeResponse>;
   artifact(projectId: unknown, buildId: unknown): Promise<ArtifactCheck | ForgeError>;
+  /**
+   * MVP-08. Server-side only: the directory holding this project's
+   * artifact for this build, or null when there is none — the build
+   * failed, never existed, belongs to another project, or its artifact
+   * was pruned. Only a successful build ever creates one. Whatever
+   * consumes an artifact resolves it here, never by building a path.
+   */
+  locateArtifact(projectId: unknown, buildId: unknown): Promise<{ directory: string; reference: string } | null>;
 }
 
 /** Ids become directory names, so they are held to a strict alphabet. */
@@ -297,6 +305,15 @@ export function createForgeService(options: ForgeServiceOptions): ForgeService {
       const reference = `forge://${projectId}/${buildId}`;
       if (!(await exists(join(dir, "index.html")))) return { reference, exists: false, files: [] };
       return { reference, exists: true, files: await listFiles(dir) };
+    },
+
+    async locateArtifact(projectId, buildId) {
+      if (typeof projectId !== "string" || !SAFE_ID.test(projectId) || typeof buildId !== "string" || !SAFE_ID.test(buildId)) {
+        return null;
+      }
+      const directory = join(artifactsOf(projectId), buildId);
+      if (!(await exists(join(directory, "index.html")))) return null;
+      return { directory, reference: `forge://${projectId}/${buildId}` };
     },
   };
 }

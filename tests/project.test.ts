@@ -107,7 +107,7 @@ test("createProject() produces a valid current-schema CattipuProject", () => {
   assert.deepEqual(project.memory, {
     records: [], decisions: [], relationships: [], conflicts: [], prompts: [], activePromptId: null, conversations: [],
   });
-  assert.deepEqual(project.launch, { releases: [], environments: [], preflightChecks: [], deployments: [] });
+  assert.deepEqual(project.launch, { releases: [], environments: [], preflightChecks: [], deployments: [], runs: [] });
   assert.equal(typeof project.id, "string");
   assert.ok(project.id.length > 0);
   assert.equal(typeof project.createdAt, "string");
@@ -175,7 +175,7 @@ test("migrateProject() converts a legacy pre-M14A record without architecture", 
   assert.deepEqual(migrated.memory, {
     records: [], decisions: [], relationships: [], conflicts: [], prompts: [], activePromptId: null, conversations: [],
   });
-  assert.deepEqual(migrated.launch, { releases: [], environments: [], preflightChecks: [], deployments: [] });
+  assert.deepEqual(migrated.launch, { releases: [], environments: [], preflightChecks: [], deployments: [], runs: [] });
 });
 
 test("migrateProjects() handles a mixed array (legacy + malformed) without throwing or dropping entries", () => {

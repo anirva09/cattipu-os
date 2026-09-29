@@ -96,7 +96,8 @@ test("implemented canonical domains report a truthful, non-future status", async
 
 test("future services report not-implemented, never ready or offline", async () => {
   const snapshot = await diagnosticsService.getSnapshot();
-  for (const id of ["ai", "memory", "forge", "live", "launch"]) {
+  // MVP-08 made Launch observable (tests/launch.test.ts covers its row).
+  for (const id of ["ai", "memory", "forge", "live"]) {
     const service = snapshot.services.find((s) => s.id === id);
     assert.ok(service, `${id} is missing from the snapshot`);
     assert.equal(service!.status, "not-implemented");
@@ -110,7 +111,6 @@ test("future services carry the roadmap milestone that owns them", async () => {
     memory: "M24",
     forge: "M26",
     live: "M27",
-    launch: "M28",
   };
   for (const [id, milestone] of Object.entries(expected)) {
     const service = snapshot.services.find((s) => s.id === id);

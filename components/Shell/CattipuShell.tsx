@@ -10,6 +10,7 @@ import { DesktopObjectLayer } from "@/components/DesktopObjects";
 import { DesktopWallpaper, useAppliedWallpaper } from "@/components/DesktopWallpaper";
 import { ExplorerApp } from "@/components/Explorer";
 import { ForgeApp } from "@/components/Forge/ForgeApp";
+import { LaunchApp } from "@/components/Launch/LaunchApp";
 import { SettingsApp } from "@/components/Window/SettingsApp";
 import { MemoryApp } from "@/components/Memory/MemoryApp";
 import type { CattipuSidebarIcons } from "@/components/Sidebar/Sidebar";
@@ -200,6 +201,9 @@ const WINDOW_CONTENT: NonNullable<
   // MVP-07 — Forge builds the active project's files through ForgeService
   // (/api/forge); the window never starts a process itself.
   forge: <ForgeApp />,
+  // MVP-08 — Launch runs a successful Forge build's artifact through
+  // LaunchService (/api/launch); the window never starts a process itself.
+  launch: <LaunchApp />,
   // Milestone 17 - Explorer is now the OS's real project browser and needs
   // the window manager to open a project, so it arrives as a function.
   // The other three are plain nodes, exactly as before.

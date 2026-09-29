@@ -1,0 +1,239 @@
+.cattipu-launch,
+.cattipu-launch *,
+.cattipu-launch *::before,
+.cattipu-launch *::after {
+  box-sizing: border-box;
+}
+
+/* Forge's build, one step down the line: toolbar, the well, the
+ * instrumentation strip. `min-height: 0` lets the well scroll instead of
+ * growing the window. */
+.cattipu-launch {
+  display: grid;
+  grid-template-rows: var(--cattipu-launch-toolbar-height) minmax(0, 1fr) var(--cattipu-launch-status-height);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+}
+
+.cattipu-launch--empty {
+  grid-template-rows: 1fr;
+  place-items: center;
+  padding: var(--cattipu-launch-pad);
+}
+
+/* ── toolbar ──────────────────────────────────────────────────────────── */
+
+.cattipu-launch__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--cattipu-launch-gap);
+  min-width: 0;
+  padding: 0 var(--cattipu-launch-pad);
+  border-bottom: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+}
+
+.cattipu-launch__source {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* OPEN is a link to the running application, drawn as the same physical
+ * key as its neighbours. */
+.cattipu-launch__button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 var(--cattipu-launch-gap);
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+  text-decoration: none;
+  cursor: default;
+}
+
+.cattipu-launch__button:disabled {
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-launch__launch,
+.cattipu-launch__open {
+  min-width: 72px;
+}
+
+/* ── well ─────────────────────────────────────────────────────────────── */
+
+.cattipu-launch__well {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cattipu-launch-pad);
+  min-height: 0;
+  margin: var(--cattipu-launch-gap);
+  padding: var(--cattipu-launch-gap);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-launch__notice {
+  max-width: 480px;
+  margin: 0;
+}
+
+/* A block is a labelled section: no card, no fill; the rule under the
+ * label is the only line. */
+.cattipu-launch__block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.cattipu-launch__label {
+  margin: 0;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--cattipu-dark-cream);
+  color: var(--cattipu-navy);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+.cattipu-launch__block[data-status="failed"] > .cattipu-launch__label,
+.cattipu-launch__block[role="alert"] > .cattipu-launch__label {
+  color: var(--cattipu-outer-frame);
+  border-bottom-color: var(--cattipu-outer-frame);
+}
+
+.cattipu-launch__text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cattipu-launch__facts {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 2px var(--cattipu-launch-gap);
+  margin: 0;
+}
+
+.cattipu-launch__facts dt {
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-body-line);
+}
+
+.cattipu-launch__facts dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cattipu-launch__actions {
+  display: flex;
+  gap: var(--cattipu-launch-gap);
+  padding-top: 4px;
+}
+
+.cattipu-launch__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Build rows: status word, time, build, whether it can launch — one line. */
+.cattipu-launch__row,
+.cattipu-launch__history-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cattipu-launch-gap);
+  width: 100%;
+  min-width: 0;
+  padding: 2px 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.cattipu-launch__row:hover:not(:disabled) {
+  background: var(--cattipu-dark-cream);
+}
+
+.cattipu-launch__row:disabled {
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-launch__row[data-selected="true"] {
+  background: var(--cattipu-dark-cream);
+  border-color: var(--cattipu-outer-frame);
+}
+
+.cattipu-launch__row-status {
+  flex: 0 0 32px;
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+}
+
+.cattipu-launch__row[data-status="success"]:not(:disabled) .cattipu-launch__row-status {
+  color: var(--cattipu-navy);
+}
+
+.cattipu-launch__row-time,
+.cattipu-launch__row-note {
+  flex: 0 0 auto;
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+}
+
+.cattipu-launch__row-note {
+  margin-left: auto;
+}
+
+.cattipu-launch__row-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ── instrumentation strip ────────────────────────────────────────────── */
+
+.cattipu-launch__status {
+  display: flex;
+  align-items: center;
+  gap: var(--cattipu-launch-pad);
+  min-width: 0;
+  padding: 0 var(--cattipu-launch-pad);
+  border-top: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  white-space: nowrap;
+}
+
+.cattipu-launch__status-state {
+  margin-left: auto;
+}

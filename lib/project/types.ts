@@ -25,7 +25,7 @@ import type { ProjectTemplateId } from "@/lib/os/templates";
 
 /** Bump this — and add a branch in migrate.ts — whenever CattipuProject's
  * shape changes in a way old persisted projects can't just be read as. */
-export const PROJECT_SCHEMA_VERSION = 7;
+export const PROJECT_SCHEMA_VERSION = 8;
 
 /** Shown as the owner of anything created locally. A single constant so
  *  the Projects list, the details panel and Explorer cannot disagree. */
@@ -50,7 +50,8 @@ export type ArtifactKind =
   | "forge-file"
   | "forge-build"
   | "launch-release"
-  | "launch-environment";
+  | "launch-environment"
+  | "launch-run";
 
 export interface ArtifactRef {
   kind: ArtifactKind;
@@ -356,11 +357,37 @@ export interface LaunchDeployment {
   deployedAt?: string;
 }
 
+/**
+ * MVP-08 (v8) — one local launch of a Forge build, as the project remembers
+ * it. A history entry, not runtime state: there is no "running" here. Only
+ * the server that owns a runtime can say it is running; `endedAt: null`
+ * means only that the launch had not been seen to end, and the Launch
+ * window reconciles such an entry with the server before showing anything.
+ */
+export interface LaunchRun {
+  id: string;
+  /** Re-stamped on load from the project that contains it. */
+  projectId: string;
+  buildId: string;
+  /** Forge's artifact reference (`forge://…`). */
+  artifact: string;
+  runtime: string;
+  startedAt: string;
+  /** The loopback address it was served on; null if it never came up. */
+  endpoint: string | null;
+  endedAt: string | null;
+  /** How it ended. Null while not seen to end. */
+  result: "stopped" | "failed" | null;
+  reason: string | null;
+}
+
 export interface LaunchArtifacts {
   releases: LaunchRelease[];
   environments: LaunchEnvironment[];
   preflightChecks: LaunchPreflightCheck[];
   deployments: LaunchDeployment[];
+  /** MVP-08 (v8). Oldest first, bounded. */
+  runs: LaunchRun[];
 }
 
 // ---------------------------------------------------------------------
@@ -468,7 +495,7 @@ export function createEmptyMemoryArtifacts(): MemoryArtifacts {
 }
 
 export function createEmptyLaunchArtifacts(): LaunchArtifacts {
-  return { releases: [], environments: [], preflightChecks: [], deployments: [] };
+  return { releases: [], environments: [], preflightChecks: [], deployments: [], runs: [] };
 }
 
 let idSeq = 0;

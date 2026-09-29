@@ -10,6 +10,8 @@ import {
   type CattipuProject,
   type ForgeArtifacts,
   type ForgeBuild,
+  type LaunchArtifacts,
+  type LaunchRun,
   type MemoryArtifacts,
   type MemoryRecord,
   type ProjectConversation,
@@ -171,6 +173,45 @@ function migrateForge(raw: unknown, projectId: string): ForgeArtifacts {
   };
 }
 
+/**
+ * MVP-08 (v8) launch history. Nothing wrote a launch before v8, so a v7
+ * record has none. An entry without an id, a build and a start time is
+ * dropped; every entry is re-stamped with the project that contains it.
+ * Nothing here can make an entry "running" — a stored launch has no such
+ * state — and an entry whose `result` is unknown is kept as not-yet-seen
+ * to end, for the Launch window to reconcile with the server.
+ */
+function migrateLaunch(raw: unknown, projectId: string): LaunchArtifacts {
+  const empty = createEmptyLaunchArtifacts();
+  if (!isRecord(raw)) return empty;
+  const text = (value: unknown): value is string => typeof value === "string";
+  const runs = (Array.isArray(raw.runs) ? raw.runs.filter(isRecord) : []).flatMap((r): LaunchRun[] => {
+    if (!text(r.id) || !text(r.buildId) || !text(r.startedAt)) return [];
+    const result = r.result === "stopped" || r.result === "failed" ? r.result : null;
+    return [{
+      id: r.id,
+      projectId,
+      buildId: r.buildId,
+      artifact: text(r.artifact) ? r.artifact : `forge://${projectId}/${r.buildId}`,
+      runtime: text(r.runtime) ? r.runtime : "local-web",
+      startedAt: r.startedAt,
+      endpoint: text(r.endpoint) ? r.endpoint : null,
+      endedAt: result && text(r.endedAt) ? r.endedAt : null,
+      result,
+      reason: text(r.reason) ? r.reason : null,
+    }];
+  });
+  return {
+    ...empty,
+    ...(raw as Partial<LaunchArtifacts>),
+    releases: Array.isArray(raw.releases) ? (raw.releases as LaunchArtifacts["releases"]) : [],
+    environments: Array.isArray(raw.environments) ? (raw.environments as LaunchArtifacts["environments"]) : [],
+    preflightChecks: Array.isArray(raw.preflightChecks) ? (raw.preflightChecks as LaunchArtifacts["preflightChecks"]) : [],
+    deployments: Array.isArray(raw.deployments) ? (raw.deployments as LaunchArtifacts["deployments"]) : [],
+    runs,
+  };
+}
+
 /** Fills in any artifact slot a not-quite-current record is missing
  * (e.g. a record written by a future version bump this file doesn't
  * know about yet, or a hand-built fixture) — defensive, not a silent
@@ -191,7 +232,7 @@ function backfillMissingArtifacts(project: CattipuProject): CattipuProject {
       : createEmptyCanvasArtifacts(),
     forge: migrateForge(project.forge, project.id),
     memory: migrateMemory(project.memory, project.id),
-    launch: project.launch ?? createEmptyLaunchArtifacts(),
+    launch: migrateLaunch(project.launch, project.id),
     // Milestone 15 fields. A v1 record predates all of them, so every one
     // is filled from something the record already carries rather than
     // invented: the type from the icon it was saved with, the owner from

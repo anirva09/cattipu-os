@@ -562,7 +562,8 @@ test("13 reload: build history survives a reload; a v6 store migrates to v7 with
     migrated.forge.builds.map((b) => [b.id, b.status, b.projectId, b.artifact]),
     [["old1", "failed", "po", null], ["old2", "success", "po", null]],
   );
-  assert.equal(PROJECT_SCHEMA_VERSION, 7);
+  // MVP-08 moved the schema to v8 (launch history); v7's Forge fields are unchanged.
+  assert.ok(PROJECT_SCHEMA_VERSION >= 7);
 });
 
 // ── the window ─────────────────────────────────────────────────────────

@@ -25,6 +25,14 @@ import { canvasService } from "@/lib/services/canvas/canvasService";
 import type { AIMessage } from "@/lib/contracts/ai";
 import type { BuildResult } from "@/lib/contracts/forge";
 import { toForgeBuild, withBuild, withLatestBuildMemory } from "@/lib/services/forge/buildHistory";
+import type { LaunchRuntime } from "@/lib/contracts/launch";
+import {
+  reconcileRuns,
+  runsNewestFirst,
+  toLaunchRun,
+  withLatestLaunchMemory,
+  withLaunchRun,
+} from "@/lib/services/launch/launchHistory";
 import type {
   MemoryChange,
   MemoryRecordDraft,
@@ -91,6 +99,21 @@ interface ProjectState {
   recordForgeBuild: (id: string, result: BuildResult) => boolean;
   appendMemoryRecord: (id: string, record: MemoryRecord) => void;
   addLaunchRelease: (id: string, release: LaunchRelease) => void;
+  /**
+   * MVP-08 — files what the server reported about one of this project's
+   * launches: the run in `launch.runs` (bounded history) and the project's
+   * one `launch` memory record pointed at the latest run. False, and
+   * nothing written, when the project does not exist or the runtime
+   * belongs to another project. A report that changes nothing writes
+   * nothing.
+   */
+  recordLaunch: (id: string, runtime: LaunchRuntime) => boolean;
+  /**
+   * MVP-08 — brings the project's history in line with the server: `live`
+   * is the project's runtime as the server reports it now, or null. Any run
+   * the server does not vouch for is recorded as ended.
+   */
+  reconcileLaunches: (id: string, live: LaunchRuntime | null) => void;
 
   // ── MVP-03 (Architect → Canvas) ────────────────────────────────────
   // Canvas's visual state lives in the project's `canvas` slot. The rules
@@ -175,6 +198,32 @@ function memoryStamp(kind: "memory" | "prompt" | "conversation" | "message"): Me
     id: `${kind}-${Date.now().toString(36)}-${memorySeq}-${Math.random().toString(36).slice(2, 8)}`,
     at: new Date().toISOString(),
   };
+}
+
+/**
+ * MVP-08. Applies a launch-history rule to one project and points its
+ * `launch` memory record at the newest run — and writes nothing at all
+ * when the rule changed nothing, so polling the server is free.
+ */
+function applyLaunch(
+  get: () => ProjectState,
+  set: (update: (s: ProjectState) => Pick<ProjectState, "projects">) => void,
+  id: string,
+  rule: (launch: CattipuProject["launch"]) => CattipuProject["launch"],
+) {
+  const project = get().projects.find((p) => p.id === id);
+  if (!project) return;
+  const launch = rule(project.launch);
+  if (launch === project.launch) return;
+  const latest = runsNewestFirst({ ...project, launch })[0];
+  const at = new Date().toISOString();
+  set((s) => ({
+    projects: s.projects.map((p) =>
+      p.id === id
+        ? { ...p, launch, memory: latest ? withLatestLaunchMemory(p.memory, latest, at) : p.memory, ...touch() }
+        : p
+    ),
+  }));
 }
 
 /**
@@ -391,6 +440,8 @@ export const useProjectStore = create<ProjectState>()(
           // MVP-05: the copy's memory is its own — notes and prompts
           // re-owned by the copy, no conversations (they are history).
           memory: memoryService.forDuplicate(source.memory, copyId),
+          // MVP-08: launches are the source's history; the copy has none.
+          launch: { ...structuredClone(source.launch), runs: [] },
           name: `${source.name} copy`,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -453,6 +504,17 @@ export const useProjectStore = create<ProjectState>()(
             p.id === id ? { ...p, canvas: canvasService.resetLayout(p.canvas), ...touch() } : p
           ),
         }));
+      },
+
+      recordLaunch: (id, runtime) => {
+        if (runtime.projectId !== id || !get().projects.some((p) => p.id === id)) return false;
+        applyLaunch(get, set, id, (launch) => withLaunchRun(launch, toLaunchRun(runtime)));
+        return true;
+      },
+
+      reconcileLaunches: (id, live) => {
+        if (live && live.projectId !== id) return;
+        applyLaunch(get, set, id, (launch) => reconcileRuns(launch, live, new Date().toISOString()));
       },
 
       addLaunchRelease: (id, release) => {

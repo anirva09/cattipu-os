@@ -196,7 +196,8 @@ test("HEALTH_REGISTRY assigns exactly the roadmap milestones this sprint locks i
 test("every check nested under a not-implemented service is itself not-implemented, never ready/offline/degraded/unknown", async () => {
   const snapshot = await diagnosticsService.getSnapshot();
   const planned = snapshot.services.filter((s) => s.status === "not-implemented");
-  assert.equal(planned.length, 5, "expected exactly the five planned services");
+  // MVP-08 made Launch observable (a local runtime); four remain planned.
+  assert.equal(planned.length, 4, "expected exactly the four planned services");
   for (const service of planned) {
     for (const check of service.checks ?? []) {
       assert.equal(

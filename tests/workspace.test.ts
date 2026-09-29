@@ -89,6 +89,7 @@ function allOpen(): WindowManagerState {
     { type: "launch", id: "canvas" },
     { type: "launch", id: "ai" },
     { type: "launch", id: "forge" },
+    { type: "launch", id: "launch" },
   );
 }
 
@@ -401,10 +402,10 @@ test("restore with nothing to restore changes nothing", () => {
 });
 
 test("tiling gives every visible window a distinct, non-overlapping place", () => {
-  // Six windows: at this box (1600x900) seven or all eight at their
-  // minimums cannot tile and correctly fall back to Cascade (see the
+  // Six windows: at this box (1600x900) most sevens, and every eight or
+  // nine, at their minimums cannot tile and correctly fall back to Cascade (see the
   // tile-that-fits case).
-  const state = reduce(allOpen(), { type: "close", id: "ai" }, { type: "close", id: "forge" }, {
+  const state = reduce(allOpen(), { type: "close", id: "ai" }, { type: "close", id: "forge" }, { type: "close", id: "launch" }, {
     type: "arrange",
     layout: "tile",
     bounds: BOX,
@@ -444,6 +445,9 @@ test("arranging skips minimized and closed windows", () => {
     allOpen(),
     { type: "minimize", id: "memory" },
     { type: "close", id: "settings" },
+    // MVP-08: with Launch open too, seven would be visible — past what
+    // this box tiles — and the case would test Cascade instead.
+    { type: "close", id: "launch" },
     { type: "arrange", layout: "tile", bounds: BOX },
   );
   // Three visible windows must tile as three, not as five with two of
@@ -765,12 +769,13 @@ test("a tile that fits is a real tile: inside the workspace, whole pixels, no ov
       }
     }
   }
-  // Tile has not quietly become Cascade. With eight windows (MVP-07 added
-  // Forge): at 1366x768 (1020x644) at most four tile at their minimums, so
-  // the 93 combinations of five or more fall back to Cascade; at 1440x900
-  // the 9 of seven or eight do, at 1600x900 8 of them do, and at
-  // 1920x1080 nothing falls back. Every other case tiles.
-  assert.equal(tiled, COMBINATIONS.length * Object.keys(WORKSPACES).length - (93 + 9 + 8));
+  // Tile has not quietly become Cascade. With nine windows (MVP-07 added
+  // Forge, MVP-08 Launch): at 1366x768 (1020x644) at most four tile at their
+  // minimums, so the 256 combinations of five or more fall back to Cascade;
+  // at 1440x900 the 46 of seven or more do; at 1600x900 37 do (28 of the 36
+  // sevens, every eight and all nine); at 1920x1080 nothing falls back.
+  // Every other case tiles.
+  assert.equal(tiled, COMBINATIONS.length * Object.keys(WORKSPACES).length - (256 + 46 + 37));
 });
 
 test("where the equal split already fits, Tile looks exactly as it always did", () => {

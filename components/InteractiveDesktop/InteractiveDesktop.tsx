@@ -114,6 +114,12 @@ const SHELL_WINDOWS: readonly ShellWindowDefinition[] = [
     status: 'FORGE READY',
   },
   {
+    id: 'launch',
+    title: 'Launch',
+    tone: 'system',
+    status: 'LAUNCH READY',
+  },
+  {
     id: 'memory',
     title: 'Memory',
     tone: 'system',

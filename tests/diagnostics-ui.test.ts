@@ -59,7 +59,8 @@ test("a not-implemented service's status text reads NOT IMPLEMENTED", () => {
 
 test("future services in the real snapshot carry both not-implemented status and a milestone", async () => {
   const snapshot = await diagnosticsService.getSnapshot();
-  for (const id of ["ai", "memory", "forge", "live", "launch"]) {
+  // MVP-08 made Launch observable; its deployment check stays not-implemented.
+  for (const id of ["ai", "memory", "forge", "live"]) {
     const service = snapshot.services.find((s) => s.id === id);
     assert.ok(service, `${id} missing from snapshot`);
     assert.equal(service!.status, "not-implemented");
