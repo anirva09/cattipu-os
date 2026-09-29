@@ -1,9 +1,14 @@
 import { create } from "zustand";
 
 import type { AIError, AIMessage, AIService } from "@/lib/contracts/ai";
+import type { ApplyFileWritesResult, FileWriteFailure, ProjectFilesContext } from "@/lib/contracts/filesystem";
+import { workspaceForProject } from "@/lib/os/filesystem";
 import type { CattipuProject } from "@/lib/project/types";
 import { aiService } from "@/lib/services/ai/aiService";
+import { projectFileService } from "@/lib/services/filesystem/projectFileService";
 import { memoryService } from "@/lib/services/memory/memoryService";
+import { useFilesystemStore } from "@/store/useFilesystemStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
 import { useProjectStore } from "@/store/useProjectStore";
 
 /**
@@ -19,6 +24,11 @@ import { useProjectStore } from "@/store/useProjectStore";
  * Keyed by project id: a reply is filed under the project (and the
  * conversation) that asked, even if the person has switched projects while
  * it was in flight.
+ *
+ * MVP-06: a request carries the project's files (from the filesystem, the
+ * files' owner), and a reply's file proposals are filed with the turn.
+ * `applyProposal` is the only path from a proposal to the filesystem, and
+ * it runs only when the person presses Apply.
  */
 
 export type AIConversationStatus = "idle" | "sending";
@@ -53,6 +63,26 @@ interface AIState {
   sessions: Record<string, AISession>;
   send: (projectId: string, text: string, service?: AIService) => Promise<void>;
   clear: (projectId: string) => void;
+  /** Writes one assistant turn's proposed files into the project's
+   *  workspace, reports the outcome, and points the filesystem selection at
+   *  the folder of the first file so Explorer opens where they are. */
+  applyProposal: (projectId: string, messageId: string) => ApplyFileWritesResult;
+}
+
+const FAILURE_TEXT: Record<FileWriteFailure, string> = {
+  "no-workspace": "The project has no workspace folder to write into.",
+  "invalid-path": "A proposed path is not a valid workspace path.",
+  "too-many": "The proposal names too many files.",
+  "too-long": "A proposed file is too large.",
+  "path-conflict": "A proposed path runs through a file, or names a folder as a file.",
+  "not-found": "That proposal is no longer in this project's conversation.",
+};
+
+/** The project's files as request data; none when it has no workspace. */
+function filesContextFor(projectId: string): ProjectFilesContext | undefined {
+  const objects = useFilesystemStore.getState().objects;
+  const workspace = workspaceForProject(objects, projectId);
+  return workspace ? projectFileService.contextFor(objects, workspace.id, projectId) : undefined;
 }
 
 let seq = 0;
@@ -84,6 +114,7 @@ export const useAIStore = create<AIState>()((set, get) => {
         projectName: project.name,
         messages: memoryService.history(filed.value),
         memory: memoryService.contextFor(project),
+        files: filesContextFor(projectId),
       });
 
       if (result.ok) {
@@ -96,6 +127,7 @@ export const useAIStore = create<AIState>()((set, get) => {
             createdAt: new Date().toISOString(),
             providerId: result.response.providerId,
             model: result.response.model,
+            ...(result.response.fileChanges?.length ? { fileChanges: result.response.fileChanges } : {}),
           },
           filed.value.id,
         );
@@ -111,6 +143,30 @@ export const useAIStore = create<AIState>()((set, get) => {
         delete next[projectId];
         return { sessions: next };
       });
+    },
+
+    applyProposal: (projectId, messageId) => {
+      const project = useProjectStore.getState().projects.find((p) => p.id === projectId);
+      const message = project?.memory.conversations
+        .flatMap((c) => (c.projectId === projectId ? c.messages : []))
+        .find((m) => m.id === messageId);
+      const writes = message?.role === "assistant" ? message.fileChanges ?? [] : [];
+      if (!project || writes.length === 0) return { ok: false, reason: "not-found" };
+
+      const filesystem = useFilesystemStore.getState();
+      const result = filesystem.applyFileWrites(projectId, writes);
+      const notify = useNotificationStore.getState().push;
+      if (!result.ok) {
+        notify("error", "Files not written", { message: FAILURE_TEXT[result.reason] });
+        return result;
+      }
+      const first = result.objects.find((o) => o.id === result.fileIds[0]);
+      if (first?.parentId) filesystem.selectObject(first.parentId);
+      const changed = result.written.filter((w) => w.status !== "unchanged").length;
+      notify("success", `${changed} ${changed === 1 ? "file" : "files"} written`, {
+        message: `${project.name}: ${result.written.map((w) => w.path).join(", ")}`,
+      });
+      return result;
     },
   };
 });

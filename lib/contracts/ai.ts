@@ -13,6 +13,12 @@
  * project prompt, project memory — as separate blocks (`AIContextBlock`).
  * The browser never writes provider context itself.
  *
+ * MVP-06 lets the AI produce files. The browser also sends the workspace's
+ * files as data (`files`); the gateway reads file proposals out of the
+ * provider's answer (`fileChanges`), whichever provider wrote it. A
+ * proposal is only data until the person applies it: nothing here writes
+ * to the filesystem.
+ *
  * Everything in this file is provider-neutral and framework-free: no React,
  * no Next, no provider SDK. The UI and the gateway speak these shapes; only
  * an adapter knows what a provider's wire format looks like. Credentials
@@ -20,6 +26,7 @@
  * read by the adapter alone.
  */
 
+import type { FileWrite, ProjectFilesContext } from "./filesystem";
 import type { ProjectMemoryContext } from "./memory";
 
 /** A stable provider identifier, as registered by an adapter. The registry
@@ -39,6 +46,9 @@ export interface AIMessage {
   /** Set on assistant turns: which provider and model produced it. */
   providerId?: AIProviderId;
   model?: string;
+  /** MVP-06. Set on assistant turns that propose files. Filed with the turn
+   *  in Project Memory, so the proposal survives a reload. */
+  fileChanges?: FileWrite[];
 }
 
 /** What a caller sends. The project is required: there is no global
@@ -55,6 +65,8 @@ export interface AIRequest {
   /** MVP-05. This project's memory, as data. Optional: a request without
    *  it is answered with the system context alone. */
   memory?: ProjectMemoryContext;
+  /** MVP-06. The project's existing files, as data. Optional. */
+  files?: ProjectFilesContext;
 }
 
 /**
@@ -65,8 +77,9 @@ export interface AIRequest {
  *   system          CATTIPU's own instructions (lib/services/ai/systemPrompt.ts)
  *   project-prompt  the project's active prompt, written by its owner
  *   project-memory  the project's memory records
+ *   project-files   the project's files (MVP-06)
  */
-export type AIContextSource = "system" | "project-prompt" | "project-memory";
+export type AIContextSource = "system" | "project-prompt" | "project-memory" | "project-files";
 
 /** One block of system-role context, rendered by the server. */
 export interface AIContextBlock {
@@ -82,6 +95,9 @@ export interface AIResponse {
   text: string;
   /** The provider's own stop signal, normalised to a string. */
   stopReason: string;
+  /** MVP-06. Files the answer proposes, read from `text` by the gateway.
+   *  Absent when it proposes none. */
+  fileChanges?: FileWrite[];
 }
 
 export type AIErrorCode =

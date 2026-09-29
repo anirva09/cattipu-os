@@ -4,10 +4,15 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { cattipuCssVariables, cattipuTokens } from "../../design-system/tokens";
 import type { AIError, AIProviderStatus } from "@/lib/contracts/ai";
+import type { FileWritePreview, FileWriteStatus } from "@/lib/contracts/filesystem";
+import { workspaceForProject, type OsObject } from "@/lib/os/filesystem";
 import { activeProject } from "@/lib/os/projects";
+import type { CattipuProject } from "@/lib/project/types";
 import { aiService } from "@/lib/services/ai/aiService";
+import { projectFileService } from "@/lib/services/filesystem/projectFileService";
 import { promptService } from "@/lib/services/memory/promptService";
 import { EMPTY_CONVERSATION, conversationFor, useAIStore, type AIConversation } from "@/store/useAIStore";
+import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { useProjectStore } from "@/store/useProjectStore";
 
 import "../../design-system/bevel.css";
@@ -25,6 +30,11 @@ import "./AIConsole.css";
  * Project Memory, so it survives a reload and stays with its project. The
  * status strip says what memory travels with the next prompt; the server,
  * not this component, turns that memory into provider context.
+ *
+ * MVP-06: a turn that proposes files shows them under its text — each path
+ * with what applying it would do, derived from the filesystem as it is now
+ * — and nothing is written until Apply is pressed. "Show in Explorer"
+ * raises Explorer on the folder the files are in.
  */
 
 export const CATTIPU_AI_CONSOLE_REFERENCE = {
@@ -78,15 +88,58 @@ export interface ConsoleMemory {
 
 const NO_MEMORY: ConsoleMemory = { records: 0, prompt: null };
 
+/** MVP-06 — one turn's proposed files, as the console shows them. */
+export interface ConsoleProposal {
+  entries: FileWritePreview[];
+  /** Why it cannot be applied, in plain words; null when it can. */
+  blocked: string | null;
+}
+
+const CHANGE_LABEL: Record<FileWriteStatus, string> = {
+  create: "NEW",
+  update: "UPDATE",
+  unchanged: "WRITTEN",
+};
+
+/** Each turn's proposal, keyed by message id, from the project's
+ *  conversation and the filesystem. Derived every time: "written" means the
+ *  file at that path holds exactly the proposed text right now. */
+export function consoleProposals(
+  project: CattipuProject,
+  messages: AIConversation["messages"],
+  objects: readonly OsObject[],
+): Record<string, ConsoleProposal> {
+  const workspace = workspaceForProject(objects, project.id);
+  const out: Record<string, ConsoleProposal> = {};
+  for (const message of messages) {
+    const changes = message.role === "assistant" ? message.fileChanges : undefined;
+    if (!changes?.length) continue;
+    const asNew = changes.map((c) => ({ path: c.path, status: "create" as const }));
+    if (!workspace) {
+      out[message.id] = { entries: asNew, blocked: `${project.name} has no workspace folder.` };
+      continue;
+    }
+    const entries = projectFileService.preview(objects, workspace.id, changes);
+    out[message.id] = entries
+      ? { entries, blocked: null }
+      : { entries: asNew, blocked: "A path conflicts with what is already in the workspace." };
+  }
+  return out;
+}
+
 export interface AIConsoleViewProps {
   project: { id: string; name: string } | null;
   provider: ConsoleProviderState;
   conversation: AIConversation;
   memory?: ConsoleMemory;
+  /** MVP-06 — proposed files, keyed by the assistant turn's id. */
+  proposals?: Record<string, ConsoleProposal>;
   draft: string;
   onDraftChange: (value: string) => void;
   onSend: () => void;
   onClear: () => void;
+  onApply?: (messageId: string) => void;
+  onShowFiles?: (messageId: string) => void;
 }
 
 /** Pure presentation: every state is a function of these props. */
@@ -95,10 +148,13 @@ export function AIConsoleView({
   provider,
   conversation,
   memory = NO_MEMORY,
+  proposals = {},
   draft,
   onDraftChange,
   onSend,
   onClear,
+  onApply,
+  onShowFiles,
 }: AIConsoleViewProps) {
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const sending = conversation.status === "sending";
@@ -160,6 +216,14 @@ export function AIConsoleView({
               {message.role === "user" ? "YOU" : `${assistantLabel}${message.model ? ` · ${message.model}` : ""}`}
             </p>
             <p className="cattipu-ai__turn-text">{message.text}</p>
+            {proposals[message.id] && (
+              <ProposalBlock
+                proposal={proposals[message.id]}
+                disabled={sending}
+                onApply={() => onApply?.(message.id)}
+                onShowFiles={() => onShowFiles?.(message.id)}
+              />
+            )}
           </article>
         ))}
 
@@ -222,8 +286,70 @@ export function AIConsoleView({
   );
 }
 
+/** MVP-06 — the files one turn proposes: a listing in an inset well, like
+ *  the transcript itself, with the two actions under it. */
+function ProposalBlock({
+  proposal,
+  disabled,
+  onApply,
+  onShowFiles,
+}: {
+  proposal: ConsoleProposal;
+  disabled: boolean;
+  onApply: () => void;
+  onShowFiles: () => void;
+}) {
+  const { entries, blocked } = proposal;
+  const pending = entries.filter((e) => e.status !== "unchanged").length;
+  const written = entries.length - pending;
+  return (
+    <div className="cattipu-ai__changes cattipu-bevel--inset" data-testid="ai-changes">
+      <p className="cattipu-ai__changes-label">
+        {`FILE CHANGES · ${String(entries.length).padStart(2, "0")}`}
+      </p>
+      <ul className="cattipu-ai__changes-list">
+        {entries.map((entry) => (
+          <li key={entry.path} className="cattipu-ai__change" data-status={entry.status} data-testid="ai-change">
+            <span className="cattipu-ai__change-status">{CHANGE_LABEL[entry.status]}</span>
+            <span className="cattipu-ai__change-path" title={entry.path}>{entry.path}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="cattipu-ai__changes-actions">
+        {blocked && (
+          <span className="cattipu-ai__changes-blocked" role="status">{blocked}</span>
+        )}
+        <button
+          type="button"
+          className="cattipu-ai__button cattipu-bevel--raised cattipu-bevel--pressable cattipu-focus--mechanical"
+          data-testid="ai-show-files"
+          disabled={blocked !== null || written === 0}
+          onClick={onShowFiles}
+        >
+          Show in Explorer
+        </button>
+        <button
+          type="button"
+          className="cattipu-ai__button cattipu-bevel--raised cattipu-bevel--pressable cattipu-focus--mechanical"
+          data-testid="ai-apply"
+          disabled={disabled || blocked !== null || pending === 0}
+          onClick={onApply}
+        >
+          {pending === 0 ? "Applied" : "Apply"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export interface AIConsoleProps {
+  /** Raises another shell window; the console opens Explorer on the files
+   *  it wrote through the window manager, never its own file view. */
+  onOpenWindow?: (id: "explorer") => void;
+}
+
 /** The window body: the active project's conversation, through the stores. */
-export function AIConsole() {
+export function AIConsole({ onOpenWindow }: AIConsoleProps = {}) {
   const projects = useProjectStore((s) => s.projects);
   const project = useMemo(() => activeProject(projects), [projects]);
   const session = useAIStore((s) => (project ? s.sessions[project.id] : undefined));
@@ -238,8 +364,14 @@ export function AIConsole() {
         : NO_MEMORY,
     [project],
   );
+  const objects = useFilesystemStore((s) => s.objects);
+  const proposals = useMemo(
+    () => (project ? consoleProposals(project, conversation.messages, objects) : {}),
+    [project, conversation.messages, objects],
+  );
   const send = useAIStore((s) => s.send);
   const clear = useAIStore((s) => s.clear);
+  const applyProposal = useAIStore((s) => s.applyProposal);
   const [provider, setProvider] = useState<ConsoleProviderState>({ kind: "checking" });
   // Drafts are per project too, so switching projects never carries a half-
   // typed prompt into another project's conversation.
@@ -272,6 +404,17 @@ export function AIConsole() {
         void send(project.id, text);
       }}
       onClear={() => project && clear(project.id)}
+      proposals={proposals}
+      onApply={(messageId) => project && applyProposal(project.id, messageId)}
+      onShowFiles={(messageId) => {
+        if (!project) return;
+        const first = conversation.messages.find((m) => m.id === messageId)?.fileChanges?.[0];
+        const fs = useFilesystemStore.getState();
+        const workspace = workspaceForProject(fs.objects, project.id);
+        const file = first && workspace ? projectFileService.fileAt(fs.objects, workspace.id, first.path) : null;
+        if (file?.parentId) fs.selectObject(file.parentId);
+        onOpenWindow?.("explorer");
+      }}
     />
   );
 }

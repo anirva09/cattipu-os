@@ -125,6 +125,75 @@
   color: var(--cattipu-bevel-bottom);
 }
 
+/* ── MVP-06: proposed files ───────────────────────────────────────────── */
+
+/* A listing in a second inset well: status column, path column, then the
+ * two actions. No fill colour marks a status; the word does. */
+.cattipu-ai__changes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  padding: var(--cattipu-ai-gap);
+  background: var(--cattipu-cream);
+}
+
+.cattipu-ai__changes-label {
+  margin: 0;
+  color: var(--cattipu-navy);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+.cattipu-ai__changes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cattipu-ai__change {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cattipu-ai-gap);
+  min-width: 0;
+}
+
+.cattipu-ai__change-status {
+  flex: 0 0 56px;
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+.cattipu-ai__change[data-status="unchanged"] .cattipu-ai__change-status {
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-ai__change-path {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cattipu-ai__changes-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--cattipu-ai-gap);
+  padding-top: 4px;
+  border-top: 1px solid var(--cattipu-dark-cream);
+}
+
+.cattipu-ai__changes-blocked {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* ── prompt row ───────────────────────────────────────────────────────── */
 
 .cattipu-ai__input {

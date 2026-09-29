@@ -194,7 +194,8 @@ const WINDOW_CONTENT: NonNullable<
   canvas: ({ openWindow }) => <CanvasApp onOpenWindow={(id) => openWindow(id)} />,
   // MVP-04 — the AI Console. It talks to the AI Gateway through the client
   // AIService only; no provider or credential is reachable from here.
-  ai: <AIConsole />,
+  // MVP-06 — a function so it can raise Explorer on the files it wrote.
+  ai: ({ openWindow }) => <AIConsole onOpenWindow={(id) => openWindow(id)} />,
   // Milestone 17 - Explorer is now the OS's real project browser and needs
   // the window manager to open a project, so it arrives as a function.
   // The other three are plain nodes, exactly as before.

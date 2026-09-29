@@ -2,12 +2,15 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { moveObject, nextFreeCell, type GridCell } from "@/lib/os/desktop";
+import { FILE_LIMITS, type ApplyFileWritesResult, type FileWrite } from "@/lib/contracts/filesystem";
 import {
   canMoveInto,
   nextFolderName,
   removeSubtree,
+  workspaceForProject,
   type OsObject,
 } from "@/lib/os/filesystem";
+import { projectFileService } from "@/lib/services/filesystem/projectFileService";
 import { projectWorkspaceService } from "@/lib/services/filesystem/projectWorkspaceService";
 
 /**
@@ -79,6 +82,16 @@ interface FilesystemState {
    *  (into itself, into its own descendant, or into a missing folder) so
    *  the caller can say so rather than silently doing nothing. */
   moveIntoFolder: (id: string, parentId: string | null) => boolean;
+  /**
+   * MVP-06 — writes files into a project's workspace by path, creating the
+   * folders a path needs. All or nothing; the rules are
+   * projectFileService's. Only ever called on an explicit request (Apply
+   * in the AI Console), never as a side effect of an AI answer arriving.
+   */
+  applyFileWrites: (projectId: string, writes: readonly FileWrite[]) => ApplyFileWritesResult;
+  /** MVP-06 — saves a file's text (Explorer's editor). False when the id is
+   *  not a file or the text is over the limit. */
+  writeFileContent: (id: string, content: string) => boolean;
 }
 
 let seq = 0;
@@ -149,6 +162,10 @@ export const useFilesystemStore = create<FilesystemState>()(
       renameObject: (id, label) => {
         const next = label.trim();
         if (!next) return;
+        // A file's name is the last segment of its path, so it is held to
+        // what a path segment may be; a "/" in it would name another place.
+        const target = get().objects.find((o) => o.id === id);
+        if (target?.kind === "file" && (next.includes("/") || projectFileService.normalizePath(next) !== next)) return;
         set((s) => ({
           objects: s.objects.map((o) => (o.id === id ? { ...o, label: next } : o)),
         }));
@@ -191,6 +208,25 @@ export const useFilesystemStore = create<FilesystemState>()(
         return true;
       },
 
+      applyFileWrites: (projectId, writes) => {
+        const objects = get().objects;
+        const workspace = workspaceForProject(objects, projectId);
+        if (!workspace) return { ok: false, reason: "no-workspace" };
+        const result = projectFileService.apply(objects, workspace.id, writes, {
+          nextId,
+          at: new Date().toISOString(),
+        });
+        if (result.ok) set({ objects: result.objects });
+        return result;
+      },
+
+      writeFileContent: (id, content) => {
+        const objects = get().objects;
+        if (content.length > FILE_LIMITS.maxFileChars) return false;
+        if (!objects.some((o) => o.id === id && o.kind === "file")) return false;
+        set({ objects: objects.map((o) => (o.id === id ? { ...o, content } : o)) });
+        return true;
+      },
     }),
     {
       name: "cattipu-desktop",
@@ -203,14 +239,20 @@ export const useFilesystemStore = create<FilesystemState>()(
       // v4 adds `selectedObjectId`, the Explorer tree's selection. Older
       // records start with no selection; one naming a missing object is
       // dropped rather than restored as a dangling id.
-      version: 4,
+      // v5 (MVP-06) adds `file` records carrying `content`. Nothing earlier
+      // wrote one, so there is nothing to convert; a file record without
+      // text (a hand-edited value) is dropped rather than restored as a
+      // file that cannot be opened.
+      version: 5,
       partialize: (state) => ({
         objects: state.objects,
         selectedObjectId: state.selectedObjectId,
       }),
       migrate: (persisted, version) => {
         const state = (persisted ?? {}) as Partial<FilesystemState>;
-        const objects = Array.isArray(state.objects) ? state.objects : [];
+        const objects = (Array.isArray(state.objects) ? state.objects : []).filter(
+          (o) => o.kind !== "file" || typeof o.content === "string",
+        );
         const selectedObjectId =
           typeof state.selectedObjectId === "string" &&
           objects.some((object) => object.id === state.selectedObjectId)

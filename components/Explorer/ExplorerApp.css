@@ -300,6 +300,95 @@
   color: var(--cattipu-bevel-bottom);
 }
 
+/* ── MVP-06: an open file ─────────────────────────────────────────────── */
+
+/* Takes the grid's place in the body: a bar, the text well, a status
+ * strip — the same three-part build as the AI Console. */
+.cattipu-explorer__file {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--cattipu-explorer-gap);
+  min-width: 0;
+  min-height: 0;
+  padding: var(--cattipu-explorer-pad);
+  background: var(--cattipu-cream);
+}
+
+.cattipu-explorer__file-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--cattipu-explorer-gap);
+  min-width: 0;
+}
+
+.cattipu-explorer__file-path {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-ink, #141110);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cattipu-explorer__file-button {
+  flex: 0 0 auto;
+  height: 24px;
+  padding: 0 var(--cattipu-explorer-gap);
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font: inherit;
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+  cursor: default;
+}
+
+.cattipu-explorer__file-button:disabled {
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-explorer__file-text {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 4px;
+  resize: none;
+  overflow: auto;
+  scrollbar-width: thin;
+  background: var(--cattipu-cream);
+  color: var(--color-ink, #141110);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+  tab-size: 2;
+  outline: none;
+}
+
+.cattipu-explorer__file-text:focus-visible {
+  outline: var(--cattipu-border-size) solid var(--cattipu-navy);
+  outline-offset: 0;
+}
+
+.cattipu-explorer__file-status {
+  display: flex;
+  gap: var(--cattipu-explorer-pad);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  white-space: nowrap;
+}
+
+.cattipu-explorer__file-state {
+  margin-left: auto;
+}
+
+.cattipu-explorer__file[data-dirty='true'] .cattipu-explorer__file-state {
+  color: var(--cattipu-navy);
+}
+
 /* The tree pane has no side padding of its own; its rows inset by the
    tree's 8px root inset, and the no-workspace line matches them. */
 .cattipu-explorer__tree > .cattipu-explorer__empty {

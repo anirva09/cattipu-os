@@ -5,7 +5,8 @@ import type {
   AIRequest,
   AIResult,
 } from "@/lib/contracts/ai";
-import { assembleContext, parseMemoryContext } from "./contextAssembly";
+import { assembleContext, parseFilesContext, parseMemoryContext } from "./contextAssembly";
+import { parseFileProposals } from "./fileProposals";
 import type { ProviderRegistry } from "./providerRegistry";
 
 /**
@@ -13,7 +14,8 @@ import type { ProviderRegistry } from "./providerRegistry";
  *
  * It validates the request, resolves the provider through the registry,
  * refuses early when that provider has no credentials, assembles the
- * provider context from the project's memory (MVP-05), and guarantees the
+ * provider context from the project's memory (MVP-05) and files (MVP-06),
+ * reads file proposals out of the answer (MVP-06), and guarantees the
  * caller always receives a normalised `AIResult` — never a raw provider
  * error and never an exception.
  */
@@ -40,7 +42,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /** Narrows untrusted JSON to an `AIRequest`, or says what is wrong. */
 export function parseAIRequest(input: unknown): { ok: true; request: AIRequest } | { ok: false; result: AIResult } {
   if (!isRecord(input)) return { ok: false, result: invalid("The request body must be a JSON object.") };
-  const { projectId, projectName, providerId, messages, memory } = input;
+  const { projectId, projectName, providerId, messages, memory, files } = input;
   if (typeof projectId !== "string" || !projectId.trim()) {
     return { ok: false, result: invalid("An AI request must name the project it belongs to.") };
   }
@@ -71,6 +73,8 @@ export function parseAIRequest(input: unknown): { ok: true; request: AIRequest }
   }
   const parsedMemory = parseMemoryContext(memory, projectId);
   if (!parsedMemory.ok) return { ok: false, result: invalid(parsedMemory.message) };
+  const parsedFiles = parseFilesContext(files, projectId);
+  if (!parsedFiles.ok) return { ok: false, result: invalid(parsedFiles.message) };
   return {
     ok: true,
     request: {
@@ -79,6 +83,7 @@ export function parseAIRequest(input: unknown): { ok: true; request: AIRequest }
       providerId: providerId as string | undefined,
       messages: turns,
       ...(parsedMemory.memory ? { memory: parsedMemory.memory } : {}),
+      ...(parsedFiles.files ? { files: parsedFiles.files } : {}),
     },
   };
 }
@@ -138,7 +143,13 @@ export function createAIGateway(registry: ProviderRegistry, options: AIGatewayOp
             error: { code: "provider-error", message: "The provider answered for a different project.", retryable: false, providerId },
           };
         }
-        return result;
+        if (!result.ok) return result;
+        // Proposals are read here, once, for every provider. They are data
+        // for the person to apply; the gateway writes nothing.
+        const fileChanges = parseFileProposals(result.response.text);
+        return fileChanges.length > 0
+          ? { ok: true, response: { ...result.response, fileChanges } }
+          : result;
       } catch {
         // Adapters return failures rather than throw; if one throws anyway,
         // the caller still gets a normalised error. The raw error is not

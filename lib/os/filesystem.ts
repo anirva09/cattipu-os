@@ -29,7 +29,10 @@ import type { CattipuProject } from "@/lib/project/types";
  * is a tree of FOLDERS, which is what it is called.
  */
 
-export type OsObjectKind = "folder" | "project-shortcut";
+/** MVP-06 adds `file`: a text file with its content, living inside a
+ *  project's workspace. A file is never at the OS root — the desktop has
+ *  no file surface — so `canMoveInto` refuses that move. */
+export type OsObjectKind = "folder" | "file" | "project-shortcut";
 
 /** Grid cells, not pixels. Snapping is then not a rounding step applied
  *  after a drag — a position simply cannot be off-grid — and a layout
@@ -54,6 +57,8 @@ export interface OsObject {
    *  the root has somewhere to land. */
   position: GridCell;
   createdAt: string;
+  /** MVP-06. Files only: the file's text. */
+  content?: string;
 }
 
 /** @deprecated Milestone 16's name for the same record, kept so the
@@ -64,14 +69,20 @@ export const OS_ROOT: null = null;
 
 // ── reading the tree ────────────────────────────────────────────────────
 
-/** Folders first, then shortcuts, each alphabetical. A listing whose
- *  order depends on creation time reshuffles itself as you work. */
+const KIND_ORDER: Record<OsObjectKind, number> = {
+  folder: 0,
+  file: 1,
+  "project-shortcut": 2,
+};
+
+/** Folders first, then files, then shortcuts, each alphabetical. A listing
+ *  whose order depends on creation time reshuffles itself as you work. */
 function byKindThenLabel(
   a: OsObject,
   b: OsObject,
   projects: readonly CattipuProject[],
 ): number {
-  if (a.kind !== b.kind) return a.kind === "folder" ? -1 : 1;
+  if (a.kind !== b.kind) return KIND_ORDER[a.kind] - KIND_ORDER[b.kind];
   return objectLabel(a, projects).localeCompare(objectLabel(b, projects));
 }
 
@@ -90,6 +101,14 @@ export function folderChildren(
   parentId: string | null,
 ): OsObject[] {
   return childrenOf(objects, parentId).filter((o) => o.kind === "folder");
+}
+
+export function findFile(
+  objects: readonly OsObject[],
+  id: string | null,
+): OsObject | null {
+  if (id === null) return null;
+  return objects.find((o) => o.id === id && o.kind === "file") ?? null;
 }
 
 export function findFolder(
@@ -179,7 +198,9 @@ export function canMoveInto(
 ): boolean {
   const moving = objects.find((o) => o.id === id);
   if (!moving) return false;
-  if (targetId === null) return moving.parentId !== null;
+  // The root is the desktop, and the desktop draws folders and shortcuts
+  // only. A file there would render as a shortcut to no project.
+  if (targetId === null) return moving.kind !== "file" && moving.parentId !== null;
   if (targetId === id) return false;
   if (!findFolder(objects, targetId)) return false;
   if (moving.parentId === targetId) return false;
@@ -348,7 +369,7 @@ export function nextFolderName(
 
 // ── what Explorer shows ─────────────────────────────────────────────────
 
-export type ExplorerEntryKind = "folder" | "project" | "project-shortcut";
+export type ExplorerEntryKind = "folder" | "file" | "project" | "project-shortcut";
 
 export interface ExplorerEntry {
   /** Unique within a listing. For an OS object it is the object's id;
@@ -358,7 +379,7 @@ export interface ExplorerEntry {
   label: string;
   /** Set on projects and shortcuts — what "Open" acts on. */
   projectId?: string;
-  /** Set on folders and shortcuts — the OS object behind the entry. */
+  /** Set on folders, files and shortcuts — the OS object behind the entry. */
   objectId?: string;
   /** Breadcrumb-style location, filled in for search results so a hit
    *  three folders deep says where it was found. */
@@ -369,6 +390,9 @@ function entryFor(
   object: OsObject,
   projects: readonly CattipuProject[],
 ): ExplorerEntry {
+  if (object.kind === "file") {
+    return { id: object.id, kind: "file", label: object.label, objectId: object.id };
+  }
   return object.kind === "folder"
     ? {
         id: object.id,

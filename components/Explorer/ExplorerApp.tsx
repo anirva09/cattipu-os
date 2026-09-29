@@ -21,6 +21,7 @@ import {
   canMoveInto,
   descendantIds,
   explorerEntries,
+  findFile,
   folderChildren,
   folderPath,
   isInWorkspace,
@@ -31,8 +32,9 @@ import {
   type OsObject,
 } from "@/lib/os/filesystem";
 import { activeProject, orderProjects } from "@/lib/os/projects";
-import type { ProjectWorkspaceState } from "@/lib/contracts/filesystem";
+import { FILE_LIMITS, type ProjectWorkspaceState } from "@/lib/contracts/filesystem";
 import type { CattipuProject } from "@/lib/project/types";
+import { projectFileService } from "@/lib/services/filesystem/projectFileService";
 import { projectWorkspaceService } from "@/lib/services/filesystem/projectWorkspaceService";
 import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { useProjectStore } from "@/store/useProjectStore";
@@ -62,6 +64,13 @@ import "./ExplorerApp.css";
  * cached to invalidate. A folder created on the desktop is in the next
  * render because the next render reads the same array the desktop wrote
  * to.
+ *
+ * MVP-06 — files. A file opens in this window, in place of the grid: its
+ * text in an inset well, saved back to the filesystem (useFilesystemStore
+ * `writeFileContent`) only when Save is pressed. Unsaved edits are kept
+ * per file while the window is open. Which file is open is this window's
+ * state; the file itself is the filesystem's, so an AI Apply or a save
+ * elsewhere shows here on the next render unless it is being edited.
  *
  * The static "Apps / Assets / Templates / Downloads" filesystem the old
  * Explorer displayed is gone. It was a mock, and a mock filesystem in the
@@ -94,6 +103,7 @@ function iconFor(kind: ExplorerEntry["kind"]): ShellIconName {
   // both would put two identically drawn, identically labelled entries
   // side by side in the root listing.
   if (kind === "folder") return "folder";
+  if (kind === "file") return "file";
   if (kind === "project-shortcut") return "openfile";
   return "projects";
 }
@@ -180,6 +190,7 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
   const moveIntoFolder = useFilesystemStore((s) => s.moveIntoFolder);
   const selectedObjectId = useFilesystemStore((s) => s.selectedObjectId);
   const selectObject = useFilesystemStore((s) => s.selectObject);
+  const writeFileContent = useFilesystemStore((s) => s.writeFileContent);
 
   const projects = useProjectStore((s) => s.projects);
   const openProject = useProjectStore((s) => s.openProject);
@@ -192,6 +203,12 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
+  /** The open file and the folder it was opened in. Navigating anywhere
+   *  else closes it, because the pane is only shown while `at` is where
+   *  the window is standing. */
+  const [openFile, setOpenFile] = useState<{ id: string; at: string | null } | null>(null);
+  /** Unsaved text, per file id. Absent means "shows the saved content". */
+  const [fileDrafts, setFileDrafts] = useState<Record<string, string>>({});
 
   // A folder deleted in another window (or on the desktop) must not leave
   // this one pointing at nothing. Resolving every render means the
@@ -234,6 +251,14 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
   );
 
   const trail = useMemo(() => folderPath(objects, location), [objects, location]);
+
+  const editing =
+    !searching && openFile && openFile.at === location
+      ? (() => {
+          const file = findFile(objects, openFile.id);
+          return file && file.parentId === location ? file : null;
+        })()
+      : null;
 
   // ── tree ──────────────────────────────────────────────────────────────
 
@@ -285,6 +310,16 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
 
   const open = useCallback(
     (entry: ExplorerEntry) => {
+      if (entry.kind === "file") {
+        // From a search hit the file may be anywhere; the window moves to
+        // its folder first, so the breadcrumbs say where it is.
+        const file = findFile(useFilesystemStore.getState().objects, entry.id);
+        if (!file) return;
+        setQuery("");
+        selectObject(file.parentId);
+        setOpenFile({ id: file.id, at: file.parentId });
+        return;
+      }
       if (entry.kind === "folder") {
         setQuery("");
         selectObject(entry.id);
@@ -408,6 +443,26 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
       ];
     }
 
+    if (entry.kind === "file" && entry.objectId) {
+      const targets = moveTargets(entry.objectId);
+      return [
+        openItem,
+        { kind: "separator", id: "sep-1" },
+        renameItem,
+        {
+          id: "move",
+          ...MENU_COMMANDS.moveTo,
+          disabled: targets.length === 0,
+          children: targets,
+        },
+        {
+          id: "delete",
+          ...MENU_COMMANDS.delete,
+          onSelect: () => removeObject(entry.objectId as string),
+        },
+      ];
+    }
+
     if (entry.kind === "project-shortcut" && entry.objectId) {
       const targets = moveTargets(entry.objectId);
       return [
@@ -506,13 +561,30 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
                   type="button"
                   className="cattipu-explorer__crumb"
                   data-testid="explorer-crumb"
-                  data-current={index === crumbs.length - 1 ? "true" : undefined}
-                  onClick={() => selectObject(crumb.id)}
+                  data-current={index === crumbs.length - 1 && !editing ? "true" : undefined}
+                  onClick={() => {
+                    setOpenFile(null);
+                    selectObject(crumb.id);
+                  }}
                 >
                   {crumb.label}
                 </button>
               </span>
             ))
+          )}
+          {editing && (
+            <>
+              <span className="cattipu-explorer__crumb-sep" aria-hidden="true">
+                /
+              </span>
+              <span
+                className="cattipu-explorer__crumb"
+                data-testid="explorer-crumb"
+                data-current="true"
+              >
+                {editing.label}
+              </span>
+            </>
           )}
         </nav>
 
@@ -563,96 +635,128 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
 
         <DividerGroove orientation="vertical" />
 
-        <div
-          className="cattipu-explorer__grid"
-          data-testid="explorer-grid"
-          onPointerDown={() => {
-            setSelectedId(null);
-            setRenamingId(null);
-          }}
-          onContextMenu={(event) => openMenu(event, null)}
-        >
-          {searching && (
-            <p className="cattipu-explorer__found" data-testid="explorer-found">
-              {entries.length} {entries.length === 1 ? "MATCH" : "MATCHES"}
-            </p>
-          )}
+        {editing ? (
+          <FilePane
+            file={editing}
+            path={
+              workspace.kind === "ready"
+                ? projectFileService.pathOf(objects, editing.id, workspace.workspace.id) ?? editing.label
+                : editing.label
+            }
+            draft={fileDrafts[editing.id]}
+            onDraftChange={(value) =>
+              setFileDrafts((d) => ({ ...d, [editing.id]: value }))
+            }
+            onRevert={() =>
+              setFileDrafts((d) => {
+                const next = { ...d };
+                delete next[editing.id];
+                return next;
+              })
+            }
+            onSave={() => {
+              const draft = fileDrafts[editing.id];
+              if (draft === undefined || !writeFileContent(editing.id, draft)) return;
+              setFileDrafts((d) => {
+                const next = { ...d };
+                delete next[editing.id];
+                return next;
+              });
+            }}
+            onClose={() => setOpenFile(null)}
+          />
+        ) : (
+          <div
+            className="cattipu-explorer__grid"
+            data-testid="explorer-grid"
+            onPointerDown={() => {
+              setSelectedId(null);
+              setRenamingId(null);
+            }}
+            onContextMenu={(event) => openMenu(event, null)}
+          >
+            {searching && (
+              <p className="cattipu-explorer__found" data-testid="explorer-found">
+                {entries.length} {entries.length === 1 ? "MATCH" : "MATCHES"}
+              </p>
+            )}
 
-          {entries.length === 0 ? (
-            <p className="cattipu-explorer__empty">
-              {searching ? "Nothing matches that." : "This folder is empty."}
-            </p>
-          ) : (
-            <ul className="cattipu-explorer__items">
-              {entries.map((entry) => (
-                <li key={entry.id}>
-                  <div
-                    className="cattipu-explorer__item"
-                    data-testid="explorer-item"
-                    data-entry-id={entry.id}
-                    data-entry-kind={entry.kind}
-                    data-selected={selectedId === entry.id ? "true" : undefined}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={entry.label}
-                    onPointerDown={(event) => {
-                      event.stopPropagation();
-                      setSelectedId(entry.id);
-                    }}
-                    onDoubleClick={() => open(entry)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") open(entry);
-                      if (event.key === "F2") setRenamingId(entry.id);
-                    }}
-                    onContextMenu={(event) => openMenu(event, entry)}
-                  >
-                    <span className="cattipu-explorer__item-plate">
-                      <ShellIcon name={iconFor(entry.kind)} size={32} />
-                    </span>
-
-                    {renamingId === entry.id ? (
-                      <input
-                        className="cattipu-explorer__rename"
-                        defaultValue={entry.label}
-                        autoFocus
-                        onFocus={(event) => event.currentTarget.select()}
-                        onPointerDown={(event) => event.stopPropagation()}
-                        onBlur={(event) => commitRename(entry, event.currentTarget.value)}
-                        onKeyDown={(event) => {
-                          // The row this input sits inside also listens for
-                          // Enter, and opens the item. Without stopping the
-                          // event here, committing a rename immediately
-                          // navigates into the folder you just renamed.
-                          event.stopPropagation();
-                          if (event.key === "Enter") {
-                            commitRename(entry, event.currentTarget.value);
-                          }
-                          if (event.key === "Escape") setRenamingId(null);
-                        }}
-                      />
-                    ) : (
-                      <span
-                        className="cattipu-explorer__item-label"
-                        title={entry.label}
-                      >
-                        {entry.label}
+            {entries.length === 0 ? (
+              <p className="cattipu-explorer__empty">
+                {searching ? "Nothing matches that." : "This folder is empty."}
+              </p>
+            ) : (
+              <ul className="cattipu-explorer__items">
+                {entries.map((entry) => (
+                  <li key={entry.id}>
+                    <div
+                      className="cattipu-explorer__item"
+                      data-testid="explorer-item"
+                      data-entry-id={entry.id}
+                      data-entry-kind={entry.kind}
+                      data-selected={selectedId === entry.id ? "true" : undefined}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={entry.label}
+                      onPointerDown={(event) => {
+                        event.stopPropagation();
+                        setSelectedId(entry.id);
+                      }}
+                      onDoubleClick={() => open(entry)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") open(entry);
+                        if (event.key === "F2") setRenamingId(entry.id);
+                      }}
+                      onContextMenu={(event) => openMenu(event, entry)}
+                    >
+                      <span className="cattipu-explorer__item-plate">
+                        <ShellIcon name={iconFor(entry.kind)} size={32} />
                       </span>
-                    )}
 
-                    {entry.location && (
-                      <span
-                        className="cattipu-explorer__item-where"
-                        title={entry.location}
-                      >
-                        {entry.location}
-                      </span>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                      {renamingId === entry.id ? (
+                        <input
+                          className="cattipu-explorer__rename"
+                          defaultValue={entry.label}
+                          autoFocus
+                          onFocus={(event) => event.currentTarget.select()}
+                          onPointerDown={(event) => event.stopPropagation()}
+                          onBlur={(event) => commitRename(entry, event.currentTarget.value)}
+                          onKeyDown={(event) => {
+                            // The row this input sits inside also listens for
+                            // Enter, and opens the item. Without stopping the
+                            // event here, committing a rename immediately
+                            // navigates into the folder you just renamed.
+                            event.stopPropagation();
+                            if (event.key === "Enter") {
+                              commitRename(entry, event.currentTarget.value);
+                            }
+                            if (event.key === "Escape") setRenamingId(null);
+                          }}
+                        />
+                      ) : (
+                        <span
+                          className="cattipu-explorer__item-label"
+                          title={entry.label}
+                        >
+                          {entry.label}
+                        </span>
+                      )}
+
+                      {entry.location && (
+                        <span
+                          className="cattipu-explorer__item-where"
+                          title={entry.location}
+                        >
+                          {entry.location}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
 
       {menu && (
@@ -664,6 +768,81 @@ export function ExplorerApp({ onOpenWindow }: ExplorerAppProps) {
           onClose={() => setMenu(null)}
         />
       )}
+    </div>
+  );
+}
+
+interface FilePaneProps {
+  file: OsObject;
+  /** Workspace-relative, the way the AI names it. */
+  path: string;
+  /** Unsaved text, or undefined when the pane shows what is saved. */
+  draft: string | undefined;
+  onDraftChange: (value: string) => void;
+  onRevert: () => void;
+  onSave: () => void;
+  onClose: () => void;
+}
+
+/** MVP-06 — one file, open for reading and editing. A bar with the path
+ *  and the three actions, the text in an inset well, and a status strip. */
+function FilePane({ file, path, draft, onDraftChange, onRevert, onSave, onClose }: FilePaneProps) {
+  const text = draft ?? file.content ?? "";
+  const dirty = draft !== undefined && draft !== (file.content ?? "");
+  const lines = text ? text.split("\n").length - (text.endsWith("\n") ? 1 : 0) : 0;
+  return (
+    <div className="cattipu-explorer__file" data-testid="explorer-file" data-dirty={dirty ? "true" : undefined}>
+      <div className="cattipu-explorer__file-bar">
+        <ShellIcon name="file" size={16} />
+        <span className="cattipu-explorer__file-path" title={path}>
+          {path}
+        </span>
+        <button
+          type="button"
+          className="cattipu-explorer__file-button cattipu-bevel--raised cattipu-bevel--pressable"
+          disabled={!dirty}
+          onClick={onRevert}
+        >
+          Revert
+        </button>
+        <button
+          type="button"
+          className="cattipu-explorer__file-button cattipu-bevel--raised cattipu-bevel--pressable"
+          data-testid="explorer-file-save"
+          disabled={!dirty}
+          onClick={onSave}
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          className="cattipu-explorer__file-button cattipu-bevel--raised cattipu-bevel--pressable"
+          data-testid="explorer-file-close"
+          onClick={onClose}
+        >
+          Close
+        </button>
+      </div>
+      <textarea
+        className="cattipu-explorer__file-text cattipu-bevel--inset"
+        data-testid="explorer-file-text"
+        aria-label={`Contents of ${path}`}
+        spellCheck={false}
+        wrap="off"
+        maxLength={FILE_LIMITS.maxFileChars}
+        value={text}
+        onChange={(event) => onDraftChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key.toLowerCase() === "s" && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            if (dirty) onSave();
+          }
+        }}
+      />
+      <div className="cattipu-explorer__file-status" data-testid="explorer-file-status">
+        <span>{`${lines} ${lines === 1 ? "LINE" : "LINES"} · ${text.length} CHARS`}</span>
+        <span className="cattipu-explorer__file-state">{dirty ? "UNSAVED" : "SAVED"}</span>
+      </div>
     </div>
   );
 }
