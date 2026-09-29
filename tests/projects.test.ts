@@ -59,7 +59,7 @@ test("a project with every artifact is 100%", () => {
     idea: { prompt: "x" },
     architect: { data: {} },
     canvas: { ...p.canvas, screens: [{}] },
-    forge: { ...p.forge, builds: [{}] },
+    forge: { ...p.forge, builds: [{ status: "success" }] },
     memory: { ...p.memory, records: [{}] },
     launch: { ...p.launch, releases: [{}] },
   } as unknown as CattipuProject;
@@ -82,7 +82,7 @@ test("the milestone list and the percentage cannot drift apart", () => {
       case "idea": return { ...acc, idea: { prompt: "x" } };
       case "architect": return { ...acc, architect: { data: {} } } as unknown as CattipuProject;
       case "canvas": return { ...acc, canvas: { ...acc.canvas, screens: [{}] } } as unknown as CattipuProject;
-      case "forge": return { ...acc, forge: { ...acc.forge, builds: [{}] } } as unknown as CattipuProject;
+      case "forge": return { ...acc, forge: { ...acc.forge, builds: [{ status: "success" }] } } as unknown as CattipuProject;
       case "memory": return { ...acc, memory: { ...acc.memory, records: [{}] } } as unknown as CattipuProject;
       case "launch": return { ...acc, launch: { ...acc.launch, releases: [{}] } } as unknown as CattipuProject;
       default: return acc;
@@ -207,7 +207,7 @@ test("the Projects card carries derived progress, not a stored number", () => {
   const built = {
     ...p,
     idea: { prompt: "x" },
-    forge: { ...p.forge, builds: [{}] },
+    forge: { ...p.forge, builds: [{ status: "success" }] },
   } as unknown as CattipuProject;
   assert.equal(toWindowProject(p).progress, 0);
   assert.equal(toWindowProject(built).progress, 33);

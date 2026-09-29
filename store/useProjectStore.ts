@@ -23,6 +23,8 @@ import type { CreateProjectResult } from "@/lib/contracts/projects";
 import { projectLifecycleService } from "@/lib/services/projects/projectLifecycleService";
 import { canvasService } from "@/lib/services/canvas/canvasService";
 import type { AIMessage } from "@/lib/contracts/ai";
+import type { BuildResult } from "@/lib/contracts/forge";
+import { toForgeBuild, withBuild, withLatestBuildMemory } from "@/lib/services/forge/buildHistory";
 import type {
   MemoryChange,
   MemoryRecordDraft,
@@ -80,6 +82,13 @@ interface ProjectState {
   // built) — this is the contract, not a feature.
   setCanvasArtifacts: (id: string, canvas: CanvasArtifacts) => void;
   addForgeBuild: (id: string, build: ForgeBuild) => void;
+  /**
+   * MVP-07 — files a Forge build result under its project: the build in
+   * `forge.builds` (bounded history) and the project's one `build` memory
+   * record pointed at it. False, and nothing written, when the project does
+   * not exist or the result belongs to another project.
+   */
+  recordForgeBuild: (id: string, result: BuildResult) => boolean;
   appendMemoryRecord: (id: string, record: MemoryRecord) => void;
   addLaunchRelease: (id: string, release: LaunchRelease) => void;
 
@@ -302,6 +311,20 @@ export const useProjectStore = create<ProjectState>()(
             p.id === id ? { ...p, forge: { ...p.forge, builds: [...p.forge.builds, build] }, ...touch() } : p
           ),
         }));
+      },
+
+      recordForgeBuild: (id, result) => {
+        if (result.projectId !== id || !get().projects.some((p) => p.id === id)) return false;
+        const build = toForgeBuild(result);
+        const at = new Date().toISOString();
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id === id
+              ? { ...p, forge: withBuild(p.forge, build), memory: withLatestBuildMemory(p.memory, build, at), ...touch() }
+              : p
+          ),
+        }));
+        return true;
       },
 
       appendMemoryRecord: (id, record) => {

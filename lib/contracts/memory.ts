@@ -24,9 +24,16 @@ import type {
  */
 
 /** What a memory record is about. Deliberately small: the subjects a
- *  person can state about a project today without another app's data. */
-export const MEMORY_RECORD_KINDS = ["context", "architecture", "design", "api", "database"] as const;
+ *  person can state about a project today without another app's data.
+ *  MVP-07 adds `build`: the latest Forge build, written by Forge as a
+ *  reference (`forge-build`), never the build's log. */
+export const MEMORY_RECORD_KINDS = ["context", "architecture", "design", "api", "database", "build"] as const;
 export type MemoryRecordKind = (typeof MEMORY_RECORD_KINDS)[number];
+
+/** The kinds a person writes in the Memory window. `build` is Forge's. */
+export const WRITABLE_MEMORY_RECORD_KINDS = MEMORY_RECORD_KINDS.filter(
+  (kind): kind is Exclude<MemoryRecordKind, "build"> => kind !== "build",
+);
 
 export const MEMORY_RECORD_LABEL: Record<MemoryRecordKind, string> = {
   context: "CONTEXT",
@@ -34,6 +41,7 @@ export const MEMORY_RECORD_LABEL: Record<MemoryRecordKind, string> = {
   design: "DESIGN",
   api: "API",
   database: "DATABASE",
+  build: "BUILD",
 };
 
 export function isMemoryRecordKind(value: unknown): value is MemoryRecordKind {

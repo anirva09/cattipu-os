@@ -88,6 +88,7 @@ function allOpen(): WindowManagerState {
     { type: "launch", id: "settings" },
     { type: "launch", id: "canvas" },
     { type: "launch", id: "ai" },
+    { type: "launch", id: "forge" },
   );
 }
 
@@ -400,9 +401,10 @@ test("restore with nothing to restore changes nothing", () => {
 });
 
 test("tiling gives every visible window a distinct, non-overlapping place", () => {
-  // Six windows: at this box (1600x900) all seven at their minimums cannot
-  // tile and correctly fall back to Cascade (see the tile-that-fits case).
-  const state = reduce(allOpen(), { type: "close", id: "ai" }, {
+  // Six windows: at this box (1600x900) seven or all eight at their
+  // minimums cannot tile and correctly fall back to Cascade (see the
+  // tile-that-fits case).
+  const state = reduce(allOpen(), { type: "close", id: "ai" }, { type: "close", id: "forge" }, {
     type: "arrange",
     layout: "tile",
     bounds: BOX,
@@ -763,11 +765,12 @@ test("a tile that fits is a real tile: inside the workspace, whole pixels, no ov
       }
     }
   }
-  // Tile has not quietly become Cascade. At 1366x768 (1020x644) at most
-  // four windows tile at their minimums, so the 29 combinations of five,
-  // six or seven windows there fall back to Cascade; at 1440x900 and
-  // 1600x900 only all seven together do. Every other case tiles.
-  assert.equal(tiled, COMBINATIONS.length * Object.keys(WORKSPACES).length - 31);
+  // Tile has not quietly become Cascade. With eight windows (MVP-07 added
+  // Forge): at 1366x768 (1020x644) at most four tile at their minimums, so
+  // the 93 combinations of five or more fall back to Cascade; at 1440x900
+  // the 9 of seven or eight do, at 1600x900 8 of them do, and at
+  // 1920x1080 nothing falls back. Every other case tiles.
+  assert.equal(tiled, COMBINATIONS.length * Object.keys(WORKSPACES).length - (93 + 9 + 8));
 });
 
 test("where the equal split already fits, Tile looks exactly as it always did", () => {
@@ -953,7 +956,9 @@ test("1366x768: three cascaded windows step apart instead of hiding Settings", (
 });
 
 test("where the reference size already fits, Cascade is exactly what it was", () => {
-  for (const viewport of ["1440x900", "1600x900", "1920x1080"]) {
+  // With eight windows (MVP-07) the full reference-size run fits only at
+  // 1920x1080; smaller boxes take the fitted cascade, tested below.
+  for (const viewport of ["1920x1080"]) {
     const box = WORKSPACES[viewport];
     const ids = [...CATTIPU_WINDOW_IDS];
     const { rects } = stack(reduce(openOnly(ids), { type: "arrange", layout: "cascade", bounds: box }), ids);

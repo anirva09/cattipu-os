@@ -39,7 +39,9 @@ export const PROJECT_MILESTONES = [
   { key: "idea", label: "Idea captured", has: (p: CattipuProject) => p.idea.prompt.trim().length > 0 },
   { key: "architect", label: "Architecture designed", has: (p: CattipuProject) => p.architect.data !== null },
   { key: "canvas", label: "Interface drawn", has: (p: CattipuProject) => p.canvas.screens.length > 0 },
-  { key: "forge", label: "Built", has: (p: CattipuProject) => p.forge.builds.length > 0 },
+  // MVP-07: "Built" means a build succeeded. A failed build is still a
+  // build (the project is "Building"), but nothing was built by it.
+  { key: "forge", label: "Built", has: (p: CattipuProject) => p.forge.builds.some((b) => b.status === "success") },
   { key: "memory", label: "Indexed", has: (p: CattipuProject) => p.memory.records.length > 0 },
   { key: "launch", label: "Released", has: (p: CattipuProject) => p.launch.releases.length > 0 },
 ] as const;

@@ -5,7 +5,7 @@ import { useMemo, useState, type CSSProperties } from "react";
 import { cattipuCssVariables, cattipuTokens } from "../../design-system/tokens";
 import {
   MEMORY_LIMITS,
-  MEMORY_RECORD_KINDS,
+  WRITABLE_MEMORY_RECORD_KINDS,
   MEMORY_RECORD_LABEL,
   type MemoryFailure,
   type MemoryRecordKind,
@@ -189,7 +189,7 @@ export function MemoryView(props: MemoryViewProps) {
             }}
           >
             <span className="cattipu-memory__kinds" role="group" aria-label="Kind">
-              {MEMORY_RECORD_KINDS.map((kind) => (
+              {WRITABLE_MEMORY_RECORD_KINDS.map((kind) => (
                 <button
                   key={kind}
                   type="button"

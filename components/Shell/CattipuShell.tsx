@@ -9,6 +9,7 @@ import { AIConsole } from "@/components/AIConsole/AIConsole";
 import { DesktopObjectLayer } from "@/components/DesktopObjects";
 import { DesktopWallpaper, useAppliedWallpaper } from "@/components/DesktopWallpaper";
 import { ExplorerApp } from "@/components/Explorer";
+import { ForgeApp } from "@/components/Forge/ForgeApp";
 import { SettingsApp } from "@/components/Window/SettingsApp";
 import { MemoryApp } from "@/components/Memory/MemoryApp";
 import type { CattipuSidebarIcons } from "@/components/Sidebar/Sidebar";
@@ -196,6 +197,9 @@ const WINDOW_CONTENT: NonNullable<
   // AIService only; no provider or credential is reachable from here.
   // MVP-06 — a function so it can raise Explorer on the files it wrote.
   ai: ({ openWindow }) => <AIConsole onOpenWindow={(id) => openWindow(id)} />,
+  // MVP-07 — Forge builds the active project's files through ForgeService
+  // (/api/forge); the window never starts a process itself.
+  forge: <ForgeApp />,
   // Milestone 17 - Explorer is now the OS's real project browser and needs
   // the window manager to open a project, so it arrives as a function.
   // The other three are plain nodes, exactly as before.

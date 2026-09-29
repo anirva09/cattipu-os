@@ -8,6 +8,8 @@ import {
   createEmptyLaunchArtifacts,
   createEmptyMemoryArtifacts,
   type CattipuProject,
+  type ForgeArtifacts,
+  type ForgeBuild,
   type MemoryArtifacts,
   type MemoryRecord,
   type ProjectConversation,
@@ -124,6 +126,51 @@ function migrateMemory(raw: unknown, projectId: string): MemoryArtifacts {
   };
 }
 
+/**
+ * MVP-07 (v7) Forge builds. Nothing wrote a build before v7, so a v6 record
+ * has none; an entry without an id, a known status and a start time is
+ * dropped rather than shown as a build that never happened. Every build is
+ * re-stamped with the project that contains it, and the other v7 fields
+ * are filled from what the entry carries, never invented as a success.
+ */
+function migrateForge(raw: unknown, projectId: string): ForgeArtifacts {
+  const empty = createEmptyForgeArtifacts();
+  if (!isRecord(raw)) return empty;
+  const text = (value: unknown): value is string => typeof value === "string";
+  const builds = (Array.isArray(raw.builds) ? raw.builds.filter(isRecord) : []).flatMap((b): ForgeBuild[] => {
+    if (!text(b.id) || !text(b.startedAt) || (b.status !== "pending" && b.status !== "success" && b.status !== "failed")) {
+      return [];
+    }
+    const artifact = b.status === "success" && isRecord(b.artifact) ? (b.artifact as unknown as ForgeBuild["artifact"]) : null;
+    return [{
+      id: b.id,
+      // A build still "pending" in storage was interrupted: nothing will
+      // ever finish it, so it is recorded as the failure it is.
+      status: b.status === "pending" ? "failed" : b.status,
+      startedAt: b.startedAt,
+      projectId,
+      target: text(b.target) ? b.target : "unknown",
+      configuration: text(b.configuration) ? b.configuration : "production",
+      completedAt: text(b.completedAt) ? b.completedAt : b.startedAt,
+      durationMs: typeof b.durationMs === "number" ? b.durationMs : 0,
+      summary: text(b.summary) ? b.summary : b.status === "pending" ? "Interrupted before it finished." : "",
+      diagnostics: Array.isArray(b.diagnostics) ? (b.diagnostics as ForgeBuild["diagnostics"]) : [],
+      artifact: b.status === "success" ? artifact : null,
+      executed: b.executed === true,
+      sourceFiles: typeof b.sourceFiles === "number" ? b.sourceFiles : 0,
+      ...(text(b.output) ? { output: b.output } : {}),
+    }];
+  });
+  return {
+    ...empty,
+    ...(raw as Partial<ForgeArtifacts>),
+    sourceFiles: Array.isArray(raw.sourceFiles) ? (raw.sourceFiles as ForgeArtifacts["sourceFiles"]) : [],
+    tests: Array.isArray(raw.tests) ? (raw.tests as ForgeArtifacts["tests"]) : [],
+    diagnostics: Array.isArray(raw.diagnostics) ? (raw.diagnostics as ForgeArtifacts["diagnostics"]) : [],
+    builds,
+  };
+}
+
 /** Fills in any artifact slot a not-quite-current record is missing
  * (e.g. a record written by a future version bump this file doesn't
  * know about yet, or a hand-built fixture) — defensive, not a silent
@@ -142,7 +189,7 @@ function backfillMissingArtifacts(project: CattipuProject): CattipuProject {
           layout: Array.isArray(project.canvas.layout) ? project.canvas.layout : [],
         }
       : createEmptyCanvasArtifacts(),
-    forge: project.forge ?? createEmptyForgeArtifacts(),
+    forge: migrateForge(project.forge, project.id),
     memory: migrateMemory(project.memory, project.id),
     launch: project.launch ?? createEmptyLaunchArtifacts(),
     // Milestone 15 fields. A v1 record predates all of them, so every one

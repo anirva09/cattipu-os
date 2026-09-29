@@ -14,6 +14,7 @@ export const CATTIPU_WINDOW_IDS = [
   'architect',
   'canvas',
   'ai',
+  'forge',
   'memory',
   'explorer',
   'settings',
@@ -72,6 +73,8 @@ export const CATTIPU_DEFAULT_WINDOW_SIZE: WindowSize = {
  * - canvas    400×240: the toolbar stays whole; the drawing surface
  *   scrolls in both directions.
  * - ai        400×240: the prompt row stays whole; the session scrolls.
+ * - forge     400×240: the build row and status strip stay whole; the
+ *   result and history scroll (MVP-07).
  * - memory    320×200: the toolbar and status strip stay whole; entries and
  *   editors scroll inside the well (MVP-05).
  * - explorer  420×240: the narrowest width at which one 112px file tile
@@ -86,6 +89,7 @@ export const CATTIPU_WINDOW_MIN_SIZE: Record<CattipuWindowId, WindowSize> = {
   architect: { width: 400, height: 240 },
   canvas: { width: 400, height: 240 },
   ai: { width: 400, height: 240 },
+  forge: { width: 400, height: 240 },
   memory: { width: 320, height: 200 },
   explorer: { width: 420, height: 240 },
   settings: { width: 440, height: 240 },
@@ -150,6 +154,7 @@ const DEFAULT_POSITIONS: Record<CattipuWindowId, WindowPosition> = {
   // Next step of the same 24px cascade the other defaults follow.
   canvas: { x: 272, y: 168 },
   ai: { x: 296, y: 192 },
+  forge: { x: 320, y: 216 },
   memory: { x: 200, y: 96 },
   explorer: { x: 224, y: 120 },
   settings: { x: 248, y: 144 },
@@ -182,6 +187,7 @@ export function createInitialWindowManagerState(): WindowManagerState {
       settings: createWindowState('settings', false, 4),
       canvas: createWindowState('canvas', false, 5),
       ai: createWindowState('ai', false, 6),
+      forge: createWindowState('forge', false, 7),
     },
     activeWindowId: 'projects',
     nextZIndex: 11,

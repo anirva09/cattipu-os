@@ -428,8 +428,13 @@ const NOT_IMPLEMENTED_MESSAGES: Record<
   // relationships, staleness, provider-shared memory) is still to come.
   memory:
     "project memory records, prompts and AI conversations are stored per project (CattipuProject.memory, MVP-05); the M24 Project Memory Core (decisions, relationships, staleness) is not built",
+  // MVP-07 built a real Forge build (/api/forge: one web-application target,
+  // bundled by esbuild on the server; builds recorded in
+  // CattipuProject.forge.builds). The row stays not-implemented: toolchain
+  // readiness is a server-side fact this browser snapshot cannot observe,
+  // and M26's Forge (tests, generation, live build progress) is still to come.
   forge:
-    "no Forge implementation exists; CattipuProject.forge and the WorkspaceGenerator contract (lib/os/extensions.ts) are the prepared seam",
+    "Forge builds the active project's workspace as a web application (/api/forge, MVP-07) and records builds per project; Diagnostics does not observe the build toolchain yet — the Forge window reports it",
   live: "no Live Runtime implementation exists, and no seam has been prepared for it yet",
   launch:
     "no Launch implementation exists; CattipuProject.launch and the DeploymentProvider contract (lib/os/extensions.ts) are the prepared seam",

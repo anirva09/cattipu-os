@@ -399,10 +399,16 @@ test("correcting a template reaches every project that never disagreed", () => {
 
 test("build status is the LAST build, not the first or a stored claim", () => {
   const p = createProject({ name: "Web App", template: "web-app" });
+  // MVP-07 (v7) gave builds their real fields; only id, status and
+  // startedAt matter to this rule.
+  const build = (id: string, status: "success" | "failed" | "pending", startedAt: string) => ({
+    id, status, startedAt, projectId: p.id, target: "web-app", configuration: "production",
+    completedAt: startedAt, durationMs: 0, summary: "", diagnostics: [], artifact: null, executed: true, sourceFiles: 0,
+  });
   p.forge.builds = [
-    { id: "b1", status: "success", startedAt: "2026-09-01T00:00:00.000Z" },
-    { id: "b2", status: "failed", startedAt: "2026-09-03T00:00:00.000Z" },
-    { id: "b3", status: "pending", startedAt: "2026-09-02T00:00:00.000Z" },
+    build("b1", "success", "2026-09-01T00:00:00.000Z"),
+    build("b2", "failed", "2026-09-03T00:00:00.000Z"),
+    build("b3", "pending", "2026-09-02T00:00:00.000Z"),
   ];
   assert.equal(buildStatus(p), "failed", "newest by startedAt, not array order");
 });

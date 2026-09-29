@@ -108,6 +108,12 @@ const SHELL_WINDOWS: readonly ShellWindowDefinition[] = [
     status: 'AI CONSOLE READY',
   },
   {
+    id: 'forge',
+    title: 'Forge',
+    tone: 'system',
+    status: 'FORGE READY',
+  },
+  {
     id: 'memory',
     title: 'Memory',
     tone: 'system',

@@ -179,14 +179,17 @@ export const projectFileService: ProjectFileService = {
     return { ok: true, objects: next, written, fileIds };
   },
 
-  contextFor(objects, workspaceId, projectId): ProjectFilesContext {
+  snapshot(objects, workspaceId) {
     const inside = new Set(descendantIds(objects, workspaceId));
-    const files = objects
+    return objects
       .filter((o) => o.kind === "file" && inside.has(o.id))
       .map((o) => ({ path: projectFileService.pathOf(objects, o.id, workspaceId), content: o.content ?? "" }))
       .filter((f): f is { path: string; content: string } => f.path !== null)
-      .sort((a, b) => a.path.localeCompare(b.path))
-      .slice(0, FILE_LIMITS.maxContextFiles);
+      .sort((a, b) => a.path.localeCompare(b.path));
+  },
+
+  contextFor(objects, workspaceId, projectId): ProjectFilesContext {
+    const files = projectFileService.snapshot(objects, workspaceId).slice(0, FILE_LIMITS.maxContextFiles);
 
     // Paths always travel; content only while it fits the budget, so a
     // large file never crowds every other file's content out of a request

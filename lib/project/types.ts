@@ -1,5 +1,6 @@
 import type { GeneratedArchitecture } from "@/lib/ai/types";
 import type { AIMessage } from "@/lib/contracts/ai";
+import type { BuildArtifact, BuildDiagnostic } from "@/lib/contracts/forge";
 import type { MemoryRecordKind } from "@/lib/contracts/memory";
 import type { ProjectTemplateId } from "@/lib/os/templates";
 
@@ -24,7 +25,7 @@ import type { ProjectTemplateId } from "@/lib/os/templates";
 
 /** Bump this — and add a branch in migrate.ts — whenever CattipuProject's
  * shape changes in a way old persisted projects can't just be read as. */
-export const PROJECT_SCHEMA_VERSION = 6;
+export const PROJECT_SCHEMA_VERSION = 7;
 
 /** Shown as the owner of anything created locally. A single constant so
  *  the Projects list, the details panel and Explorer cannot disagree. */
@@ -186,10 +187,31 @@ export interface ForgeSourceFile {
 
 export type ForgeBuildStatus = "pending" | "success" | "failed";
 
+/**
+ * One Forge build, as the project remembers it. MVP-07 (v7) filled in the
+ * fields a real build produces; before it nothing wrote builds. The raw
+ * output is kept only for failed builds, bounded, so a history of
+ * successes does not fill storage with logs nobody needs.
+ */
 export interface ForgeBuild {
   id: string;
   status: ForgeBuildStatus;
   startedAt: string;
+  /** MVP-07 (v7). Re-stamped on load from the project that contains it. */
+  projectId: string;
+  target: string;
+  configuration: string;
+  completedAt: string;
+  durationMs: number;
+  summary: string;
+  diagnostics: BuildDiagnostic[];
+  /** Null when the build failed: a failed build has no artifact. */
+  artifact: BuildArtifact | null;
+  /** Whether a build process actually ran. */
+  executed: boolean;
+  sourceFiles: number;
+  /** Failed builds only: the bounded, redacted output tail. */
+  output?: string;
 }
 
 export type ForgeTestStatus = "pending" | "passed" | "failed";

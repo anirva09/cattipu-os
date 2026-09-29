@@ -1,0 +1,285 @@
+.cattipu-forge,
+.cattipu-forge *,
+.cattipu-forge *::before,
+.cattipu-forge *::after {
+  box-sizing: border-box;
+}
+
+/* Three rows, the AI Console's build: toolbar, the result well, the
+ * instrumentation strip. `min-height: 0` lets the well scroll instead of
+ * growing the window. */
+.cattipu-forge {
+  display: grid;
+  grid-template-rows: var(--cattipu-forge-toolbar-height) minmax(0, 1fr) var(--cattipu-forge-status-height);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+}
+
+.cattipu-forge--empty {
+  grid-template-rows: 1fr;
+  place-items: center;
+  padding: var(--cattipu-forge-pad);
+}
+
+/* ── toolbar ──────────────────────────────────────────────────────────── */
+
+.cattipu-forge__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--cattipu-forge-gap);
+  min-width: 0;
+  padding: 0 var(--cattipu-forge-pad);
+  border-bottom: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+}
+
+.cattipu-forge__source {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cattipu-forge__configs {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.cattipu-forge__config,
+.cattipu-forge__button {
+  flex: 0 0 auto;
+  height: 24px;
+  padding: 0 var(--cattipu-forge-gap);
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-ui);
+  font-size: var(--cattipu-type-body-size);
+  line-height: var(--cattipu-type-body-line);
+  cursor: default;
+}
+
+.cattipu-forge__config {
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+.cattipu-forge__config:disabled,
+.cattipu-forge__button:disabled {
+  color: var(--cattipu-bevel-bottom);
+}
+
+.cattipu-forge__build {
+  min-width: 72px;
+}
+
+/* ── result well ──────────────────────────────────────────────────────── */
+
+.cattipu-forge__well {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cattipu-forge-pad);
+  min-height: 0;
+  margin: var(--cattipu-forge-gap);
+  padding: var(--cattipu-forge-gap);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  background: var(--cattipu-cream);
+}
+
+.cattipu-forge__notice {
+  max-width: 480px;
+  margin: 0;
+}
+
+/* A block is a labelled section, like a turn in the AI Console: no card,
+ * no fill; the rule under the label is the only line. */
+.cattipu-forge__block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.cattipu-forge__label {
+  margin: 0;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--cattipu-dark-cream);
+  color: var(--cattipu-navy);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+.cattipu-forge__block[data-status="failed"] > .cattipu-forge__label,
+.cattipu-forge__block[role="alert"] > .cattipu-forge__label {
+  color: var(--cattipu-outer-frame);
+  border-bottom-color: var(--cattipu-outer-frame);
+}
+
+.cattipu-forge__text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cattipu-forge__facts {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 2px var(--cattipu-forge-gap);
+  margin: 0;
+}
+
+.cattipu-forge__facts dt {
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-body-line);
+}
+
+.cattipu-forge__facts dd {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cattipu-forge__path,
+.cattipu-forge__presence {
+  color: var(--cattipu-bevel-bottom);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+.cattipu-forge__files,
+.cattipu-forge__diagnostics,
+.cattipu-forge__history {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cattipu-forge__files li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--cattipu-forge-gap);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+}
+
+.cattipu-forge__diagnostics li {
+  display: flex;
+  gap: var(--cattipu-forge-gap);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cattipu-forge__severity {
+  flex: 0 0 48px;
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-body-line);
+}
+
+.cattipu-forge__output summary {
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  cursor: default;
+}
+
+.cattipu-forge__output pre {
+  max-height: 160px;
+  margin: 4px 0 0;
+  padding: 4px;
+  overflow: auto;
+  border: 1px solid var(--cattipu-dark-cream);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* History rows: status word, time, summary — one line each. */
+.cattipu-forge__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cattipu-forge-gap);
+  width: 100%;
+  min-width: 0;
+  padding: 2px 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.cattipu-forge__row:hover {
+  background: var(--cattipu-dark-cream);
+}
+
+.cattipu-forge__row[data-selected="true"] {
+  background: var(--cattipu-dark-cream);
+  border-color: var(--cattipu-outer-frame);
+}
+
+.cattipu-forge__row-status {
+  flex: 0 0 32px;
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+}
+
+.cattipu-forge__row[data-status="success"] .cattipu-forge__row-status {
+  color: var(--cattipu-navy);
+}
+
+.cattipu-forge__row-time {
+  flex: 0 0 auto;
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+}
+
+.cattipu-forge__row-summary {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ── instrumentation strip ────────────────────────────────────────────── */
+
+.cattipu-forge__status {
+  display: flex;
+  align-items: center;
+  gap: var(--cattipu-forge-pad);
+  min-width: 0;
+  padding: 0 var(--cattipu-forge-pad);
+  border-top: var(--cattipu-border-size) solid var(--cattipu-outer-frame);
+  font-family: var(--cattipu-font-compact);
+  font-size: var(--cattipu-type-status-size);
+  line-height: var(--cattipu-type-status-line);
+  white-space: nowrap;
+}
+
+.cattipu-forge__status-state {
+  margin-left: auto;
+}

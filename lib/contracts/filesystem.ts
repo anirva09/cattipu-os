@@ -130,6 +130,10 @@ export interface ProjectFileService {
     writes: readonly FileWrite[],
     source: FileRecordSource,
   ): ApplyFileWritesResult;
+  /** MVP-07. Every file in the workspace with its full text, sorted by
+   *  path — what a Forge build carries. Unbounded here; Forge enforces its
+   *  own limits. */
+  snapshot(objects: readonly OsObject[], workspaceId: string): FileWrite[];
   /** The workspace's files, sorted by path, bounded for one AI request. */
   contextFor(objects: readonly OsObject[], workspaceId: string, projectId: string): ProjectFilesContext;
 }
