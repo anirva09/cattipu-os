@@ -30,6 +30,8 @@ import { PROJECT_TEMPLATES, planSections } from "@/lib/os/templates";
 import { isProjectLinked } from "@/lib/os/filesystem";
 import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { useProjectStore } from "@/store/useProjectStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { DESKTOP_WIDGETS } from "@/lib/os/widgets";
 
 import "./DesktopObjectLayer.css";
 
@@ -120,6 +122,11 @@ export function DesktopObjectLayer({
   const moveTo = useFilesystemStore((s) => s.moveTo);
 
   const projects = useProjectStore((s) => s.projects);
+  // MVP-09. The Widgets list reads and writes the same settings the widget
+  // column's own keys do; there is one record of what is closed.
+  const hiddenWidgets = useSettingsStore((s) => s.hiddenWidgets);
+  const setWidgetHidden = useSettingsStore((s) => s.setWidgetHidden);
+  const showAllWidgets = useSettingsStore((s) => s.showAllWidgets);
   const openProject = useProjectStore((s) => s.openProject);
   const renameProject = useProjectStore((s) => s.renameProject);
   const addProjectFromTemplate = useProjectStore((s) => s.addProjectFromTemplate);
@@ -361,8 +368,34 @@ export function DesktopObjectLayer({
         // so raising Settings is the whole command — no second picker here.
         onSelect: () => onOpenWindow("settings"),
       },
+      {
+        // MVP-09. Every widget, ON or OFF; choosing one flips it. The
+        // column's ADD WIDGET key offers only the closed ones.
+        id: "widgets",
+        ...MENU_COMMANDS.widgets,
+        children: [
+          ...DESKTOP_WIDGETS.map(({ id, label }): ContextMenuItem => {
+            const hidden = hiddenWidgets.includes(id);
+            return {
+              id: `widget-${id}`,
+              label,
+              hint: hidden ? "OFF" : "ON",
+              onSelect: () => setWidgetHidden(id, !hidden),
+            };
+          }),
+          { kind: "separator", id: "widgets-sep" },
+          {
+            id: "widgets-show-all",
+            ...MENU_COMMANDS.showAllWidgets,
+            onSelect: showAllWidgets,
+          },
+        ],
+      },
     ];
   }, [
+    hiddenWidgets,
+    setWidgetHidden,
+    showAllWidgets,
     addProjectFromTemplate,
     createProjectWorkspace,
     createFolder,

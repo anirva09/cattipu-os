@@ -83,6 +83,21 @@
   color: var(--cattipu-outer-frame);
 }
 
+/* MVP-09 — the keys are real buttons now. The plate is unchanged; only
+ * the browser's own button styling is taken off it. A key with nothing to
+ * do (no handler) is engraved, the way disabled menu rows are. */
+button.cattipu-right-widget-stack__control {
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  font: inherit;
+  cursor: default;
+}
+
+button.cattipu-right-widget-stack__control:disabled {
+  color: var(--cattipu-bevel-bottom);
+}
+
 .cattipu-right-widget-stack__control-glyph {
   position: relative;
   display: block;
@@ -338,4 +353,34 @@
 .cattipu-right-widget-stack__tool:disabled .cattipu-right-widget-stack__tool-label {
   color: var(--cattipu-bevel-bottom);
   text-shadow: 1px 1px 0 var(--cattipu-bevel-top);
+}
+
+/* MVP-09 — a minimized widget is its header plate alone: the frozen plate
+ * height inside the widget's own outer frame. The plate's bottom rule
+ * would double the frame's, so it goes while folded. */
+.cattipu-right-widget-stack__widget[data-collapsed='true'] {
+  flex-basis: calc(var(--cattipu-widget-header-height) + 2 * var(--cattipu-border-size));
+  height: calc(var(--cattipu-widget-header-height) + 2 * var(--cattipu-border-size));
+}
+
+.cattipu-right-widget-stack__widget[data-collapsed='true'] .cattipu-right-widget-stack__header {
+  border-bottom: 0;
+}
+
+/* MVP-09 — ADD WIDGET: the VIEW ALL key's plate, the full column width,
+ * at the foot of the stack. It only exists while something is closed. */
+.cattipu-right-widget-stack__add {
+  flex: 0 0 var(--cattipu-widget-view-all-height);
+  width: 100%;
+  height: var(--cattipu-widget-view-all-height);
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  background: var(--cattipu-cream);
+  color: var(--cattipu-outer-frame);
+  font-family: inherit;
+  font-size: var(--cattipu-type-body-size);
+  font-weight: var(--cattipu-type-weight);
+  line-height: var(--cattipu-type-body-line);
+  cursor: default;
 }

@@ -8,6 +8,7 @@ import {
   resolveWallpaperId,
   type WallpaperId,
 } from "@/lib/os/wallpapers";
+import { DESKTOP_WIDGET_IDS, sanitizeWidgetIds, type DesktopWidgetId } from "@/lib/os/widgets";
 
 export type DockMode = "hover" | "always";
 export type DockIconSize = "sm" | "md" | "lg";
@@ -20,12 +21,24 @@ interface SettingsState {
   cursorEnabled: boolean;
   soundEnabled: boolean;
   soundVolume: number; // 0..1
+  /** MVP-09. Desktop widgets the person closed, in stack order. */
+  hiddenWidgets: DesktopWidgetId[];
+  /** MVP-09. Desktop widgets folded to their header, in stack order. */
+  collapsedWidgets: DesktopWidgetId[];
   setWallpaper: (v: WallpaperId) => void;
   setDockMode: (v: DockMode) => void;
   setDockIconSize: (v: DockIconSize) => void;
   setCursorEnabled: (v: boolean) => void;
   setSoundEnabled: (v: boolean) => void;
   setSoundVolume: (v: number) => void;
+  setWidgetHidden: (id: DesktopWidgetId, hidden: boolean) => void;
+  setWidgetCollapsed: (id: DesktopWidgetId, collapsed: boolean) => void;
+  showAllWidgets: () => void;
+}
+
+/** A widget list with `id` in or out, kept in stack order. */
+function toggled(list: readonly DesktopWidgetId[], id: DesktopWidgetId, on: boolean): DesktopWidgetId[] {
+  return DESKTOP_WIDGET_IDS.filter((w) => (w === id ? on : list.includes(w)));
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -37,6 +50,8 @@ export const useSettingsStore = create<SettingsState>()(
       cursorEnabled: true,
       soundEnabled: true,
       soundVolume: 0.5,
+      hiddenWidgets: [],
+      collapsedWidgets: [],
 
       setWallpaper: (wallpaper) => set({ wallpaper }),
       setDockMode: (dockMode) => set({ dockMode }),
@@ -44,6 +59,10 @@ export const useSettingsStore = create<SettingsState>()(
       setCursorEnabled: (cursorEnabled) => set({ cursorEnabled }),
       setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
       setSoundVolume: (soundVolume) => set({ soundVolume }),
+      setWidgetHidden: (id, hidden) => set((s) => ({ hiddenWidgets: toggled(s.hiddenWidgets, id, hidden) })),
+      setWidgetCollapsed: (id, collapsed) => set((s) => ({ collapsedWidgets: toggled(s.collapsedWidgets, id, collapsed) })),
+      // Everything back, as it first shipped: shown and unfolded.
+      showAllWidgets: () => set({ hiddenWidgets: [], collapsedWidgets: [] }),
     }),
     {
       name: "cattipu-settings",
@@ -59,9 +78,18 @@ export const useSettingsStore = create<SettingsState>()(
       // A current-version record can still carry an id this build does not
       // know (hand-edited storage, a rolled-back release). Resolve it on
       // load so the store itself never holds an unrenderable wallpaper.
+      // MVP-09: the widget lists are optional additions to the same record
+      // (absent before MVP-09 = nothing closed), cleaned the same way, so no
+      // version bump is needed.
       merge: (persisted, current) => {
         const state = (persisted ?? {}) as Partial<SettingsState>;
-        return { ...current, ...state, wallpaper: resolveWallpaperId(state.wallpaper) };
+        return {
+          ...current,
+          ...state,
+          wallpaper: resolveWallpaperId(state.wallpaper),
+          hiddenWidgets: sanitizeWidgetIds(state.hiddenWidgets),
+          collapsedWidgets: sanitizeWidgetIds(state.collapsedWidgets),
+        };
       },
     }
   )

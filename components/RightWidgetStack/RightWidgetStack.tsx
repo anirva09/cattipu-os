@@ -1,8 +1,9 @@
-import type {
-  ButtonHTMLAttributes,
-  CSSProperties,
-  HTMLAttributes,
-  ReactNode,
+import {
+  useState,
+  type ButtonHTMLAttributes,
+  type CSSProperties,
+  type HTMLAttributes,
+  type ReactNode,
 } from 'react';
 
 import {
@@ -14,6 +15,9 @@ import '../../design-system/bevel.css';
 import './RightWidgetStack.css';
 
 import { PixelIcon } from '../PixelIcon/PixelIcon';
+import { ContextMenu, type ContextMenuItem } from '../ContextMenu';
+import { MENU_COMMANDS } from '../ContextMenu/menuCommands';
+import { DESKTOP_WIDGETS, type DesktopWidgetId } from '../../lib/os/widgets';
 
 
 
@@ -62,6 +66,22 @@ export interface RightWidgetStackProps
   statuses?: readonly SystemStatusRow[];
   onViewAll?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
   onToolSelect?: (tool: CattipuToolboxTool) => void;
+  /**
+   * MVP-09. Widgets the person closed; they are not drawn, and the ADD
+   * WIDGET key at the foot of the column brings them back. Owned by
+   * useSettingsStore; this component only draws what it is given.
+   */
+  hiddenWidgets?: readonly DesktopWidgetId[];
+  /** MVP-09. Widgets folded down to their header plate. */
+  collapsedWidgets?: readonly DesktopWidgetId[];
+  /**
+   * MVP-09. What the header keys do. Without these the keys are drawn
+   * disabled: a key that presses in and does nothing would be a promise
+   * the shell cannot keep.
+   */
+  onWidgetHidden?: (id: DesktopWidgetId, hidden: boolean) => void;
+  onWidgetCollapsed?: (id: DesktopWidgetId, collapsed: boolean) => void;
+  onShowAllWidgets?: () => void;
 }
 
 type WidgetTone = 'welcome' | 'status' | 'architect' | 'projects';
@@ -70,7 +90,10 @@ interface WidgetShellProps {
   title: string;
   tone: WidgetTone;
   height: number;
-  controls?: readonly ('minimize' | 'maximize' | 'close')[];
+  label: string;
+  collapsed: boolean;
+  onCollapse?: (collapsed: boolean) => void;
+  onClose?: () => void;
   children: ReactNode;
   className?: string;
 }
@@ -105,6 +128,23 @@ const TOOLBOX_TOOLS: readonly {
   { id: 'config', label: 'Config' },
 ];
 
+/** Each widget's header tone and frozen height, keyed by its registry id. */
+const WIDGET_TONE: Record<DesktopWidgetId, WidgetTone> = {
+  welcome: 'welcome',
+  recent: 'status',
+  architect: 'architect',
+  system: 'projects',
+  toolbox: 'architect',
+};
+
+const WIDGET_HEIGHT: Record<DesktopWidgetId, number> = {
+  welcome: CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.welcomeHeight,
+  recent: CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.recentHeight,
+  architect: CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.architectHeight,
+  system: CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.systemHeight,
+  toolbox: CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.toolboxHeight,
+};
+
 function WindowControlGlyph({
   kind,
 }: {
@@ -118,11 +158,23 @@ function WindowControlGlyph({
   );
 }
 
+const CONTROL = 'cattipu-right-widget-stack__control cattipu-bevel--raised cattipu-bevel--pressable cattipu-focus--mechanical';
+
+/**
+ * One widget: a toned header plate and an inset body. MVP-09 made the
+ * header keys real, in the window grammar: [_] folds the widget to its
+ * plate, [□] unfolds it again, [X] closes it. There is no maximize: a
+ * widget has nowhere larger to go, so the key it used to draw did nothing
+ * and is gone.
+ */
 function WidgetShell({
   title,
   tone,
   height,
-  controls = ['minimize', 'close'],
+  label,
+  collapsed,
+  onCollapse,
+  onClose,
   children,
   className,
 }: WidgetShellProps) {
@@ -136,6 +188,9 @@ function WidgetShell({
       style={{
         '--cattipu-widget-height': `${height}px`,
       } as CSSProperties}
+      aria-label={label}
+      data-widget={label}
+      data-collapsed={collapsed ? 'true' : undefined}
     >
       <header
         className="cattipu-right-widget-stack__header"
@@ -145,21 +200,38 @@ function WidgetShell({
           {title}
         </span>
 
-        <span className="cattipu-right-widget-stack__controls" aria-hidden="true">
-          {controls.map((control) => (
-            <span
-              key={control}
-              className="cattipu-right-widget-stack__control cattipu-bevel--raised"
-            >
-              <WindowControlGlyph kind={control} />
-            </span>
-          ))}
+        <span className="cattipu-right-widget-stack__controls">
+          <button
+            type="button"
+            className={CONTROL}
+            data-control={collapsed ? 'restore' : 'minimize'}
+            aria-label={`${collapsed ? 'Restore' : 'Minimize'} ${label}`}
+            aria-expanded={!collapsed}
+            title={collapsed ? 'Restore' : 'Minimize'}
+            disabled={!onCollapse}
+            onClick={onCollapse ? () => onCollapse(!collapsed) : undefined}
+          >
+            <WindowControlGlyph kind={collapsed ? 'maximize' : 'minimize'} />
+          </button>
+          <button
+            type="button"
+            className={CONTROL}
+            data-control="close"
+            aria-label={`Close ${label}`}
+            title="Close"
+            disabled={!onClose}
+            onClick={onClose}
+          >
+            <WindowControlGlyph kind="close" />
+          </button>
         </span>
       </header>
 
-      <div className="cattipu-right-widget-stack__body cattipu-bevel--inset">
-        {children}
-      </div>
+      {!collapsed && (
+        <div className="cattipu-right-widget-stack__body cattipu-bevel--inset">
+          {children}
+        </div>
+      )}
     </section>
   );
 }
@@ -218,10 +290,16 @@ export function RightWidgetStack({
   statuses = DEFAULT_STATUSES,
   onViewAll,
   onToolSelect,
+  hiddenWidgets = [],
+  collapsedWidgets = [],
+  onWidgetHidden,
+  onWidgetCollapsed,
+  onShowAllWidgets,
   className,
   style,
   ...asideProps
 }: RightWidgetStackProps) {
+  const [addMenu, setAddMenu] = useState<{ x: number; y: number } | null>(null);
   const stackStyle: RightWidgetStackStyle = {
     ...cattipuCssVariables,
     '--cattipu-right-stack-width': `${CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.width}px`,
@@ -242,6 +320,87 @@ export function RightWidgetStack({
     ...style,
   };
 
+  // What each widget holds. The chrome around it is WidgetShell's.
+  const content: Record<DesktopWidgetId, ReactNode> = {
+    welcome: (
+      <div className="cattipu-right-widget-stack__welcome-copy">
+        <strong>Welcome back, {creatorName}.</strong>
+        <strong>What will we build today?</strong>
+      </div>
+    ),
+    recent: (
+      <div className="cattipu-right-widget-stack__recent">
+        <ul className="cattipu-right-widget-stack__recent-list">
+          {/* Every project it is given. The panel keeps its fixed height
+              and the list scrolls inside it, so a long history never
+              pushes the widgets below it down the desktop. */}
+          {recentProjects.map((project) => (
+            <li key={project}>{project}</li>
+          ))}
+        </ul>
+
+        <button
+          type="button"
+          className="cattipu-right-widget-stack__view-all cattipu-bevel--raised cattipu-bevel--pressable cattipu-focus--mechanical"
+          onClick={onViewAll}
+        >
+          VIEW ALL
+        </button>
+      </div>
+    ),
+    architect: (
+      <div className="cattipu-right-widget-stack__architect">
+        <ArchitectPreviewDiagram />
+      </div>
+    ),
+    system: (
+      <dl className="cattipu-right-widget-stack__status">
+        {statuses.slice(0, 7).map(({ label, value }) => (
+          <div
+            className="cattipu-right-widget-stack__status-row"
+            key={label}
+          >
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    ),
+    toolbox: (
+      <div className="cattipu-right-widget-stack__toolbox">
+        {/* A tool is only pressable when something will receive it. No
+         * tool has a canonical destination yet (BOUNDARY_AUDIT.md §2.9),
+         * so the live shell passes no handler, and a plate that pressed
+         * in and did nothing would be a promise the OS cannot keep. They
+         * stay on the shelf, disabled and engraved, the way the context
+         * menu shows Paste: the machine has the concept; it is planned. */}
+        {TOOLBOX_TOOLS.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            className="cattipu-right-widget-stack__tool cattipu-focus--mechanical"
+            disabled={!onToolSelect}
+            data-availability={onToolSelect ? 'available' : 'planned'}
+            title={onToolSelect ? label : `${label} — planned`}
+            onClick={onToolSelect ? () => onToolSelect(id) : undefined}
+          >
+            <span
+              className={[
+                'cattipu-right-widget-stack__tool-icon cattipu-bevel--raised',
+                onToolSelect && 'cattipu-bevel--pressable',
+              ].filter(Boolean).join(' ')}
+            >
+              <PixelIcon name={id} size={32} />
+            </span>
+            <span className="cattipu-right-widget-stack__tool-label">
+              {label}
+            </span>
+          </button>
+        ))}
+      </div>
+    ),
+  };
+
   return (
     <aside
       {...asideProps}
@@ -252,109 +411,59 @@ export function RightWidgetStack({
       style={stackStyle}
       aria-label="Desktop widgets"
     >
-      <WidgetShell
-        title="WELCOME"
-        tone="welcome"
-        height={CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.welcomeHeight}
-        controls={['minimize', 'maximize', 'close']}
-      >
-        <div className="cattipu-right-widget-stack__welcome-copy">
-          <strong>Welcome back, {creatorName}.</strong>
-          <strong>What will we build today?</strong>
-        </div>
-      </WidgetShell>
+      {DESKTOP_WIDGETS.filter(({ id }) => !hiddenWidgets.includes(id)).map(({ id, title, label }) => (
+        <WidgetShell
+          key={id}
+          title={title}
+          tone={WIDGET_TONE[id]}
+          height={WIDGET_HEIGHT[id]}
+          label={label}
+          collapsed={collapsedWidgets.includes(id)}
+          onCollapse={onWidgetCollapsed ? (collapsed) => onWidgetCollapsed(id, collapsed) : undefined}
+          onClose={onWidgetHidden ? () => onWidgetHidden(id, true) : undefined}
+        >
+          {content[id]}
+        </WidgetShell>
+      ))}
 
-      <WidgetShell
-        title="RECENT PROJECTS"
-        tone="status"
-        height={CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.recentHeight}
-      >
-        <div className="cattipu-right-widget-stack__recent">
-          <ul className="cattipu-right-widget-stack__recent-list">
-            {/* Every project it is given. The panel keeps its fixed height
-                and the list scrolls inside it, so a long history never
-                pushes the widgets below it down the desktop. */}
-            {recentProjects.map((project) => (
-              <li key={project}>{project}</li>
-            ))}
-          </ul>
+      {/* MVP-09. Closed widgets come back from here (and from the desktop
+          menu's Widgets list), through the shell's one menu component. */}
+      {hiddenWidgets.length > 0 && onWidgetHidden && (
+        <button
+          type="button"
+          className="cattipu-right-widget-stack__add cattipu-bevel--raised cattipu-bevel--pressable cattipu-focus--mechanical"
+          aria-haspopup="menu"
+          aria-expanded={addMenu !== null}
+          onClick={(event) => {
+            const box = event.currentTarget.getBoundingClientRect();
+            setAddMenu({ x: box.left, y: box.bottom });
+          }}
+        >
+          ADD WIDGET
+        </button>
+      )}
 
-          <button
-            type="button"
-            className="cattipu-right-widget-stack__view-all cattipu-bevel--raised cattipu-bevel--pressable cattipu-focus--mechanical"
-            onClick={onViewAll}
-          >
-            VIEW ALL
-          </button>
-        </div>
-      </WidgetShell>
-
-      <WidgetShell
-        title="ARCHITECT PREVIEW"
-        tone="architect"
-        height={CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.architectHeight}
-      >
-        <div className="cattipu-right-widget-stack__architect">
-          <ArchitectPreviewDiagram />
-        </div>
-      </WidgetShell>
-
-      <WidgetShell
-        title="SYSTEM STATUS"
-        tone="projects"
-        height={CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.systemHeight}
-      >
-        <dl className="cattipu-right-widget-stack__status">
-          {statuses.slice(0, 7).map(({ label, value }) => (
-            <div
-              className="cattipu-right-widget-stack__status-row"
-              key={label}
-            >
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </div>
-          ))}
-        </dl>
-      </WidgetShell>
-
-      <WidgetShell
-        title="TOOLBOX"
-        tone="architect"
-        height={CATTIPU_RIGHT_WIDGET_STACK_REFERENCE.toolboxHeight}
-        controls={['minimize', 'maximize', 'close']}
-      >
-        <div className="cattipu-right-widget-stack__toolbox">
-          {/* A tool is only pressable when something will receive it. No
-           * tool has a canonical destination yet (BOUNDARY_AUDIT.md §2.9),
-           * so the live shell passes no handler, and a plate that pressed
-           * in and did nothing would be a promise the OS cannot keep. They
-           * stay on the shelf, disabled and engraved, the way the context
-           * menu shows Paste: the machine has the concept; it is planned. */}
-          {TOOLBOX_TOOLS.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              className="cattipu-right-widget-stack__tool cattipu-focus--mechanical"
-              disabled={!onToolSelect}
-              data-availability={onToolSelect ? 'available' : 'planned'}
-              title={onToolSelect ? label : `${label} — planned`}
-              onClick={onToolSelect ? () => onToolSelect(id) : undefined}
-            >
-              <span
-                className={[
-                  'cattipu-right-widget-stack__tool-icon cattipu-bevel--raised',
-                  onToolSelect && 'cattipu-bevel--pressable',
-                ].filter(Boolean).join(' ')}
-              >
-                <PixelIcon name={id} size={32} />
-              </span>
-              <span className="cattipu-right-widget-stack__tool-label">
-                {label}
-              </span>
-            </button>
-          ))}
-        </div>
-      </WidgetShell>
+      {addMenu && onWidgetHidden && (
+        <ContextMenu
+          x={addMenu.x}
+          y={addMenu.y}
+          title="Widgets"
+          items={[
+            ...hiddenWidgets.map((id): ContextMenuItem => ({
+              id: `show-${id}`,
+              label: DESKTOP_WIDGETS.find((w) => w.id === id)?.label ?? id,
+              onSelect: () => onWidgetHidden(id, false),
+            })),
+            ...(onShowAllWidgets
+              ? [
+                  { kind: 'separator', id: 'widgets-sep' } as const,
+                  { id: 'show-all', ...MENU_COMMANDS.showAllWidgets, onSelect: onShowAllWidgets },
+                ]
+              : []),
+          ]}
+          onClose={() => setAddMenu(null)}
+        />
+      )}
     </aside>
   );
 }

@@ -27,6 +27,7 @@ import {
   RightWidgetStack,
   type SystemStatusRow,
 } from '../RightWidgetStack/RightWidgetStack';
+import type { DesktopWidgetId } from '../../lib/os/widgets';
 import {
   CATTIPU_SIDEBAR_ITEMS,
   Sidebar,
@@ -251,6 +252,28 @@ export interface InteractiveDesktopProps {
     onToggle: () => void;
     panel: ReactNode;
   };
+  /**
+   * MVP-09. The desktop's surface: painted behind the window layer AND the
+   * widget column, from the sidebar's edge to the right edge of the screen,
+   * between the top bar and the status bar. It starts at the window layer's
+   * own origin, so a tile lands on exactly the pixels it did when only the
+   * window layer carried it; it simply continues under the widgets, which
+   * now float on it. Omitted, the surface is Engineering Paper, as signed
+   * off.
+   */
+  desktopSurface?: ReactNode;
+  /**
+   * MVP-09. The widget column's state and what its keys do. The shell owns
+   * both (useSettingsStore); omitted, the column draws every widget with
+   * its keys disabled.
+   */
+  widgets?: {
+    hidden: readonly DesktopWidgetId[];
+    collapsed: readonly DesktopWidgetId[];
+    onHidden: (id: DesktopWidgetId, hidden: boolean) => void;
+    onCollapsed: (id: DesktopWidgetId, collapsed: boolean) => void;
+    onShowAll: () => void;
+  };
   desktopLayer?: (controls: {
     openWindow: (id: CattipuWindowId) => void;
     /**
@@ -322,6 +345,8 @@ export function InteractiveDesktop({
   renderProjectsWindow,
   notificationCenter,
   desktopLayer,
+  desktopSurface,
+  widgets,
 }: InteractiveDesktopProps) {
   const {
     state,
@@ -483,6 +508,10 @@ export function InteractiveDesktop({
         onNotifications={notificationCenter?.onToggle}
       />
 
+      <div className="cattipu-interactive-desktop__surface" aria-hidden="true">
+        {desktopSurface}
+      </div>
+
       <div
         ref={windowLayerRef}
         className="cattipu-interactive-desktop__window-layer"
@@ -579,6 +608,11 @@ export function InteractiveDesktop({
         recentProjects={recentProjects}
         statuses={statuses}
         onViewAll={() => launchWindow('projects')}
+        hiddenWidgets={widgets?.hidden}
+        collapsedWidgets={widgets?.collapsed}
+        onWidgetHidden={widgets?.onHidden}
+        onWidgetCollapsed={widgets?.onCollapsed}
+        onShowAllWidgets={widgets?.onShowAll}
       />
 
       <BottomStatusBar

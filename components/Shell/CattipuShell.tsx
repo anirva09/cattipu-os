@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 
 import { InteractiveDesktop } from "@/components/InteractiveDesktop";
 import { ArchitectApp } from "@/components/Architect/ArchitectApp";
@@ -33,6 +33,7 @@ import { unreadCount, useNotificationStore } from "@/store/useNotificationStore"
 import { useProjectStore } from "@/store/useProjectStore";
 import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import type { DesktopWidgetId } from "@/lib/os/widgets";
 import {
   documentTitle,
   orderProjects,
@@ -173,6 +174,37 @@ function useDateTimeText(): string {
 
   return text;
 }
+
+/**
+ * MVP-09 — the widget column's state, from Settings.
+ *
+ * Which widgets are closed or folded is saved in the browser, which the
+ * server render cannot see. Like useAppliedWallpaper, the server render and
+ * the hydration pass both draw every widget open, and the saved layout
+ * takes over on the first client render after hydration — no mismatch, no
+ * setState-in-effect round trip.
+ */
+function useDesktopWidgets() {
+  const hidden = useSettingsStore((s) => s.hiddenWidgets);
+  const collapsed = useSettingsStore((s) => s.collapsedWidgets);
+  const onHidden = useSettingsStore((s) => s.setWidgetHidden);
+  const onCollapsed = useSettingsStore((s) => s.setWidgetCollapsed);
+  const onShowAll = useSettingsStore((s) => s.showAllWidgets);
+  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
+  return useMemo(
+    () => ({
+      hidden: hydrated ? hidden : NO_WIDGETS,
+      collapsed: hydrated ? collapsed : NO_WIDGETS,
+      onHidden,
+      onCollapsed,
+      onShowAll,
+    }),
+    [hydrated, hidden, collapsed, onHidden, onCollapsed, onShowAll],
+  );
+}
+
+const NO_WIDGETS: readonly DesktopWidgetId[] = [];
+const subscribeNever = () => () => {};
 
 /**
  * The existing apps, re-hosted inside the package's window chrome.
@@ -424,6 +456,7 @@ export function CattipuShell() {
   // else in the shell reads it, so a dark wallpaper never recolours chrome.
   const wallpaper = useAppliedWallpaper();
   const notificationCenter = useNotificationCenter();
+  const widgets = useDesktopWidgets();
 
   const sidebarIcons = useMemo<CattipuSidebarIcons>(() => {
     const entries = CATTIPU_SIDEBAR_ITEMS.map(({ id, label }) => [
@@ -453,6 +486,11 @@ export function CattipuShell() {
       windowContent={WINDOW_CONTENT}
       renderProjectsWindow={(controls) => <LiveProjectsWindow {...controls} />}
       notificationCenter={notificationCenter}
+      // MVP-09. The wallpaper paints the whole desktop surface, under the
+      // widget column too, so the widgets float on it. Window insides are
+      // untouched.
+      desktopSurface={<DesktopWallpaper wallpaper={wallpaper} />}
+      widgets={widgets}
       // Milestone 16. The layer owns desktop objects; the desktop owns the
       // window manager, so opening a shortcut's project comes back through
       // this callback rather than through a second copy of window state.
@@ -463,7 +501,6 @@ export function CattipuShell() {
         visibleWindowCount,
       }) => (
         <>
-          <DesktopWallpaper wallpaper={wallpaper} />
           <DesktopObjectLayer
             onOpenWindow={openWindow}
             onArrangeWindows={arrangeWindows}

@@ -40,6 +40,8 @@ export const MENU_COMMANDS = {
   tile: { label: "Tile" },
   restoreAll: { label: "Restore All", hint: "SIZE + PLACE + ORDER" },
   changeWallpaper: { label: "Change Wallpaper", icon: "wallpaper" },
+  widgets: { label: "Widgets" },
+  showAllWidgets: { label: "Show All Widgets" },
 } as const satisfies Record<string, MenuCommandPresentation>;
 
 export type MenuCommandId = keyof typeof MENU_COMMANDS;

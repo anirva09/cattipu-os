@@ -123,6 +123,31 @@
   width: auto;
 }
 
+/* MVP-09 — the desktop surface. The wallpaper used to stop at the window
+ * layer's right edge, leaving a cream strip behind the widget column. It is
+ * now its own layer spanning to the right edge of the screen, beneath the
+ * window layer (z 100) and the widgets (z 8600), so the widgets float on
+ * the wallpaper. Its left/top edge is the window layer's, so the tile's
+ * origin - and every pixel of the Golden Master render inside the window
+ * layer - is unchanged. Engineering Paper is the fallback when the shell
+ * passes no surface. */
+.cattipu-interactive-desktop__surface {
+  position: absolute;
+  left: var(--cattipu-desktop-sidebar-width);
+  top: var(--cattipu-desktop-topbar-height);
+  right: 0;
+  bottom: var(--cattipu-desktop-bottom-height);
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background-color: var(--cattipu-cream);
+  background-image: url("/assets/cattipu/engineering-paper-8px.png");
+  background-repeat: repeat;
+  background-size: 8px 8px;
+}
+
+/* The window layer keeps its box - and with it every window bound, snap
+ * region and tile - but no longer paints: the surface beneath it does. */
 .cattipu-interactive-desktop__window-layer {
   position: absolute;
   left: var(--cattipu-desktop-sidebar-width);
@@ -131,10 +156,7 @@
   bottom: var(--cattipu-desktop-bottom-height);
   z-index: 100;
   overflow: hidden;
-  background-color: var(--cattipu-cream);
-  background-image: url("/assets/cattipu/engineering-paper-8px.png");
-  background-repeat: repeat;
-  background-size: 8px 8px;
+  background: transparent;
 }
 
 .cattipu-interactive-desktop__right-widgets {
