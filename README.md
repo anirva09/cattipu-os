@@ -1,83 +1,90 @@
+<div align="center">
+
+<img src="public/logo/icon-color.png" alt="CATTIPU" width="120">
+
 # CATTIPU OS
 
-**The operating system for software creators.** v0.9 — Living Desktop.
+**The operating system for software creators.**
 
-Not a website with a desktop theme. A browser-based OS shell: a pixel boot
-sequence resolving into an engineering-paper desktop with real objects you
-can drag, a window manager that snaps and tiles and restores exactly, a
-file explorer and a desktop that are two views of one filesystem, and
-project templates that declare what is being built without pretending any
-of it exists yet.
+Plan it. Build it. Run it. All in one 1998-style engineering workstation,
+with AI working for your project instead of owning it.
 
-![The CATTIPU OS desktop at 1600×900](docs/release/Desktop_1600.png)
+![Status](https://img.shields.io/badge/status-MVP-C6971F?style=flat-square)
+![Runs](https://img.shields.io/badge/runs-locally-002A73?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-489%20passing-0E7A3C?style=flat-square)
+![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat-square)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-A40000?style=flat-square)
+
+<img src="docs/media/cattipu-ad.gif" alt="CATTIPU OS: a 90s-style spot" width="640">
+
+*The spot, built with Motion from real CATTIPU screens.
+[Watch it in full quality (MP4)](docs/media/cattipu-ad.mp4).*
+
+</div>
 
 ---
 
-## What it does today
+![CATTIPU OS: Forge has built Habit Tracker and Launch is running it](docs/media/screens/hero.png)
 
-**A real desktop.** Icons are OS objects with an identity, a grid cell and
-a parent — not decorations. Drag them, snap them to the grid, nest them in
-folders, right-click for a mechanical context menu. The layout survives a
-reload because positions are stored as **grid cells rather than pixels**,
-so a desktop arranged on a 1920 screen lands correctly on a 1366 one.
+<p align="center"><sub>A project built by Forge (left) and running in Launch (right), with the desktop widgets floating on the wallpaper. Captured from the live app at 1600×900.</sub></p>
 
-**One filesystem, two views.** Explorer and the desktop read the same
-array. `parentId === null` means the OS root, and the OS root *is* the
-desktop — so a folder made in Explorer appears on the desktop, and a
-folder made on the desktop appears in Explorer, with nothing to
-synchronise because there is nothing to keep in step.
+## What is CATTIPU?
 
-**A window manager that remembers.** Snap left/right/top/bottom with a
-drag preview, Cascade, Tile, and a Restore that returns a window to its
-exact size, position and z-order. Restoring a snapped-then-maximised
-window goes back one level at a time, because a snap stores a *region*
-rather than a rectangle. `Ctrl+Alt+C / T / R` reach cascade, tile and
-restore-all when a tiled workspace leaves no desktop to right-click.
+Building software means juggling a planning doc, a design tool, an IDE, a
+terminal, a browser and an AI chat that forgets your project every time.
+None of them share one understanding of what you are building.
 
-**Ten project templates.** Web App, Mobile App, API, AI Agent, SaaS,
-Dashboard, Chrome Extension, Desktop App, CLI Tool, Game. Creating one
-builds its workspace folders and a full project identity — target
-platform, stack, deployment target, artifact state, build status — and
-reports the project as **0% built**, because it is. An API gets no
-`Screens` folder; the template does not lie about the shape of the thing.
+CATTIPU is a single operating environment where **the Project is the
+primary object**. Planning, design, files, AI, builds and running apps all
+belong to the same project, and every tool sees the same state:
 
-**One action, every surface.** Creating a project reaches the Projects
-window, Explorer, search, the desktop, Recent Projects and the title bar
-from a single record. No duplicated state.
+```text
+Architect  ──▶  Canvas  ──▶  Forge  ──▶  Launch  ──▶  Live
+  plan          design        build        run          (next)
+```
+
+AI models are **interchangeable workers** behind adapters (local Ollama
+today, Claude ready, more to come). They read the project's memory, and
+the project never belongs to the model.
+
+## A tour
 
 | | |
 |---|---|
-| ![Boot](docs/release/Boot_1800ms.png) | ![Explorer](docs/m17/Explorer_WithFolders.png) |
-| The boot sequence | Explorer, showing the shared filesystem |
-| ![Tiled windows](docs/m18/Tile.png) | ![Templates](docs/m19/Templates_Menu.png) |
-| Tile, with exact restore | The ten templates |
+| ![Boot](docs/media/screens/boot.png) | ![Desktop](docs/media/screens/desktop.png) |
+| **Boot.** The original CATTIPU boot sequence. | **Desktop.** Projects window, rail, widgets, status bar. |
+| ![Architect](docs/media/screens/architect.png) | ![Canvas](docs/media/screens/canvas.png) |
+| **Architect.** Describe the software; get summary, features, architecture, data model, stack, APIs, roadmap. | **Canvas.** The architecture as a layout you can arrange. |
+| ![AI Console](docs/media/screens/ai-console.png) | ![Explorer](docs/media/screens/explorer.png) |
+| **AI Console.** Project-scoped AI (here a local Ollama model) that can propose files. | **Explorer.** One shared filesystem; open and edit the project's source. |
+| ![Forge](docs/media/screens/forge.png) | ![Launch](docs/media/screens/launch.png) |
+| **Forge.** A real esbuild build: diagnostics, artifact, history. | **Launch.** The build runs as a real local app on `127.0.0.1`. |
+| ![The built app](docs/media/screens/built-app.png) | ![The built app, dark mode](docs/media/screens/built-app-dark.png) |
+| **The result.** The app CATTIPU built and launched. | **Same app, dark mode.** Served live by Launch. |
+| ![Memory](docs/media/screens/memory.png) | ![Floating widgets](docs/media/screens/desktop-dark.png) |
+| **Memory.** Notes, prompts and conversations every AI reads; Forge and Launch file their results here. | **Floating widgets** on any wallpaper; minimise, close and add back. |
+| ![Wallpaper Studio](docs/media/screens/wallpaper-studio.png) | ![Notifications](docs/media/screens/notifications.png) |
+| **Wallpaper Studio.** Six period-true surfaces. | **Notification Center.** Every build and launch, in one history. |
 
----
+## How you use it
 
-## Design rules
+1. **Projects** → name your project → **CREATE**. It gets a workspace and
+   becomes the active project.
+2. **Architect** → describe what you want → **Generate** to get the plan.
+3. **Ask AI** in Architect → talk it through; the AI can **propose files**,
+   and **Apply** writes them into the project.
+4. **Explorer** → open and edit the files.
+5. **Forge** → **Build**: a real build with real diagnostics.
+6. **Launch** → **Launch**, then **Open** to use the app; **Stop** when done.
 
-Two hold the project together, and both are enforced by tests rather than
-by discipline.
+Everything is remembered per project: builds, launches, notes and
+conversations. Right-click the desktop for folders, window arrangement
+(Cascade, Tile, Restore All), wallpapers and widgets.
 
-**Nothing is stored that can be derived.** Progress, status and build
-state have no setters — they are computed from what a project actually
-contains, so no screen can be right while another is stale. A shortcut
-stores a project *id*, never a name, so renaming a project renames every
-shortcut with nothing to propagate.
+## Getting started
 
-**The Golden Master is the visual authority.** The v0.9 shell was signed
-off as a render, and every sprint since is measured against it by pixel
-comparison. Changes are allowed where a sprint asked for them and nowhere
-else.
-
-`docs/DESIGN_SYSTEM.md` and `docs/DESIGN_CONSTITUTION.md` carry the full
-rules; `docs/ARCHITECTURE.md` explains the state layer.
-
----
-
-## Installation
-
-Requires Node 20 or newer (developed on 22).
+Requires **Node 20+** and npm.
 
 ```bash
 git clone https://github.com/anirva09/cattipu-os.git
@@ -88,11 +95,66 @@ npm run dev
 
 Open <http://localhost:3000>.
 
-> Install with **npm**. `package-lock.json` is the authoritative lockfile;
-> `pnpm install` produces an incomplete `node_modules` that breaks
-> linting. `pnpm run <script>` is fine once the install has happened.
+> Install with **npm** (`package-lock.json` is authoritative). `pnpm install`
+> produces an incomplete `node_modules` that breaks linting.
 
----
+### Connect an AI
+
+CATTIPU talks to models through its AI gateway. Configure it in
+`.env.local` (never commit it):
+
+| Provider | Setup |
+|---|---|
+| **Ollama** (local, default in development) | Install [Ollama](https://ollama.com), `ollama pull qwen2.5-coder:1.5b`, keep it running. Optional: `OLLAMA_MODEL`, `OLLAMA_BASE_URL`, `OLLAMA_NUM_GPU=0` for CPU-only machines. |
+| **Claude** | `AI_PROVIDER=claude` and `ANTHROPIC_API_KEY=…`; optional `CATTIPU_CLAUDE_MODEL`. |
+
+Forge and Launch run real processes on your machine. They are on under
+`npm run dev`; under `npm start` they stay off unless `FORGE_ENABLED=1`
+and `LAUNCH_ENABLED=1`.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Browser["CATTIPU shell (React)"]
+    W["Windows<br/>Architect · Canvas · AI · Explorer · Forge · Launch · Memory"]
+    S["Stores (zustand)<br/>projects · filesystem · settings"]
+  end
+  subgraph Server["Local server (Next.js API)"]
+    AI["/api/ai<br/>AI gateway"]
+    F["/api/forge<br/>ForgeService"]
+    L["/api/launch<br/>LaunchService"]
+  end
+  W --> S
+  S --> AI --> P["Provider adapters<br/>Ollama · Claude"]
+  S --> F --> E["esbuild<br/>fixed args, no shell"]
+  F -- artifact --> L --> R["Local runtime<br/>127.0.0.1:port"]
+```
+
+Ground rules the code is built on:
+
+- **One owner per concern.** One window manager, one filesystem, one
+  project store, one notification system, one menu component.
+- **Derived, not stored.** Progress, status and build state are computed
+  from what a project contains, so nothing on screen goes stale.
+- **No arbitrary execution.** Builds and launches run fixed executables
+  with fixed argument arrays, no shell, a minimal environment, and
+  confinement checks. The AI proposes content; it never runs commands.
+- **The Golden Master is the visual authority.** The design system is
+  locked: Px437 and Ark Pixel type, molded bevels, PixelForge icons, a
+  2px maximum radius.
+
+| Where | What |
+|---|---|
+| `app/` | Next.js routes, including `api/ai`, `api/forge`, `api/launch` |
+| `components/` | The shell and every application window |
+| `lib/contracts/` | Typed contracts for each bounded context |
+| `lib/services/` · `lib/adapters/` | Services and the provider/process adapters behind them |
+| `store/` | Zustand stores, persisted and versioned |
+| `design-system/` | Tokens, bevels, icon registry |
+| `tests/` | 23 suites, 489 cases |
+| `scripts/promo/` | The 90s spot: a Motion timeline and its renderer |
+| `docs/` | Constitution, design system, sprint reports, handoff |
 
 ## Development
 
@@ -100,81 +162,36 @@ Open <http://localhost:3000>.
 |---|---|
 | `npm run dev` | Development server |
 | `npm run build` | Production build |
-| `npm start` | Serve the production build |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run lint` | ESLint |
-| `npm test` | 136 unit assertions across six suites in `tests/` |
-| `npm run verify` | typecheck, lint and tests together |
+| `npm run verify` | Typecheck, lint and all tests |
+| `node scripts/promo/render-ad.mjs` | Re-render the spot (Chrome/Edge + Python Pillow) |
 
-### Behavioural harnesses
+Every sprint is audited first, verified in the real app, and lands as one
+commit with a report in `docs/`. The rules are in
+[`PROJECT_CONSTITUTION.md`](PROJECT_CONSTITUTION.md) and
+[`docs/DESIGN_CONSTITUTION.md`](docs/DESIGN_CONSTITUTION.md).
 
-`scripts/*-verify.py` drive the production build in a real browser and
-assert against it — **213 checks** covering desktop objects, Explorer, the
-window manager, templates, propagation, the boot sequence, and every
-application at all four supported viewports.
+## Status and roadmap
 
-```bash
-npm run build && npm start -- -p 3321      # in one shell
-python3 scripts/m19-verify.py              # in another
-```
+**Today (MVP, local):** projects, Architect → Canvas, a project-scoped AI
+gateway, Project Memory, AI-written files, real builds, and real local
+launches.
 
-They need Python with `playwright` and `pillow`.
+**Next, in order:** ChatGPT-quality streaming AI → projects saved on disk →
+AI requirements interview into a plan → React apps with npm packages → an
+agent that builds, fixes and runs the app → a guided Create flow →
+a consistency sweep → showcase.
 
-**Every negative assertion in this project is mutation-tested.** A check
-that cannot fail proves nothing, so each one is confirmed by deliberately
-breaking the thing it watches and seeing it go red. The reports in
-`docs/history/` record which mutations were used — including the cases
-where a test looked fine and turned out to be vacuous.
+**Then:** a native Windows application (Tauri), multiple LLM providers
+sharing one Project Memory, and Live deployment.
 
-### Layout
+Honest limits today: local AI answers are slow and short, Architect plans
+come from templates until the AI interview lands, Forge builds plain web
+apps only, and data lives in the browser until projects move to disk.
 
-```
-app/            Next.js routes, global stylesheet, boot mount
-components/     The shell, its applications, and the frozen v0.9 package
-design-system/  Tokens, bevel primitives, the icon registry
-hooks/          App-level hooks
-lib/            OS state layer — filesystem, projects, workspace, templates
-store/          Zustand stores, persisted and versioned
-tests/          Unit suites
-scripts/        Verification harnesses, asset generators, release capture
-docs/           Architecture, design system, roadmap; history/ holds the record
-public/         pixelforge/ cursors/ wallpapers/ logo/ sounds/ assets/
-```
-
-`lib/os/extensions.ts` declares the seams the next milestones plug into —
-the generation pipeline, deployment, plugins, wallpapers, cursor themes,
-the notification centre. It implements nothing; it records the contract so
-each decision is made once.
-
----
-
-## Roadmap
-
-v0.9 completes the **Living Desktop foundation**: real objects, a real
-filesystem, workspace intelligence, and project identity.
-
-Next, in order: mounting the Notification Centre and command palette in
-the v0.9 shell, then the AI Workspace pipeline — Architect generating into
-Canvas, Canvas into Forge — followed by Launch and deployment providers.
-Full detail in `docs/ROADMAP.md`.
-
----
-
-## Deployment
-
-The app is a static Next.js build with no server-side state; everything
-persists in the browser via `zustand/persist`. Any Next-capable host
-works, Vercel included:
-
-```bash
-npm run build       # must be clean before deploying
-```
-
-`docs/DEPLOYMENT_REPORT.md` records the current release's verification and
-the deployment checklist.
-
----
+Full plan: [`docs/ROADMAP.md`](docs/ROADMAP.md). Picking this up as a new
+contributor or AI session? Start with [`docs/HANDOFF.md`](docs/HANDOFF.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE). Bundled fonts carry their own licences in
+`public/fonts/`.

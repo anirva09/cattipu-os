@@ -10,6 +10,8 @@ Before doing anything:
 5. Follow the Git identity, audit-first, verification,
    one-sprint/one-commit, and no-AI-attribution rules.
 6. Execute only the explicitly requested sprint.
+7. Read `docs/HANDOFF.md` for where the project stands, how CATTIPU is used,
+   and the ordered sprint queue (Q → X).
 
 Everything below is a summary. The constitution governs.
 
